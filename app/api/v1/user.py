@@ -6,7 +6,7 @@ from app.crud import user as crud_user
 from app.core.security import verify_password_hash, create_access_token
 from fastapi.security import OAuth2PasswordRequestForm
 from app.core.enums import UserRole
-from app.services.user_service import _sign_up_user
+from app.services.user_service import _sign_up_user, authenticate_user
 from app.services.exceptions import UserAlreadyExistError
 
 router = APIRouter()
@@ -51,7 +51,7 @@ def login_user(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail='Invalid email or password'
     )
-    authenticated_user = crud_user.authenticate_user(db, email=form_data.username, password=form_data.password)
+    authenticated_user = authenticate_user(db, email=form_data.username, password=form_data.password)
 
 
     if not authenticated_user :
@@ -59,7 +59,7 @@ def login_user(
 
 
     access_token = create_access_token(
-        subject=authenticated_user.id
+        subject=str(authenticated_user.id)
     )
 
 
