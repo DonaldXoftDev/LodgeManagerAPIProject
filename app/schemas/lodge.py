@@ -20,3 +20,5 @@ class LodgeResponse(LodgeBase):
     model_config = {'from_attributes': True}
 
 
+class LodgeUpdate(BaseModel):
+    pass

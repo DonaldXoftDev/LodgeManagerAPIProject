@@ -39,4 +39,4 @@
 # def delete_tenant(db: Session, db_tenant: Tenant):
 #     db.delete(db_tenant)
 #     db.commit()
-#     db.close()
+
