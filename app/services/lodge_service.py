@@ -28,5 +28,5 @@ def get_lodge_for_landlord(db: Session, lodge_id:int, landlord_id: int):
 def update_landlord_lodge(db:Session, lodge_id: int, landlord_id: int, update_data: LodgeUpdate):
     lodge = get_lodge_for_landlord(db=db, lodge_id=lodge_id, landlord_id=landlord_id)
 
-    return crud_lodge.update(db=db, lodge_data=update_data, db_lodge=lodge)
+    return crud_lodge.update(db=db, update_data=update_data, db_lodge=lodge)
 

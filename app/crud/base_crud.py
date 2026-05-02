@@ -25,17 +25,16 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         db.refresh(db_object)
         return db_object
 
-    def update(self, db: Session, update_data: UpdateSchemaType):
+    def update(self, db: Session, update_data: UpdateSchemaType, db_lodge: ModelType):
         update_dict = update_data.model_dump(exclude_unset=True)
 
         for key, value in update_dict.items():
-            setattr(self.model, key, value)
+            setattr(db_lodge, key, value)
 
-        db.add(self.model)
+        db.add(db_lodge)
         db.commit()
-        db.refresh(self.model)
-        return self.model
-
+        db.refresh(db_lodge)
+        return db_lodge
 
 
 
