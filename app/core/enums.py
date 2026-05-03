@@ -10,3 +10,7 @@ class RoomStatus(str, Enum):
     VACANT = 'Vacant'
     OCCUPIED = 'Occupied'
     MAINTENANCE = 'Maintenance'
+
+class TenantType(str, Enum):
+    STUDENT = 'student'
+    OTHERS = 'others'

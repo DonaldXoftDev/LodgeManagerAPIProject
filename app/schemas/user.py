@@ -1,10 +1,14 @@
 from pydantic import BaseModel, EmailStr, Field, field_validator
 from datetime import datetime
 from app.core.enums import UserRole
-
+#all users have email, password, phone no, first and last name
+#landlords
 
 class UserBase(BaseModel):
+    first_name: str
+    last_name: str
     email: EmailStr
+    phone_no: str = Field(..., max_length=15)
 
     @field_validator('email', mode='before')
     @classmethod
