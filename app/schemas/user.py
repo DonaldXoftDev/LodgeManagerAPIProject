@@ -12,7 +12,7 @@ class UserBase(BaseModel):
     email: EmailStr
     phone_no: str = Field(..., max_length=15)
 
-    @field_validator('email', mode='before')
+    @field_validator('email', 'first_name', 'last_name', mode='before')
     @classmethod
     def clean_name(cls, value: str) -> str:
         return value.strip().lower()
@@ -21,6 +21,8 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str = Field(..., min_length=8, max_length=128)
 
+class UserInternal(UserBase):
+    hashed_password: str
 
 class UserResponse(UserBase):
     id: int

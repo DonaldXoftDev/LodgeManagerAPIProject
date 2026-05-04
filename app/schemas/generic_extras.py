@@ -5,3 +5,4 @@ class GenericExtras(TypedDict):
     role: UserRole
     landlord_id: int
     lodge_id: int
+    hashed_password: str

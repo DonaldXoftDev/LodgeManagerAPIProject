@@ -8,11 +8,11 @@ class User(Base):
     __tablename__ = 'users'
 
     id = Column(Integer, primary_key=True)
-    first_name = Column(String, nullable=False)
-    last_name = Column(String, nullable=False)
+    first_name = Column(String, nullable=True)
+    last_name = Column(String, nullable=True)
     email= Column(String(256), unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
-    phone_no = Column(String(20), nullable=False, unique=True, index=True)
+    phone_no = Column(String(20), nullable=True, unique=False, index=True)
     role = Column(Enum(UserRole), default=UserRole.LANDLORD, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     lodges = relationship('Lodge', back_populates='owner', cascade='all, delete-orphan')

@@ -1,11 +1,12 @@
 from sqlalchemy.orm import Session
-from typing import Generic, Type, TypeVar, Unpack
+from typing import Generic, Type, TypeVar, Unpack, Union
 from pydantic import BaseModel
 from app.schemas.generic_extras import GenericExtras
 
 ModelType = TypeVar('ModelType')
 CreateSchemaType = TypeVar('CreateSchemaType', bound=BaseModel)
 UpdateSchemaType = TypeVar('UpdateSchemaType', bound=BaseModel)
+
 
 
 class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):

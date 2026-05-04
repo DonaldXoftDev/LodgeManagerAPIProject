@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from app.api.deps import get_db
 from app.schemas import user as schema_user
+from app.schemas import tenantprofile as schema_tenant
 from app.core.security import  create_access_token
-from fastapi.security import OAuth2PasswordRequestForm
 from app.core.enums import UserRole
 from app.services.user_service import sign_up_user, authenticate_user
 from app.core.exceptions import UserAlreadyExistError
@@ -25,13 +26,16 @@ def register_landlord(
         )
 
 
-@router.post('/register/tenant', response_model=schema_user.UserResponse, status_code=201)
+@router.post('/register/tenant', response_model=schema_tenant.TenantProfileResponse, status_code=201)
 def register_tenant(
-        user_data: schema_user.UserCreate,
+        tenant_data: schema_tenant.TenantProfileCreate,
         db: Session = Depends(get_db)
 ):
+    #does the user exist in the db?
+    #is the role a tenant_type??
+
     try:
-        return sign_up_user(user_data=user_data, db=db, role=UserRole.TENANT)
+        return sign_up_user(user_data=tenant_data, db=db, role=UserRole.TENANT)
 
     except UserAlreadyExistError as error:
         raise HTTPException(

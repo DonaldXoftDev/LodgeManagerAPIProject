@@ -7,6 +7,8 @@ from app.crud.lodge import crud_lodge
 def is_landlord(user_role: UserRole):
     return user_role == UserRole.LANDLORD
 
+def is_tenant(user_role: UserRole):
+    return user_role == UserRole.TENANT
 
 def create_new_loge_for_landlord(db: Session, landlord_id: int, lodge_in: LodgeCreate):
     lodge_exist = crud_lodge.get_by_name_and_landlord(db, landlord_id=landlord_id, lodge_name=lodge_in.name)

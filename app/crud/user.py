@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.core.security import get_password_hash
 from app.models.user import User
-from app.schemas.user import UserCreate, UserUpdate
+from app.schemas.user import UserCreate, UserUpdate, UserInternal
 from app.schemas.generic_extras import GenericExtras
 
 from app.crud.base_crud import CRUDBase
@@ -16,18 +16,7 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         print(f'User input email: {email}')
         return db.query(self.model).filter(self.model.email == email).first()
 
-    def create(self, db: Session, *, obj_in: UserCreate, **kwargs: Unpack[GenericExtras]) -> User:
-        obj_data = obj_in.model_dump()
-
-        password = obj_data.pop('password')
-        obj_data['hashed_password'] = get_password_hash(password=password)
-
-        db_user = User(**obj_data, **kwargs)
-
-        db.add(db_user)
-        db.commit()
-        db.refresh(db_user)
-        return db_user
 
 
 crud_user = CRUDUser(User)
+#fun facts you can add type hints to kwargs using Unpack[TypeDict], a feature in typing module
