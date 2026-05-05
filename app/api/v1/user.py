@@ -5,8 +5,8 @@ from app.api.deps import get_db
 from app.schemas import user as schema_user
 from app.schemas import tenantprofile as schema_tenant
 from app.core.security import  create_access_token
-from app.core.enums import UserRole
-from app.services.user_service import sign_up_user, authenticate_user
+
+from app.services.user_service import authenticate_user, sign_up_tenant, sign_up_landlord
 from app.core.exceptions import UserAlreadyExistError
 
 router = APIRouter()
@@ -18,7 +18,7 @@ def register_landlord(
         db: Session = Depends(get_db)
 ):
     try:
-        return  sign_up_user(user_data=user_data, db=db)
+        return  sign_up_landlord(user_data=user_data, db=db)
     except UserAlreadyExistError as error:
         raise HTTPException(
             status_code=400,
@@ -28,14 +28,12 @@ def register_landlord(
 
 @router.post('/register/tenant', response_model=schema_tenant.TenantProfileResponse, status_code=201)
 def register_tenant(
-        tenant_data: schema_tenant.TenantProfileCreate,
+        tenant_in: schema_tenant.TenantProfileCreate,
         db: Session = Depends(get_db)
 ):
-    #does the user exist in the db?
-    #is the role a tenant_type??
 
     try:
-        return sign_up_user(user_data=tenant_data, db=db, role=UserRole.TENANT)
+        return sign_up_tenant(db=db, tenant_in=tenant_in)
 
     except UserAlreadyExistError as error:
         raise HTTPException(

@@ -1,37 +1,37 @@
+from typing import Dict, Any
+
 from app.core.enums import UserRole
 from app.core.security import get_password_hash
+from app.crud.user import crud_user
 from app.models.tenantprofile import TenantProfile
 from app.models.user import User
 from app.schemas.tenantprofile import TenantProfileCreate, TenantProfileUpdate
 from sqlalchemy.orm import Session, joinedload
 from app.crud.base_crud import CRUDBase
-from app.schemas.user import UserCreate
+from app.schemas.user import UserCreate, UserInternal
 
 
 class CRUDTenantProfile(CRUDBase[TenantProfile, TenantProfileCreate, TenantProfileUpdate]):
-    def create_tenant(self, db: Session, *, tenant_data: TenantProfileCreate, hashed_password: str, role:UserRole):
+    def create_tenant(self, db: Session, tenant_in: TenantProfileCreate, internal_user: UserInternal):
         try:
-            user_dict = {k:v for k,v in tenant_data.model_dump().items() if k in User.__table__.columns}
-            user_dict['hashed_password'] = hashed_password
-            user_dict['role'] = role
-
-            db_user = User(**user_dict)
+            db_user = User(**internal_user.model_dump())
             db.add(db_user)
             db.flush()
 
-            tenant_dict = {k:v for k,v in tenant_data.model_dump().items() if k in TenantProfile.__table__.columns}
-            db_tenant = TenantProfile(**tenant_dict, user_id=db_user.id)
-            db.add(db_tenant)
+            tenant_profile = tenant_in.model_dump(exclude={'user_info'})
+            tenant_profile['tenant_info']['user_id'] = db_user.id
 
+            db_tenant = TenantProfile(**tenant_profile.get('tenant_info'))
+            db.add(db_tenant)
             db.commit()
             db.refresh(db_tenant)
-            db_tenant = db.query(TenantProfile).options(joinedload(TenantProfile.user)).filter(TenantProfile.id == db_tenant.id).first()
 
+            return db_tenant
         except Exception as e:
             db.rollback()
             raise e
 
-        return db_tenant
+
 
 
 def get_tenants(db: Session, skip: int = 0, max_limit= 50):

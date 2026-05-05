@@ -23,6 +23,7 @@ class UserCreate(UserBase):
 
 class UserInternal(UserBase):
     hashed_password: str
+    role: UserRole
 
 class UserResponse(UserBase):
     id: int

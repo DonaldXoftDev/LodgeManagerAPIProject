@@ -44,5 +44,19 @@
 - [x] **Task 2.1:** Create `Lodge` SQLAlchemy Model (`app/models/lodge.py`).
 - [x] **Task 2.2:** Create `Room` Pydantic Schemas (`app/schemas/room.py`).
 
+## Epic 3: User Service Refactoring
+**Concept Focus:** Service Layer Orchestration, Polymorphic Input Handling, Schema Composition, Database Transactions.
+
+### 📝 Pending Tasks
+- [ ] **Task 3.5:** Build `Tenant` API Router (`app/api/v1/tenants.py`).
+
+### ✅ Completed Tasks
+- [x] Review `sign_up_user` in `app/services/user_service.py`.
+- [x] **Task 3.1:** Refactor Pydantic Schemas to remove redundant fields in responses. 
+- [x] **Task 3.2:** Fix `TenantProfileCreate` schema. It incorrectly expects `UserResponse` instead of `UserCreate`.
+- [x] **Task 3.3:** Finalize `TenantProfileResponse` schema to remove all redundant data and security leaks.
+- [x] **Task 3.4:** Refactor `register_tenant` in `app/services/user_service.py` to fix transaction rollback bug and unpacking logic using `db.flush()`.
+- [x] **Task 3.4.1:** Delete redundant `create_tenant` from `app/crud/tenantprofile.py`.
+
 ---
 *Note: The PM (AI) will automatically append to this file upon task completion. Do not delete historical items.*
