@@ -19,6 +19,13 @@ class TenantProfileCreate(BaseModel):
     user_info: UserCreate
     tenant_info: TenantBase
 
+class TenantInfoUpdate(BaseModel):
+    tenant_type: Optional[TenantType] = None
+    emergency_contact_name: Optional[str] = None
+    emergency_contact_phone_no: Optional[str] = None
+    level: Optional[StudentLevel] = None
+    reg_no: Optional[int] = None
+    department: Optional[str] = None
 
 class TenantProfileResponse(TenantBase):
     id: int
@@ -31,8 +38,7 @@ class TenantProfileResponse(TenantBase):
     model_config = {'from_attributes': True}
 
 
-class TenantProfileUpdate(UserUpdate):
-    tenant_type: Optional[TenantType] = None
-    level: Optional[StudentLevel] = None
-    reg_no: Optional[int] = None
-    department: Optional[str] = None
+class TenantProfileUpdate(BaseModel):
+    user_info: Optional[UserUpdate] = None
+    tenant_info: Optional[TenantInfoUpdate] = None
+

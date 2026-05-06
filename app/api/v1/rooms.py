@@ -10,7 +10,6 @@ from app.core.exceptions import LodgeNotFoundError, RoomAlreadyExistError, RoomN
 
 router = APIRouter()
 
-
 @router.get('/{lodge_id}/rooms', response_model=List[schema_room.RoomResponse])
 def get_all_rooms(
         lodge_id: int,
@@ -91,13 +90,13 @@ def update_room_by_id(
         db: Session = Depends(get_db),
         landlord_user: User = Depends(get_landlord_user)
 ):
-    #does the lodge exist and owned by landlord
-    #does the room exist and exist in lodge
+
 
     try:
         updated_room = room_service.update_room_details(
             db, room_id=room_id,
             update_data=update_data,
+            landlord_id=landlord_user.id
         )
         return updated_room
     except RoomNotFoundError as e:

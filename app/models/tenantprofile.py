@@ -13,7 +13,7 @@ class TenantProfile(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False, unique=True)
-    lodge_id: Mapped[int] = mapped_column(Integer, ForeignKey('lodges.id', ondelete='CASCADE'), nullable=False, unique=True)
+    lodge_id: Mapped[int] = mapped_column(Integer, ForeignKey('lodges.id', ondelete='CASCADE'), nullable=False)
     tenant_type: Mapped[TenantType] = mapped_column(Enum(TenantType), nullable=False, default=TenantType.STUDENT)
     emergency_contact_name: Mapped[str] = mapped_column(String(20), nullable=False,  index=True)
     emergency_contact_phone_no: Mapped[str] = mapped_column(String, nullable=False)

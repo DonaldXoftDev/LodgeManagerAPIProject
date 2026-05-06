@@ -8,6 +8,9 @@ class LodgeAlreadyExistError(Exception):
     def __init__(self, name: str):
         super().__init__(f'Lodge with name: {name} already exists')
 
+class UserNotFoundError(Exception):
+    def __init__(self):
+        super().__init__(f'User Not found')
 
 class LodgeNotFoundError(Exception):
     def __init__(self):

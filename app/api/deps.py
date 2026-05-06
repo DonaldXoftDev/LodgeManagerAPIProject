@@ -9,7 +9,7 @@ from fastapi.security import OAuth2PasswordBearer
 from fastapi import Depends, HTTPException, status
 from app.crud.user import crud_user
 from app.models.user import User
-from app.services.lodge_service import is_landlord
+from app.services.lodge_service import is_landlord, is_tenant
 
 #helps to extract token from http request
 oauth_2 = OAuth2PasswordBearer(
@@ -69,5 +69,15 @@ def get_landlord_user(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail='Only landlords can manage lodges'
+        )
+    return current_user
+
+def get_tenant_user(
+        current_user: User = Depends(get_current_user)
+):
+    if not is_tenant(current_user.role):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail='Only tenants can update their profile'
         )
     return current_user

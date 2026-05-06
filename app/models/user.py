@@ -24,7 +24,7 @@ class User(Base):
     created_at: Mapped['DateTime'] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     lodges: Mapped[list["Lodge"]] = relationship('Lodge', back_populates='owner', cascade='all, delete-orphan')
     is_active = Column(Boolean, default=True, nullable=False)
-    tenantprofile: Mapped[list["TenantProfile"]] = relationship(
+    tenantprofile: Mapped["TenantProfile"] = relationship(
         "TenantProfile",back_populates='user',
         cascade='all, delete-orphan',
         single_parent=True

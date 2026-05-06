@@ -1,8 +1,8 @@
 """Initial migration
 
-Revision ID: 76092dcc32a4
+Revision ID: 01ddf636c7d8
 Revises: 
-Create Date: 2026-05-06 12:42:35.517543
+Create Date: 2026-05-06 18:50:50.601020
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '76092dcc32a4'
+revision: str = '01ddf636c7d8'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -75,7 +75,6 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['lodge_id'], ['lodges.id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('lodge_id'),
     sa.UniqueConstraint('user_id')
     )
     with op.batch_alter_table('tenant_profiles', schema=None) as batch_op:

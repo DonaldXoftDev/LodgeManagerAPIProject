@@ -40,15 +40,14 @@ def get_room_details(db: Session, lodge_id: int, room_id: int, landlord_id: int)
     return room
 
 
-def update_room_details(db: Session, room_id: int, update_data: schema_room.RoomUpdate):
+def update_room_details(db: Session, room_id: int, landlord_id: int, update_data: schema_room.RoomUpdate):
     room = crud_room.get(db, item_id=room_id)
     if not room:
         raise RoomNotFoundError()
 
-    lodge = room.lodge
-    return lodge
-    #rooms can only be updated by landlords who own it
-    #get the lodge from the room's relationship...
-    #
-    updated_room =  crud_room.update(db, db_obj=room, update_data=update_data)
-    return updated_room
+    if room.lodge.landlord_id != landlord_id:
+        raise RoomNotFoundError()
+
+    return crud_room.update(db, db_obj=room, update_data=update_data)
+
+

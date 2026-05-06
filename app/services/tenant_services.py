@@ -4,10 +4,11 @@ from app.crud.lodge import crud_lodge
 from app.crud.user import crud_user
 from app.crud.tenantprofile import crud_tenant
 from app.core.enums import UserRole
-from app.core.exceptions import UserAlreadyExistError, LodgeNotFoundError
-from app.core.security import  get_password_hash
+from app.core.exceptions import UserAlreadyExistError, LodgeNotFoundError, UserNotFoundError
+from app.core.security import get_password_hash
+from app.models.tenantprofile import TenantProfile
 from app.models.user import User
-from app.schemas.tenantprofile import TenantProfileCreate
+from app.schemas.tenantprofile import TenantProfileCreate, TenantProfileUpdate
 from app.schemas.user import UserInternal
 from app.services import lodge_service
 
@@ -34,23 +35,29 @@ def sign_up_tenant(
         role=UserRole.TENANT
     )
 
-    return crud_tenant.create_tenant(db, tenant_in=tenant_in, internal_user=base_user_data, lodge_id = lodge_id)
-
+    return crud_tenant.create_tenant(db, tenant_in=tenant_in, internal_user=base_user_data, lodge_id=lodge_id)
 
 
 def fetch_lodge_tenants(
         db: Session,
         lodge_id: int,
-        landlord_user: User ,
+        landlord_user: User,
         skip: int,
         limit: int
 ):
-
     lodge = lodge_service.verify_lodge_ownership(db, lodge_id=lodge_id, landlord_id=landlord_user.id)
     if not lodge:
         raise LodgeNotFoundError()
 
-    tenants =  crud_tenant.get_tenants(db, lodge_id=lodge_id, skip=skip, max_limit=limit)
+    tenants = crud_tenant.get_tenants(db, lodge_id=lodge_id, skip=skip, max_limit=limit)
     return tenants
 
 
+def update_tenant_profile(
+        db: Session,
+        base_user: User,
+        update_data: TenantProfileUpdate
+):
+
+    tenant_user = base_user.tenantprofile
+    return crud_tenant.update_tenant(db, update_data=update_data, tenant_user=tenant_user, base_user=base_user)
