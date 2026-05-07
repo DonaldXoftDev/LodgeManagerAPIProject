@@ -1,17 +1,18 @@
 from pydantic import BaseModel, Field
 from typing import Optional
-from decimal import Decimal
-from datetime import date
+from datetime import date, datetime
 
+from app.core.enums import LeaseStatus
 
 
 class LeaseBase(BaseModel):
     tenant_id: int
     room_id: int
-    agreed_rent_amt: Decimal = Field(..., ge=0 ,max_digits=10, decimal_places=2)
-    is_active: bool = True
+    agreed_rent_amt: int = Field(..., ge=0)
+    status: LeaseStatus = LeaseStatus.ACTIVE
     start_date: date
-    end_date: Optional[date] = None
+    end_date: date
+
 
 
 class LeaseCreate(LeaseBase):
@@ -20,15 +21,16 @@ class LeaseCreate(LeaseBase):
 
 class LeaseResponse(LeaseBase):
     id: int
+    initial_amt_paid: int
+    created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}
 
 class LeaseUpdate(BaseModel):
     tenant_id: Optional[int] = None
     room_id: Optional[int] = None
-    agreed_rent_amt: Optional[Decimal]  = None
-    is_active: Optional[bool] = None
+    agreed_rent_amt: Optional[int]  = None
+    status: Optional[LeaseStatus] = None
     start_date: Optional[date] = None
     end_date: Optional[date] = None
 

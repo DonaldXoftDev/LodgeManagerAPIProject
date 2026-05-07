@@ -22,3 +22,8 @@ class StudentLevel(str, Enum):
     LEVEL_400 = '400'
     LEVEL_500 = '500'
     LEVEL_600 = '600'
+
+class LeaseStatus(str, Enum):
+    ACTIVE = 'Active'
+    EXPIRED = 'Expired'
+    TERMINATED = 'Terminated'
