@@ -1,17 +1,14 @@
 from typing import Optional
-
 from app.core.enums import LeaseStatus
 from app.crud.tenantprofile import crud_tenant
 from app.models.user import User
-from app.schemas import room as schema_room
 from app.crud.room import crud_room
 from sqlalchemy.orm import Session
-
 from app.schemas.lease import LeaseCreate
-from app.services import lodge_service, room_service
+from app.services import lodge_service
 from app.crud.lease import crud_lease
-from app.core.exceptions import RoomAlreadyExistError, RoomNotFoundError, UserNotFoundError, ActiveLeaseFoundError, \
-        LodgeNotFoundError
+from app.core.exceptions import RoomNotFoundError, UserNotFoundError, ActiveLeaseFoundError, \
+    LodgeNotFoundError, LeaseNotFoundError, LeaseAlreadyExpired, LeaseAlreadyTerminated
 
 
 def create_new_lease(
@@ -54,21 +51,20 @@ def filter_leases_for_landlord(
         max_limit: Optional[int] = None,
         status: Optional[LeaseStatus] = None
 ):
+    lodge = lodge_service.verify_lodge_ownership(db, lodge_id=lodge_id, landlord_id=landlord_id)
 
-        lodge = lodge_service.verify_lodge_ownership(db, lodge_id=lodge_id, landlord_id=landlord_id)
+    if not lodge:
+        raise LodgeNotFoundError()
 
-        if not lodge:
-                raise LodgeNotFoundError()
+    return filter_leases(
+        db,
+        tenant_id=tenant_id,
+        room_id=room_id,
+        skip=skip,
+        max_limit=max_limit,
+        status=status
+    )
 
-
-        return filter_leases(
-                db,
-                tenant_id=tenant_id,
-                room_id=room_id,
-                skip=skip,
-                max_limit=max_limit,
-                status=status
-        )
 
 def filter_leases(
         db: Session,
@@ -79,8 +75,6 @@ def filter_leases(
         max_limit: Optional[int] = None,
         status: Optional[LeaseStatus] = None
 ):
-
-
     return crud_lease.get_tenant_leases(
         db,
         lodge_id=lodge_id,
@@ -91,10 +85,11 @@ def filter_leases(
         skip=skip
     )
 
+
 def terminate_lease(
         db: Session,
         lease_id: int,
-        landlord_user: int,
+        landlord_id: int,
 ):
     #find the lease with that id
     #use the room_id to find the room associated with that lease
@@ -104,5 +99,22 @@ def terminate_lease(
     lease = crud_lease.get(db, item_id=lease_id)
 
     if not lease:
-        raise LodgeNotFoundError
-    pass
+        raise LeaseNotFoundError()
+
+    #lease cannot be terminated if it has already been terminated or is expired
+    is_terminated_lease = lease.status == LeaseStatus.TERMINATED
+
+    if  is_terminated_lease:
+        raise LeaseAlreadyTerminated()
+
+    is_expired_lease =  lease.status == LeaseStatus.EXPIRED
+
+    if is_expired_lease:
+        raise LeaseAlreadyExpired()
+
+    room = lease.room
+
+    if room.lodge.landlord_id != landlord_id:
+        raise RoomNotFoundError()
+
+    return crud_lease.terminate_lease(db, db_lease=lease)

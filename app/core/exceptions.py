@@ -24,7 +24,19 @@ class RoomAlreadyExistError(BaseAlreadyExistError):
 
 class ActiveLeaseFoundError(BaseAlreadyExistError):
     def __init__(self):
-        super().__init__(exception_name='Lease')
+        super().__init__(exception_name='Active Lease')
+
+
+
+
+class LeaseAlreadyTerminated(Exception):
+    def __init__(self):
+        self.detail = f'Lease has already been Terminated'
+
+class LeaseAlreadyExpired(Exception):
+    def __init__(self):
+        self.detail = f'Lease has already Expired'
+
 
 
 
@@ -47,6 +59,14 @@ class LodgeNotFoundError(BaseNotFoundError):
 class RoomNotFoundError(BaseNotFoundError):
     def __init__(self):
         super().__init__(name='Room')
+
+class LeaseNotFoundError(BaseNotFoundError):
+    def __init__(self):
+        super().__init__(name='Lease')
+
+
+
+
 
 
 class UnauthorizedAccessError(Exception):

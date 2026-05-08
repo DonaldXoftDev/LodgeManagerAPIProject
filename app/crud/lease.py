@@ -93,6 +93,7 @@ class CRUDLease(CRUDBase[Lease, LeaseCreate, LeaseUpdate]):
         db.refresh(db_lease)
         return db_lease
 
+
     def update_lease(self, db: Session, lease_data: LeaseUpdate, db_lease: Lease):
         update_data = lease_data.model_dump(exclude_unset=True)
 

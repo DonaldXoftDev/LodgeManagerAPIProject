@@ -27,3 +27,4 @@ class LeaseStatus(str, Enum):
     ACTIVE = 'Active'
     EXPIRED = 'Expired'
     TERMINATED = 'Terminated'
+    PENDING_TERMINATION = 'Pending_Termination'

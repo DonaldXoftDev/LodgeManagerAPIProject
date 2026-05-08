@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Response
+from fastapi import FastAPI
 from app.core.config import settings
 from app.db import base
 from app.api.v1.user import router as user_router

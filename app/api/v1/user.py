@@ -42,4 +42,4 @@ def login_user(
         db: Session = Depends(get_db),
         form_data: OAuth2PasswordRequestForm = Depends()
 ):
-    return user_service.login_authenticated_user(db, email=form_data.username, password=form_data.password)
+    return user_service.login_authenticated_user(db, email=form_data.username.lower(), password=form_data.password)

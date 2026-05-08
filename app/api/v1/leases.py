@@ -1,9 +1,5 @@
 from app.core.enums import LeaseStatus
-from app.core.exceptions import UserNotFoundError, RoomNotFoundError, ActiveLeaseFoundError, LodgeNotFoundError
-from app.crud.room import crud_room
-from app.crud.tenantprofile import crud_tenant
 from app.crud import lease as crud_lease
-from app.models.room import RoomStatus
 from app.schemas import lease as schema_lease
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException
@@ -22,28 +18,16 @@ def create_new_lease(
         db: Session = Depends(get_db),
         landlord_user: User = Depends(get_landlord_user)
 ):
-    try:
-        return lease_services.create_new_lease(
-            db,
-            lease_data=lease_data,
-            landlord_user=landlord_user
-        )
-    except RoomNotFoundError as e:
-        raise HTTPException(
-            status_code=404,
-            detail=str(e)
-        )
 
-    except UserNotFoundError as e:
-        raise HTTPException(
-            status_code=404,
-            detail=str(e)
-        )
-    except ActiveLeaseFoundError as e:
-        raise HTTPException(
-            status_code=400,
-            detail=str(e)
-        )
+    return lease_services.create_new_lease(
+        db,
+        lease_data=lease_data,
+        landlord_user=landlord_user
+    )
+
+
+
+
 
 
 @router.get('/{lodge_id}', response_model=List[schema_lease.LeaseResponse])
@@ -57,24 +41,20 @@ def get_leases_for_landlord(
         db: Session = Depends(get_db),
         current_user: User = Depends(get_landlord_user)
 ):
-    try:
 
-        return lease_services.filter_leases_for_landlord(
-            db,
-            landlord_id=current_user.id,
-            lodge_id=lodge_id,
-            tenant_id=tenant_id,
-            room_id=room_id,
-            skip=skip,
-            max_limit=max_limit,
-            status=status
 
-            )
-    except LodgeNotFoundError as e:
-        raise HTTPException(
-            status_code=404,
-            detail=str(e)
+    return lease_services.filter_leases_for_landlord(
+        db,
+        landlord_id=current_user.id,
+        lodge_id=lodge_id,
+        tenant_id=tenant_id,
+        room_id=room_id,
+        skip=skip,
+        max_limit=max_limit,
+        status=status
+
         )
+
 
 
 
@@ -129,10 +109,13 @@ def terminate_lease_by_id(
     #the landlord can only terminate leases in his specific lodge
     #the lease must exist
 
-    lease = crud_lease.get_lease(db=db, lease_id=lease_id)
-    if not lease:
-        raise HTTPException(
-            status_code=404,
-            detail='Lease not Found'
-        )
-    return crud_lease.terminate_lease(db=db, db_lease=lease)
+    return lease_services.terminate_lease(db, lease_id=lease_id, landlord_id=current_user.id)
+
+
+@router.patch('/me/terminate', response_model=schema_lease.LeaseResponse)
+def request_lease_termination(
+        db: Session,
+        current_tenant: User = Depends(get_tenant_user)
+):
+    #leases
+
