@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     """
     # --- Database Settings ---
     DATABASE_URL: str
-    PROJECT_NAME: str = 'Lodge Management System Api'
+    PROJECT_NAME: str = 'LodgeOps Api'
 
     # --- Security & JWT Settings ---
     SECRET_KEY: str

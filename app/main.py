@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from app.core.config import settings
 from app.db import base
 from app.api.v1.user import router as user_router
@@ -8,8 +8,10 @@ from app.api.v1.tenants import router as tenant_router
 from app.api.v1.leases import router as lease_router
 # from app.api.v1.payments import router as payment_router
 from fastapi.middleware.cors import CORSMiddleware
+from app.core.handlers import lodge_ops_handlers
 
-app = FastAPI(title=settings.PROJECT_NAME)
+app = FastAPI(title=settings.PROJECT_NAME, exception_handlers=lodge_ops_handlers)
+
 
 app.add_middleware(
     CORSMiddleware,

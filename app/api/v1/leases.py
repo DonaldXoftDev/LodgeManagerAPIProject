@@ -78,7 +78,7 @@ def get_leases_for_landlord(
 
 
 
-@router.get('/tenant/me')
+@router.get('/tenant/me', response_model=List[schema_lease.LeaseResponse])
 def get_tenant_leases(
         skip: Optional[int] = None,
         max_limit: Optional[int] = None,
@@ -100,20 +100,6 @@ def get_tenant_leases(
 
 
 
-# @router.get('/{lease_id}', response_model=schema_lease.LeaseResponse)
-# def get_lease_land(
-#         lease_id: int,
-#         db: Session = Depends(get_db),
-#         current_user:  = Depends(get_current_user)
-# ):
-#     lease = crud_lease.get_lease(db=db, lease_id=lease_id)
-#
-#     if not lease:
-#         raise HTTPException(
-#             status_code=404,
-#             detail='Lease not Found'
-#         )
-#     return lease
 
 
 # @router.patch('/{lease_id}', response_model=schema_lease.LeaseResponse)
@@ -134,16 +120,19 @@ def get_tenant_leases(
 #     return crud_lease.update_lease(db=db, lease_data=lease_data, db_lease=lease)
 #
 #
-# @router.patch('/terminate/{lease_id}', response_model=schema_lease.LeaseResponse)
-# def terminate_lease_by_id(
-#         lease_id: int,
-#         db: Session = Depends(get_db),
-#         current_user: LandLord = Depends(get_current_user)
-# ):
-#     lease = crud_lease.get_lease(db=db, lease_id=lease_id)
-#     if not lease:
-#         raise HTTPException(
-#             status_code=404,
-#             detail='Lease not Found'
-#         )
-#     return crud_lease.terminate_lease(db=db, db_lease=lease)
+@router.patch('/terminate/{lease_id}', response_model=schema_lease.LeaseResponse)
+def terminate_lease_by_id(
+        lease_id: int,
+        db: Session = Depends(get_db),
+        current_user: User = Depends(get_landlord_user)
+):
+    #the landlord can only terminate leases in his specific lodge
+    #the lease must exist
+
+    lease = crud_lease.get_lease(db=db, lease_id=lease_id)
+    if not lease:
+        raise HTTPException(
+            status_code=404,
+            detail='Lease not Found'
+        )
+    return crud_lease.terminate_lease(db=db, db_lease=lease)

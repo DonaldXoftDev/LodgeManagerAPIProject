@@ -28,7 +28,7 @@ class LeaseResponse(LeaseBase):
 class LeaseUpdate(BaseModel):
     tenant_id: Optional[int] = None
     room_id: Optional[int] = None
-    agreed_rent_amt: Optional[int]  = None
+    agreed_rent_amt: Optional[int]  = Field(None, ge=0)
     status: Optional[LeaseStatus] = None
     start_date: Optional[date] = None
     end_date: Optional[date] = None

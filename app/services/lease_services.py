@@ -81,4 +81,28 @@ def filter_leases(
 ):
 
 
-    return crud_lease.get_tenant_leases(db, lodge_id=lodge_id, tenant_id=tenant_id,room_id=room_id, status=status, max_limit=max_limit, skip=skip)
+    return crud_lease.get_tenant_leases(
+        db,
+        lodge_id=lodge_id,
+        tenant_id=tenant_id,
+        room_id=room_id,
+        status=status,
+        max_limit=max_limit,
+        skip=skip
+    )
+
+def terminate_lease(
+        db: Session,
+        lease_id: int,
+        landlord_user: int,
+):
+    #find the lease with that id
+    #use the room_id to find the room associated with that lease
+    #check if the landlord owns the lodge the current found room is in
+    #if all checks are done and the landlord does own the lodge , terminate the lease
+
+    lease = crud_lease.get(db, item_id=lease_id)
+
+    if not lease:
+        raise LodgeNotFoundError
+    pass

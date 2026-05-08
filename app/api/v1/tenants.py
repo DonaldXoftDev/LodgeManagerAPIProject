@@ -18,17 +18,13 @@ def update_tenant_profile(
         db: Session = Depends(get_db),
         current_user: User = Depends(get_tenant_user)
 ):
-    try:
-        return tenant_services.update_tenant_profile(
-            db=db,
-            update_data=tenant_data,
-            base_user=current_user,
-        )
-    except UserNotFoundError as e:
-        raise HTTPException(
-            status_code=404,
-            detail=str(e)
-        )
+
+    return tenant_services.update_tenant_profile(
+        db=db,
+        update_data=tenant_data,
+        base_user=current_user,
+    )
+
 
 
 @router.get('/profile', response_model=schema_tenant.TenantProfileResponse)
@@ -39,14 +35,10 @@ def get_tenant_by_id(
     #if landlord -> does tenant exist and in the same lodge??
     #if tenant-> use the tenant_user obj instead (a user obj)
 
-    try:
-        return tenant_services.fetch_tenant(current_user=current_user)
 
-    except UserNotFoundError as e:
-        raise HTTPException(
-            status_code=404,
-            detail=str(e)
-        )
+     return tenant_services.fetch_tenant(current_user=current_user)
+
+
 
 
 @router.get('/profile/{tenant_id}', response_model=schema_tenant.TenantProfileResponse)
@@ -56,16 +48,12 @@ def get_tenant_by_landlord(
         current_user=Depends(get_landlord_user)
 
 ):
-    try:
-        return tenant_services.fetch_tenant_by_landlord(db, tenant_id=tenant_id, current_user=current_user)
 
-    except UserNotFoundError as e:
-        raise HTTPException(
-            status_code=404,
-            detail=str(e)
-        )
+    return tenant_services.fetch_tenant_by_landlord(db, tenant_id=tenant_id, current_user=current_user)
 
 
+
+#TODO: finish the endpoint later
 @router.delete('/{tenant_id}', status_code=status.HTTP_204_NO_CONTENT)
 def delete_tenant_by_id(
         tenant_id: int,

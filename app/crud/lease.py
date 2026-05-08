@@ -85,7 +85,7 @@ class CRUDLease(CRUDBase[Lease, LeaseCreate, LeaseUpdate]):
         ).first()
 
     def terminate_lease(self, db: Session, db_lease: Lease):
-        db_lease.is_active = False
+        db_lease.status = LeaseStatus.TERMINATED
         db_lease.room.status = RoomStatus.VACANT
         db_lease.end_date = datetime.now()
 

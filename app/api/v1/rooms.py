@@ -39,23 +39,12 @@ def create_room(
         db: Session = Depends(get_db),
         landlord_user: User = Depends(get_landlord_user)
 ):
-    try:
-        return room_service.create_room_for_lodge(
-            db=db, room_in=room_in,
-            landlord_id=landlord_user.id
-        )
 
-    except RoomAlreadyExistError as error:
-        raise HTTPException(
-            status_code=400,
-            detail=str(error)
-        )
+    return room_service.create_room_for_lodge(
+        db=db, room_in=room_in,
+        landlord_id=landlord_user.id
+    )
 
-    except LodgeNotFoundError as error:
-        raise HTTPException(
-            status_code=404,
-            detail=str(error)
-        )
 
 
 
@@ -66,19 +55,10 @@ def get_room(
         db: Session = Depends(get_db),
         current_user: User = Depends(get_current_user)
 ):
-    try:
-        room = room_service.get_room_details(db, lodge_id=lodge_id, landlord_id=current_user.id, room_id=room_id)
-        return room
-    except LodgeNotFoundError as e:
-        raise HTTPException(
-            status_code=404,
-            detail=str(e)
-        )
-    except RoomNotFoundError as e:
-        raise HTTPException(
-            status_code=404,
-            detail=str(e)
-        )
+
+     room = room_service.get_room_details(db, lodge_id=lodge_id, landlord_id=current_user.id, room_id=room_id)
+     return room
+
 
 
 @router.patch('/{room_id}', response_model=schema_room.RoomResponse)
@@ -91,20 +71,11 @@ def update_room_by_id(
 ):
 
 
-    try:
-        updated_room = room_service.update_room_details(
-            db, room_id=room_id,
-            update_data=update_data,
-            landlord_id=landlord_user.id
-        )
-        return updated_room
-    except RoomNotFoundError as e:
-        raise HTTPException(
-            status_code=404,
-            detail=str(e)
-        )
-    except LodgeNotFoundError as e:
-        raise HTTPException(
-            status_code=404,
-            detail=str(e)
-        )
+
+    updated_room = room_service.update_room_details(
+        db, room_id=room_id,
+        update_data=update_data,
+        landlord_id=landlord_user.id
+    )
+    return updated_room
+
