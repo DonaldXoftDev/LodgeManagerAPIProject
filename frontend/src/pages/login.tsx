@@ -2,38 +2,53 @@ import { LoginForm } from "../components/auth/login-form";
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen bg-linear-to-br from-indigo-100 via-white to-rose-100 flex flex-col items-center justify-center p-4">
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-rose-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" />
-      </div>
+    <div className="min-h-screen w-full flex bg-charcoal-50">
+      <div className="hidden lg:flex lg:w-1/2 relative bg-charcoal-900 overflow-hidden">
+        <img
+          src="/imgs/building.webp"
+          alt="Modern Architecture"
+          className="absolute inset-0 w-full h-full object-cover opacity-60 mix-blend-luminosity"
+        />
+        <div className="absolute inset-0 bg-linear-to-t from-charcoal-950 via-charcoal-900/40 to-transparent" />
 
-      <div className="relative z-10 w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-black text-indigo-900 tracking-tight mb-2">
-            LodgeManager
-          </h1>
-          <p className="text-indigo-600 text-sm font-medium">
-            Sign in to manage your properties
+        <div className="relative z-10 flex flex-col justify-end p-16 w-full">
+          <div className="h-1 bg-terracotta-400 w-12 mb-8" />
+          <h2 className="font-serif text-5xl font-semibold text-white leading-tight mb-6">
+            Elevating the standard of <br /> property management.
+          </h2>
+          <p className="text-charcoal-200 text-lg max-w-md font-sans">
+            A structurally refined approach to managing luxury real estate
+            portfolios, resident experiences, and financial clarity.
           </p>
         </div>
+      </div>
 
-        <div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-white/20 shadow-xl p-8 space-y-6">
-          <LoginForm />
-
-          <div className="text-center text-sm">
-            <span className="text-indigo-700/70">Don't have an account? </span>
+      <div className="w-full lg:w-1/2 flex flex-col items-center justify-center p-8 sm:p-12 lg:p-24 bg-white relative">
+        <div className="w-full max-w-sm">
+          {" "}
+          <div className="lg:hidden h-1 bg-terracotta-400 w-8 mb-8" />
+          <div className="mb-10 text-left">
+            <h1 className="font-serif text-3xl font-bold text-charcoal-900 mb-3 tracking-tight">
+              LodgeManager
+            </h1>
+            <p className="text-charcoal-500 font-sans">
+              Sign in to your administrative dashboard
+            </p>
+          </div>
+          <div className="space-y-6">
+            <LoginForm />
+          </div>
+          <div className="mt-8 text-center sm:text-left text-sm font-sans pt-8 border-t border-charcoal-100">
+            <span className="text-charcoal-500">
+              Authorized personnel only.{" "}
+            </span>
             <a
-              href="/register"
-              className="text-indigo-700 font-semibold hover:text-indigo-600 transition-colors"
+              href="#"
+              className="text-terracotta-500 font-medium hover:text-terracotta-600 transition-colors"
             >
-              Create one
+              Request Access
             </a>
           </div>
-        </div>
-
-        <div className="mt-8 text-center text-xs text-indigo-600/60">
-          <p>Demo credentials available on request</p>
         </div>
       </div>
     </div>
