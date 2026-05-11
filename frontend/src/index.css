@@ -1,0 +1,38 @@
+@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap");
+
+@import "tailwindcss";
+
+@theme {
+  --color-charcoal-50: #f6f7f9;
+  --color-charcoal-100: #ecedef;
+  --color-charcoal-200: #d4d8db;
+  --color-charcoal-300: #adb5bb;
+  --color-charcoal-400: #808c95;
+  --color-charcoal-500: #5f6d78;
+  --color-charcoal-600: #4a5661;
+  --color-charcoal-700: #3d4750;
+  --color-charcoal-800: #363e46;
+  --color-charcoal-900: #1f2326;
+  --color-charcoal-950: #1a1e20;
+
+  --color-terracotta-50: #fbf5f3;
+  --color-terracotta-100: #f6e8e2;
+  --color-terracotta-200: #eed3c8;
+  --color-terracotta-300: #e3b4a2;
+  --color-terracotta-400: #d96c4a;
+  --color-terracotta-500: #cd603d;
+  --color-terracotta-600: #b14829;
+  --color-terracotta-700: #933821;
+  --color-terracotta-800: #762f1e;
+  --color-terracotta-900: #622a1b;
+  --color-terracotta-950: #35130b;
+
+  --font-sans: "Plus Jakarta Sans", sans-serif;
+  --font-serif: "Playfair Display", serif;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-charcoal-50);
+  color: var(--color-charcoal-900);
+}
