@@ -12,6 +12,7 @@ from app.api.deps import get_db, get_current_user, get_landlord_user
 from app.models.user import User
 from app.schemas.payment import PaymentCreate
 from app.services import lodge_service
+from app.services.lease_services import verify_tenant_owns_lease
 
 
 def can_add_payment(total_payments: int, incoming_amt: int,  agreed_amt: int) -> bool:
@@ -97,5 +98,3 @@ def fetch_tenant_lease_payments(
 
 
 
-def verify_tenant_owns_lease(lease: Lease, tenant_id: int):
-    return lease.tenant_id == tenant_id

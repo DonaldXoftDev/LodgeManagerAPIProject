@@ -1,6 +1,7 @@
 from typing import Optional
 from app.core.enums import LeaseStatus
 from app.crud.tenantprofile import crud_tenant
+from app.models.lease import Lease
 from app.models.user import User
 from app.crud.room import crud_room
 from sqlalchemy.orm import Session
@@ -41,7 +42,7 @@ def create_new_lease(
     return crud_lease.create_lease(db, lease_data=lease_data, room=room)
 
 
-def filter_leases_for_landlord(
+def get_filtered_landlord_leases(
         db: Session,
         lodge_id: int,
         landlord_id: int,
@@ -139,3 +140,6 @@ def appeal_for_lease_termination(
         raise InvalidLeaseActionError(status=lease.status)
 
     return crud_lease.request_terminate_lease(db, db_lease=lease)
+
+def verify_tenant_owns_lease(lease: Lease, tenant_id: int):
+    return lease.tenant_id == tenant_id

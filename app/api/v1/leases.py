@@ -42,7 +42,7 @@ def get_leases_for_landlord(
 ):
 
 
-    return lease_services.filter_leases_for_landlord(
+    return lease_services.get_filtered_landlord_leases(
         db,
         landlord_id=current_user.id,
         lodge_id=lodge_id,
