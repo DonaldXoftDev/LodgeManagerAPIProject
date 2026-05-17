@@ -25,7 +25,7 @@ def create_payment(
 
     return payment_service.add_payment_record(
         db,
-        current_landlord=current_user,
+        current_landlord_id=current_user.id,
         payment_data=payment_data
     )
 

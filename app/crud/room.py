@@ -1,8 +1,6 @@
 from typing import Union
-
 from app.core.enums import RoomStatus, BadgeTexts, BadgeVariants
 from app.models.lease import Lease
-from app.models.lodge import Lodge
 from app.models.payment import Payment
 from app.models.room import Room
 from app.models.tenantprofile import TenantProfile
@@ -10,7 +8,7 @@ from app.models.user import User
 from app.schemas.room import RoomCreate, RoomUpdate, RoomGridSummary
 from sqlalchemy.orm import Session
 from app.crud.base_crud import CRUDBase
-from sqlalchemy import or_, literal, Select, func, select, case, and_
+from sqlalchemy import func, select, case, and_
 
 
 class CRUDRoom(CRUDBase[Room, RoomCreate, RoomUpdate]):
@@ -46,7 +44,7 @@ class CRUDRoom(CRUDBase[Room, RoomCreate, RoomUpdate]):
         has_payed = func.sum(Payment.amount_paid) == Lease.agreed_rent_amt
         not_payed = func.sum(Payment.amount_paid) < Lease.agreed_rent_amt
 
-        stmt = select(
+        stmt = (select(
             Lease.id.label('lease_id'),
             Room.room_no.label('room_no'),
             func.sum(Payment.amount_paid),
@@ -69,7 +67,7 @@ class CRUDRoom(CRUDBase[Room, RoomCreate, RoomUpdate]):
             ).label('badge_variants'),
 
             case(
-                (Room.status == RoomStatus.OCCUPIED, TenantProfile.user.name),
+                (Room.status == RoomStatus.OCCUPIED, func.concat(User.first_name, User.last_name, 'full name')),
                 (Room.status == RoomStatus.VACANT, 'Ready to Lease'),
                 (Room.status == RoomStatus.MAINTENANCE, 'Unavailable'),
                 else_='Invalid'
@@ -89,6 +87,8 @@ class CRUDRoom(CRUDBase[Room, RoomCreate, RoomUpdate]):
         ).outerjoin(
             TenantProfile, Lease.tenant_id == TenantProfile.id
         ).outerjoin(
+            User, TenantProfile.user_id == User.id
+        ).outerjoin(
             Payment, Payment.lease_id == Lease.id
         ).where(
             Room.lodge_id == lodge_id
@@ -98,8 +98,8 @@ class CRUDRoom(CRUDBase[Room, RoomCreate, RoomUpdate]):
             Lease.end_date,
             Lease.agreed_rent_amt,
             Room.status,
-            TenantProfile.user.name
-        )
+            User.name
+        ))
 
         if  filter_by == RoomStatus.OCCUPIED:
             stmt = stmt.where((Room.status == RoomStatus.OCCUPIED))
@@ -124,6 +124,7 @@ class CRUDRoom(CRUDBase[Room, RoomCreate, RoomUpdate]):
 
         stmt = stmt.offset(skip).limit(limit)
 
-        return db.execute(stmt).all()
+        db_rooms: list[RoomGridSummary] =  list(db.execute(stmt).scalars().all())
+        return db_rooms
 
 crud_room = CRUDRoom(Room)

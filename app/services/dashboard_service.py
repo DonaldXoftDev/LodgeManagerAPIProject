@@ -27,16 +27,24 @@ def get_landlord_dashboard(
     lodge = lodge_service.verify_lodge_ownership(lodge_id=lodge_id, landlord_id=landlord_id)
 
     financials = crud_room.get_financials_related_to_active_lease(lodge_id=lodge.id)
+    #potential_income : sum of all the base_rent price in all the rooms in the lodge
+    #go to the room table and sum all the base_rent price column in the table
+    #expected_income: sum of all the agreed_rent price in the current active leases
+    #go to the lease table and sum all the agreed_rent price column of leases that are active
+    #collected_income: sum of all the payments from the active leases
+    #go to the lease, sum all their active leases payments
+    #unpaid_rent: difference between the sum of expected agreed rent of all time - sum of payments of all time( timeless)
 
     # Todo: count all the entities tied to the landlord's lodge( rooms, tenant, room statuses)
 
-
     #Todo: group rooms into occupied(safe, expiring & overdue) , vacant & maintenance
-    raw_dashboard_rooms = crud_room.get_dashboard_rooms(db, filter_by=filter_by, lodge_id=lodge_id, skip=skip,limit=limit)
+    raw_dashboard_rooms = crud_room.get_dashboard_rooms(db, filter_by=filter_by, lodge_id=lodge_id, skip=skip,
+                                                        limit=limit)
     occupied_rooms_lease = OccupiedRoomLeasesResponse(
-        safe= [RoomGridSummary(**r) for r in raw_dashboard_rooms if r.badge_text == BadgeTexts.SAFE],
-        expiring= [RoomGridSummary(**r) for  r in raw_dashboard_rooms if r.badge_text == BadgeTexts.EXPIRING],
-        overdue= [RoomGridSummary(**r) for  r in raw_dashboard_rooms if r.badge_text == BadgeTexts.OVERDUE],
-        owing= [RoomGridSummary(**r) for  r in raw_dashboard_rooms if r.badge_text == BadgeTexts.OWING]
+        safe=[RoomGridSummary(**r) for r in raw_dashboard_rooms if r.badge_text == BadgeTexts.SAFE],
+        expiring=[RoomGridSummary(**r) for r in raw_dashboard_rooms if r.badge_text == BadgeTexts.EXPIRING],
+        overdue=[RoomGridSummary(**r) for r in raw_dashboard_rooms if r.badge_text == BadgeTexts.OVERDUE],
+        owing=[RoomGridSummary(**r) for r in raw_dashboard_rooms if r.badge_text == BadgeTexts.OWING]
     )
+
     pass

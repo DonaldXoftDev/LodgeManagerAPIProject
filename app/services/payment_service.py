@@ -1,26 +1,22 @@
 from app.core.enums import LeaseStatus
-from app.core.exceptions import LeaseNotFoundError, RoomNotFoundError, InvalidLeaseActionError, \
-    BaseMaxLimitReachedError, RentAmtExceededError
-from app.crud.payment import  crud_payment
+from app.core.exceptions import LeaseNotFoundError, RoomNotFoundError, InvalidLeaseActionError, RentAmtExceededError
+from app.crud.payment import crud_payment
 from app.crud.lease import crud_lease
-from app.models.lease import Lease
-from app.schemas import payment as schema_payment
-from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException
+from typing import Optional
 from sqlalchemy.orm import Session
-from app.api.deps import get_db, get_current_user, get_landlord_user
 from app.models.user import User
 from app.schemas.payment import PaymentCreate
 from app.services import lodge_service
 from app.services.lease_services import verify_tenant_owns_lease
 
 
-def can_add_payment(total_payments: int, incoming_amt: int,  agreed_amt: int) -> bool:
+def can_add_payment(total_payments: int, incoming_amt: int, agreed_amt: int) -> bool:
     return total_payments + incoming_amt <= agreed_amt
+
 
 def add_payment_record(
         db: Session,
-        current_landlord: User,
+        current_landlord_id: int,
         payment_data: PaymentCreate
 ):
     #use the lease id in the payment data to find the lease
@@ -36,16 +32,16 @@ def add_payment_record(
 
     room = lease.room
 
-    if not lodge_service.landlord_owns_room_lodge(room=room, landlord_id=current_landlord.id):
+    if not lodge_service.landlord_owns_room_lodge(room=room, landlord_id=current_landlord_id):
         raise RoomNotFoundError()
 
     if lease.status != LeaseStatus.ACTIVE:
         raise InvalidLeaseActionError(status=lease.status)
 
-
     total_payments = crud_payment.get_payments_aggregate_by_lease_id(db, lease_id=lease.id) or 0
 
-    if not can_add_payment(total_payments=total_payments,incoming_amt=payment_data.amount_paid,agreed_amt=lease.agreed_rent_amt):
+    if not can_add_payment(total_payments=total_payments, incoming_amt=payment_data.amount_paid,
+                           agreed_amt=lease.agreed_rent_amt):
         print(f'total_payment: {total_payments} ')
         raise RentAmtExceededError(
             attempted=payment_data.amount_paid,
@@ -54,7 +50,6 @@ def add_payment_record(
         )
 
     return crud_payment.create(db, obj_in=payment_data)
-
 
 
 def fetch_payments_by_lease(
@@ -77,7 +72,6 @@ def fetch_payments_by_lease(
     return crud_payment.get_lease_payments(db, lease_id=lease_id, skip=skip, limit=limit)
 
 
-
 def fetch_tenant_lease_payments(
         db: Session,
         lease_id: int,
@@ -94,7 +88,3 @@ def fetch_tenant_lease_payments(
         raise LeaseNotFoundError()
 
     return crud_payment.get_lease_payments(db, lease_id=lease_id, skip=skip, limit=limit)
-
-
-
-
