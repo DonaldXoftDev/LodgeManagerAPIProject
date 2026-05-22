@@ -97,13 +97,12 @@ class CRUDRoom(CRUDBase[Room, RoomCreate, RoomUpdate]):
             Lease.end_date,
             Lease.agreed_rent_amt,
             Room.status,
-            User.name
+            User.first_name,
+            User.last_name
         ))
 
-        if filter_by == RoomStatus.OCCUPIED:
-            stmt = stmt.where((Room.status == RoomStatus.OCCUPIED))
 
-        elif filter_by == BadgeTexts.SAFE:
+        if filter_by == BadgeTexts.SAFE:
             stmt = stmt.where((Room.status == RoomStatus.OCCUPIED)).having(has_payed, days_left >= 90)
 
         elif filter_by == BadgeTexts.EXPIRING:

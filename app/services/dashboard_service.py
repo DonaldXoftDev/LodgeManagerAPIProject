@@ -1,20 +1,70 @@
 from typing import Optional
-
+from app.models.room import RoomFilter
 from sqlalchemy.orm import Session
-from app.core.enums import UserRole, BadgeTexts
+from app.core.enums import BadgeTexts
 from app.crud.payment import crud_payment
-from app.models.room import Room
+from app.schemas.dashboard import LandlordDashboardStats
 from app.schemas.financial import FinancialResponse
 from app.schemas.lease import OccupiedRoomLeasesResponse
-from app.schemas.lodge import LodgeCreate, LodgeUpdate
-from app.core.exceptions import LodgeAlreadyExistError, LodgeNotFoundError
-from app.crud.lodge import crud_lodge
 from app.crud.room import crud_room
 from app.schemas.room import RoomGridSummary
 from app.services import lodge_service
 from typing import Union
 from app.core.enums import RoomStatus
 
+
+def get_financial_summary(db: Session, lodge_id: int):
+    potential_revenue = crud_payment.get_potential_income_from_rooms(db, lodge_id=lodge_id) or 0
+    active_lease_financials = crud_payment.get_financials_for_active_leases(db, lodge_id=lodge_id)
+    unpaid_rent = crud_payment.get_total_unpaid_rent(db, lodge_id=lodge_id) or 0
+
+    return FinancialResponse(
+        potential_revenue=potential_revenue,
+        expected_revenue=dict(active_lease_financials).get('expected_revenue') or 0,
+        collected_revenue=dict(active_lease_financials).get('collected_revenue') or 0,
+        unpaid_rent=unpaid_rent
+    )
+
+
+def get_room_dashboard_summary(
+        db: Session,
+        lodge_id: int,
+        rooms: RoomFilter,
+        filter_by: Union[BadgeTexts , RoomStatus],
+        skip: Optional[int] = None,
+        limit: Optional[int] = None
+):
+    # occupied rooms
+    if not filter_by:
+        rooms.safe = crud_room.get_dashboard_rooms(db, filter_by=BadgeTexts.SAFE, lodge_id=lodge_id, skip=skip,
+                                                   limit=limit)
+        rooms.expiring = crud_room.get_dashboard_rooms(db, filter_by=BadgeTexts.EXPIRING, lodge_id=lodge_id, skip=skip,
+                                                       limit=limit)
+        rooms.overdue = crud_room.get_dashboard_rooms(db, filter_by=BadgeTexts.OVERDUE, lodge_id=lodge_id, skip=skip,
+                                                      limit=limit)
+        rooms.owing = crud_room.get_dashboard_rooms(db, filter_by=BadgeTexts.OWING, lodge_id=lodge_id, skip=skip,
+                                                    limit=limit)
+        # vacant rooms
+        rooms.vacant = crud_room.get_dashboard_rooms(db, filter_by=RoomStatus.VACANT, lodge_id=lodge_id, skip=skip,
+                                                     limit=limit)
+        rooms.maintenance = crud_room.get_dashboard_rooms(db, filter_by=RoomStatus.MAINTENANCE, lodge_id=lodge_id,
+                                                          skip=skip, limit=limit)
+
+    else:
+        filtered_rooms = crud_room.get_dashboard_rooms(db, filter_by=filter_by, lodge_id=lodge_id, skip=skip,
+                                                       limit=limit)
+        filter_badge_text = filtered_rooms[0].badge_text.lower()
+        setattr(rooms, filter_badge_text, filtered_rooms)
+
+    return OccupiedRoomLeasesResponse(
+        safe=rooms.safe,
+        expiring=rooms.expiring,
+        overdue=rooms.overdue,
+        owing=rooms.owing
+    )
+
+def get_entity_count_summary():
+    pass
 
 def get_landlord_dashboard(
         db: Session,
@@ -25,29 +75,26 @@ def get_landlord_dashboard(
         limit: Optional[int] = None
 ):
     # check if the lodge exist and is owned by the landlord
+    lodge_service.verify_lodge_ownership(lodge_id=lodge_id, landlord_id=landlord_id)
+
     #TODO: SUM ALL financial for the landlords revenue(expected, collected & outstanding)
-    lodge = lodge_service.verify_lodge_ownership(lodge_id=lodge_id, landlord_id=landlord_id)
+    financials = get_financial_summary(db, lodge_id=lodge_id)
 
-    potential_revenue = crud_payment.get_potential_income_from_rooms(db, lodge_id=lodge_id) or 0
-    active_lease_financials = crud_payment.get_financials_for_active_leases(db, lodge_id=lodge_id)
-    unpaid_rent = crud_payment.get_total_unpaid_rent(db, lodge_id=lodge_id) or 0
-
-    financials = FinancialResponse(
-        potential_revenue= potential_revenue,
-        expected_revenue= dict(active_lease_financials).get('expected_revenue') or 0,
-        collected_revenue= dict(active_lease_financials).get('collected_revenue') or 0,
-        unpaid_rent= unpaid_rent
-    )
     # Todo: count all the entities tied to the landlord's lodge( rooms, tenant, room statuses)
 
     #Todo: group rooms into occupied(safe, expiring & overdue) , vacant & maintenance
-    raw_dashboard_rooms = crud_room.get_dashboard_rooms(db, filter_by=filter_by, lodge_id=lodge_id, skip=skip,
-                                                        limit=limit)
-    occupied_rooms_lease = OccupiedRoomLeasesResponse(
-        safe=[RoomGridSummary(**r) for r in raw_dashboard_rooms if r.badge_text == BadgeTexts.SAFE],
-        expiring=[RoomGridSummary(**r) for r in raw_dashboard_rooms if r.badge_text == BadgeTexts.EXPIRING],
-        overdue=[RoomGridSummary(**r) for r in raw_dashboard_rooms if r.badge_text == BadgeTexts.OVERDUE],
-        owing=[RoomGridSummary(**r) for r in raw_dashboard_rooms if r.badge_text == BadgeTexts.OWING]
+    rooms = RoomFilter()
+
+    occupied_rooms_lease = get_room_dashboard_summary(
+        db, lodge_id=lodge_id,
+        rooms=rooms, filter_by=filter_by,
+        skip=skip, limit=limit
     )
 
-    pass
+    dashboard_stats = LandlordDashboardStats(
+        financials= financials,
+        occupied_rooms_lease=occupied_rooms_lease,
+        maintenance_rooms=rooms.maintenance,
+        vacant_rooms=rooms.vacant,
+    )
+

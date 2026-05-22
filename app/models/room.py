@@ -37,3 +37,12 @@ class Room(Base):
             'lodge_id',
             name='lodge_room_uc'
         ),)
+
+class RoomFilter:
+    def __init__(self):
+        self.safe = []
+        self.expiring = []
+        self.overdue = []
+        self.owing = []
+        self.vacant = []
+        self.maintenance = []
