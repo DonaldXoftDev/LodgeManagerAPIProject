@@ -56,7 +56,7 @@ def get_room_dashboard_summary(
     else:
         filtered_rooms = crud_room.get_dashboard_rooms(db, filter_by=filter_by, lodge_id=lodge_id, skip=skip,
                                                        limit=limit)
-        filter_badge_text = filtered_rooms[0].
+        filter_badge_text = filtered_rooms[0].badge_text.lower()
         setattr(rooms, filter_badge_text, filtered_rooms)
 
     return OccupiedRoomLeasesResponse(

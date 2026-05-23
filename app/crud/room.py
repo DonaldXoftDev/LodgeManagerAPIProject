@@ -121,8 +121,10 @@ class CRUDRoom(CRUDBase[Room, RoomCreate, RoomUpdate]):
 
         stmt = stmt.offset(skip).limit(limit)
 
-        db_rooms = db.execute(stmt).all()
-        return db_rooms
+        db_rooms = db.execute(stmt).mappings().all()
+        rooms_summary = [RoomGridSummary(**row) for row in db_rooms]
+
+        return rooms_summary
 
 
 crud_room = CRUDRoom(Room)

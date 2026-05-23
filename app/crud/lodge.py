@@ -90,7 +90,9 @@ class CRUDLodge(CRUDBase[Lodge, LodgeCreate, LodgeUpdate]):
             Room.status,
         )
 
-        return  db.execute(stmt).all()
+        db_entity_count =   db.execute(stmt).mappings().first()
+        return  EntityCountResponse(**db_entity_count) if db_entity_count else None
+
 
 
 crud_lodge = CRUDLodge(Lodge)
