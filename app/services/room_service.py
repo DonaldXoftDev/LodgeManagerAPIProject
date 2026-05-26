@@ -6,7 +6,7 @@ from app.core.exceptions import RoomAlreadyExistError, RoomNotFoundError
 
 
 def create_room_for_lodge(db: Session, room_in: schema_room.RoomCreate, landlord_id: int):
-    lodge = lodge_service.verify_lodge_ownership(db=db, lodge_id=room_in.lodge_id, landlord_id=landlord_id)
+    lodge = lodge_service.verify_lodge_ownership(db, lodge_id=room_in.lodge_id, landlord_id=landlord_id)
 
     room = crud_room.get_room_by_lodge_and_number(db=db, room_no=room_in.room_no, lodge_id=lodge.id)
 

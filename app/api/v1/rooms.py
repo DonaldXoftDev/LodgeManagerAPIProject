@@ -6,8 +6,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_db, get_current_user, get_landlord_user
 from app.models.user import User
 from app.services import room_service
-from app.core.exceptions import LodgeNotFoundError, RoomAlreadyExistError, RoomNotFoundError
-from app.schemas import lease as schema_lease
+from app.core.exceptions import LodgeNotFoundError
 router = APIRouter()
 
 @router.get('/{lodge_id}/rooms', response_model=List[schema_room.RoomResponse])
@@ -18,19 +17,15 @@ def get_all_rooms(
         db: Session = Depends(get_db),
         landlord_user: User = Depends(get_landlord_user)
 ):
-    try:
-        return room_service.get_lodge_rooms(
-            db,
-            lodge_id=lodge_id,
-            landlord_id=landlord_user.id,
-            skip=skip,
-            limit=limit
-        )
-    except LodgeNotFoundError as e:
-        raise HTTPException(
-            status_code=404,
-            detail=str(e)
-        )
+
+    return room_service.get_lodge_rooms(
+        db,
+        lodge_id=lodge_id,
+        landlord_id=landlord_user.id,
+        skip=skip,
+        limit=limit
+    )
+
 
 
 @router.post('/', response_model=schema_room.RoomResponse)

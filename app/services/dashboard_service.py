@@ -23,8 +23,8 @@ def get_financial_summary(db: Session, lodge_id: int):
 
     return FinancialResponse(
         potential_revenue=potential_revenue,
-        expected_revenue=dict(active_lease_financials).get('expected_revenue') or 0,
-        collected_revenue=dict(active_lease_financials).get('collected_revenue') or 0,
+        expected_revenue= active_lease_financials.get('expected_revenue'),
+        collected_revenue=active_lease_financials.get('collected_revenue'),
         unpaid_rent=unpaid_rent
     )
 

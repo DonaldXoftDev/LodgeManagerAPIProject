@@ -40,7 +40,7 @@ def get_tenant_by_id(
 def get_tenant_by_landlord(
         tenant_id: int,
         db: Session = Depends(get_db),
-        current_user=Depends(get_landlord_user)
+        current_user: User =Depends(get_landlord_user)
 
 ):
 

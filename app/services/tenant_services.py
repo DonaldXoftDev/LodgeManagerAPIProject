@@ -70,10 +70,12 @@ def update_tenant_profile(
 def fetch_tenant(
         current_user: User
 ):
-    tenant_profile: TenantProfile  = cast(current_user.tenant_profile)
+    tenant_profile = current_user.tenant_profile
+
     if not tenant_profile:
         raise  UserNotFoundError()
-    return tenant_profile.lodge
+
+    return tenant_profile
 
 
 def fetch_tenant_by_landlord(
@@ -86,7 +88,7 @@ def fetch_tenant_by_landlord(
     if not tenant:
         raise UserNotFoundError()
 
-    lodge: Lodge = tenant.lodge
+    lodge = tenant.lodge
 
     if lodge.landlord_id != current_user.id:
         raise UserNotFoundError()
