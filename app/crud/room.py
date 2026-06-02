@@ -1,14 +1,14 @@
-from typing import Union
 from app.core.enums import RoomStatus, BadgeTexts, BadgeVariants
 from app.crud.payment import crud_payment
 from app.models.lease import Lease
 from app.models.room import Room
 from app.models.tenantprofile import TenantProfile
 from app.models.user import User
+from app.schemas.dashboard import DashboardFilters
 from app.schemas.room import RoomCreate, RoomUpdate, RoomGridSummary
 from sqlalchemy.orm import Session
 from app.crud.base_crud import CRUDBase
-from sqlalchemy import func, select, case, and_
+from sqlalchemy import func, select, case, and_, Integer, cast, or_
 
 
 class CRUDRoom(CRUDBase[Room, RoomCreate, RoomUpdate]):
@@ -29,9 +29,8 @@ class CRUDRoom(CRUDBase[Room, RoomCreate, RoomUpdate]):
 
     def get_dashboard_rooms(
             self,
-            filter_by:
-            Union[BadgeTexts, RoomStatus],
             db: Session,
+            filter_by: DashboardFilters,
             lodge_id: int,
             skip: int = 0,
             limit: int = 50
@@ -39,40 +38,49 @@ class CRUDRoom(CRUDBase[Room, RoomCreate, RoomUpdate]):
 
         payment_subq = crud_payment.get_payment_subq()
 
+        days_left = cast(func.julianday(Lease.end_date) - func.julianday('now'), Integer)  # only supported by sqlite,
+        # change in production to postgres
 
-        days_left = Lease.end_date - func.current_date()
-        has_payed = func.sum(payment_subq.c.total_amt_paid) == Lease.agreed_rent_amt
-        not_payed = func.sum(payment_subq.c.total_amt_paid) < Lease.agreed_rent_amt
+        total_paid = func.coalesce(payment_subq.c.total_amt_paid, 0)
 
+        has_payed_in_full = total_paid == Lease.agreed_rent_amt
+        incomplete_payment = total_paid < Lease.agreed_rent_amt
+        full_name = User.full_name
         stmt = (select(
             Lease.id.label('lease_id'),
             Room.room_no.label('room_no'),
             case(
-                (and_(Room.status == RoomStatus.OCCUPIED, days_left >= 90, has_payed), BadgeTexts.SAFE),
-                (and_(Room.status == RoomStatus.OCCUPIED, days_left >= 0, has_payed), BadgeTexts.EXPIRING),
-                (and_(Room.status == RoomStatus.OCCUPIED, days_left < 0, has_payed), BadgeTexts.OVERDUE),
+                (and_(Room.status == RoomStatus.OCCUPIED, days_left >= 90, has_payed_in_full), BadgeTexts.SAFE),
+                (and_(Room.status == RoomStatus.OCCUPIED, days_left >= 0, days_left < 90,has_payed_in_full), BadgeTexts.EXPIRING),
+                (and_(Room.status == RoomStatus.OCCUPIED, days_left < 0, has_payed_in_full), BadgeTexts.OVERDUE),
+                (and_(Room.status == RoomStatus.OCCUPIED, incomplete_payment ), BadgeTexts.OWING),
                 (Room.status == RoomStatus.VACANT, RoomStatus.VACANT),
                 (Room.status == RoomStatus.MAINTENANCE, RoomStatus.MAINTENANCE),
-                else_=BadgeTexts.OWING
+                else_='Unknown_badge_text'
             ).label('badge_text'),
 
             case(
-                (and_(Room.status == RoomStatus.OCCUPIED, days_left >= 90, has_payed), BadgeVariants.SUCCESS),
-                (and_(Room.status == RoomStatus.OCCUPIED, days_left >= 0, has_payed), BadgeVariants.WARNING),
-                (and_(Room.status == RoomStatus.OCCUPIED, days_left < 0, has_payed), BadgeVariants.DANGER),
+                (and_(Room.status == RoomStatus.OCCUPIED, days_left >= 90, has_payed_in_full), BadgeVariants.SUCCESS),
+                (and_(Room.status == RoomStatus.OCCUPIED, days_left >= 0, has_payed_in_full), BadgeVariants.WARNING),
+                (and_(Room.status == RoomStatus.OCCUPIED, days_left < 0, has_payed_in_full), BadgeVariants.DANGER),
+                (and_(Room.status == RoomStatus.OCCUPIED, incomplete_payment), BadgeVariants.INFO),
                 (Room.status == RoomStatus.VACANT, BadgeVariants.INACTIVE),
                 (Room.status == RoomStatus.MAINTENANCE, BadgeVariants.NEED_REPAIR),
-                else_=BadgeVariants.INFO
-            ).label('badge_variants'),
+                else_= 'Unknown_variant'
+            ).label('badge_variant'),
 
             case(
-                (Room.status == RoomStatus.OCCUPIED, func.concat(User.first_name, User.last_name, 'full name')),
+                (Room.status == RoomStatus.OCCUPIED, func.concat(User.first_name, ' ', User.last_name, )),
                 (Room.status == RoomStatus.VACANT, 'Ready to Lease'),
                 (Room.status == RoomStatus.MAINTENANCE, 'Unavailable'),
                 else_='Invalid'
             ).label('main_display_text'),
 
             case(
+                (
+                    and_(Room.status == RoomStatus.OCCUPIED, days_left < 0, has_payed_in_full),
+                    func.concat(func.abs(days_left, ), 'days overdue')
+                ),
                 (Room.status == RoomStatus.OCCUPIED, func.concat(days_left, 'days left')),
                 (Room.status == RoomStatus.VACANT, 'Available'),
                 (Room.status == RoomStatus.MAINTENANCE, 'Under Maintenance'),
@@ -93,38 +101,76 @@ class CRUDRoom(CRUDBase[Room, RoomCreate, RoomUpdate]):
             Room.lodge_id == lodge_id
         ).group_by(
             Lease.id,
-            Room.room_no,
-            Lease.end_date,
-            Lease.agreed_rent_amt,
-            Room.status,
             User.first_name,
-            User.last_name
+            User.last_name,
+            Room.room_no,
+            Lease.agreed_rent_amt,
+            Lease.end_date,
+            Room.status,
+
         ))
 
+        #if filters dict is empty, fetch the list of categorized rooms with pagination support
+        #otherwise only fetch the list of room categories that match the provided filters
 
-        if filter_by == BadgeTexts.SAFE:
-            stmt = stmt.where((Room.status == RoomStatus.OCCUPIED)).having(has_payed, days_left >= 90)
+        occupied_expr = Room.status == RoomStatus.OCCUPIED
+        vacant_expr = Room.status == RoomStatus.VACANT
+        maintenance_expr = Room.status == RoomStatus.MAINTENANCE
 
-        elif filter_by == BadgeTexts.EXPIRING:
-            stmt = stmt.where((Room.status == RoomStatus.OCCUPIED)).having(has_payed, days_left >= 0)
+        filter_menu = {
+            RoomStatus.OCCUPIED : occupied_expr,
+            RoomStatus.VACANT : vacant_expr,
+            RoomStatus.MAINTENANCE: maintenance_expr,
+            BadgeTexts.SAFE: (occupied_expr, has_payed_in_full, days_left >= 90),
+            BadgeTexts.EXPIRING: (occupied_expr, has_payed_in_full, days_left >= 0, days_left < 90),
+            BadgeTexts.OVERDUE: (occupied_expr, has_payed_in_full , days_left < 0),
+            BadgeTexts.OWING: (occupied_expr, has_payed_in_full, incomplete_payment)
+        }
 
-        elif filter_by == BadgeTexts.OVERDUE:
-            stmt = stmt.where((Room.status == RoomStatus.OCCUPIED)).having(has_payed, days_left < 0)
+        if filter_by:
 
-        elif filter_by == RoomStatus.VACANT:
-            stmt = stmt.where((Room.status == RoomStatus.VACANT))
+            all_expr = []
+            if filter_by.room_status_filters:
+                for status in filter_by.room_status_filters:
+                    sql_expr = filter_menu.get(status)
 
-        elif filter_by == RoomStatus.MAINTENANCE:
-            stmt = stmt.where((Room.status == RoomStatus.MAINTENANCE))
+                    if sql_expr is not None:
+                        all_expr.append(sql_expr)
 
-        elif filter_by == BadgeTexts.OWING:
-            stmt = stmt.where((Room.status == RoomStatus.OCCUPIED)).having(not_payed)
+            if filter_by.financial_filters:
+                for badge in filter_by.financial_filters:
+                    sql_expr  = filter_menu.get(badge)
+
+                    if sql_expr is not None:
+                        all_expr.append(and_(*sql_expr))
+
+
+            stmt = stmt.where(or_(*all_expr))
+
+
+        # if filter_by == BadgeTexts.SAFE:
+        #     stmt = stmt.where((Room.status == RoomStatus.OCCUPIED)).having(has_payed_in_full, days_left >= 90)
+        #
+        # elif filter_by == BadgeTexts.EXPIRING:
+        #     stmt = stmt.where((Room.status == RoomStatus.OCCUPIED)).having(
+        #         has_payed_in_full, days_left >= 0, days_left < 90)
+        #
+        # elif filter_by == BadgeTexts.OVERDUE:
+        #     stmt = stmt.where((Room.status == RoomStatus.OCCUPIED)).having(has_payed_in_full, days_left < 0)
+        #
+        # elif filter_by == RoomStatus.VACANT:
+        #     stmt = stmt.where((Room.status == RoomStatus.VACANT))
+        #
+        # elif filter_by == RoomStatus.MAINTENANCE:
+        #     stmt = stmt.where((Room.status == RoomStatus.MAINTENANCE))
+        #
+        # elif filter_by == BadgeTexts.OWING:
+        #     stmt = stmt.where((Room.status == RoomStatus.OCCUPIED)).having(incomplete_payment)
 
         stmt = stmt.offset(skip).limit(limit)
 
         db_rooms = db.execute(stmt).mappings().all()
-        room_summary = [RoomGridSummary(**row) for row in db_rooms]
-        return room_summary
+        return db_rooms
 
 
 crud_room = CRUDRoom(Room)

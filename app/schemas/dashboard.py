@@ -19,7 +19,9 @@ class LandlordDashboardStats(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-
+class DashboardFilters(BaseModel):
+    room_status_filters: list[RoomStatus]
+    financial_filters: list[BadgeTexts]
 
 
 if __name__ == "__main__":

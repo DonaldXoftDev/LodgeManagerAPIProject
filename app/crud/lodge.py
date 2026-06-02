@@ -65,20 +65,23 @@ class CRUDLodge(CRUDBase[Lodge, LodgeCreate, LodgeUpdate]):
         return result
 
     def get_occupied_counts(self, db: Session, lodge_id: int):
-        payment_subq = crud_payment.get_payment_subq()
+        payment_subq = crud_payment.get_payment_subq() #use DI to get the payment subq from the payment crud
+
         days_left = cast(func.julianday(Lease.end_date) - func.julianday('now'), Integer) #only supported by sqlite,
         #change in production to postgres
 
         total_paid = func.coalesce(payment_subq.c.total_amt_paid, 0)
+
+        has_payed = total_paid == Lease.agreed_rent_amt
         incomplete_payment = total_paid < Lease.agreed_rent_amt
 
         owing_expr = func.count(
             case(
-                (and_(Room.status == RoomStatus.OCCUPIED, incomplete_payment), 1), else_=None
+                (and_(incomplete_payment), 1), else_=None
             )
         )
 
-        has_payed = total_paid == Lease.agreed_rent_amt
+
 
         safe_expr = func.count(
             case(

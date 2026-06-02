@@ -41,3 +41,7 @@ class User(Base):
         cascade='all, delete-orphan',
         single_parent=True
     )
+
+    @property
+    def full_name(self):
+        return f'{self.first_name} {self.last_name}'

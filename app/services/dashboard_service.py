@@ -5,12 +5,12 @@ from app.models.room import RoomFilter
 from sqlalchemy.orm import Session
 from app.core.enums import BadgeTexts
 from app.crud.payment import crud_payment
-from app.schemas.dashboard import LandlordDashboardStats
+from app.schemas.dashboard import LandlordDashboardStats, DashboardFilters
 from app.schemas.entity_count import EntityCountResponse, OccupiedCounts
 from app.schemas.financial import FinancialResponse
 from app.schemas.lease import OccupiedRoomLeasesResponse
 from app.crud.room import crud_room
-from app.schemas.room import RoomStatusCounts
+from app.schemas.room import RoomStatusCounts, RoomGridSummary
 from app.services import lodge_service
 from typing import Union
 from app.core.enums import RoomStatus
@@ -33,33 +33,24 @@ def get_room_dashboard_summary(
         db: Session,
         lodge_id: int,
         rooms: RoomFilter,
-        filter_by: Union[BadgeTexts, RoomStatus] = None,
+        filter_by: DashboardFilters,
         skip: Optional[int] = None,
         limit: Optional[int] = None
 ):
     # occupied rooms
-    if not filter_by:
-        rooms.safe = crud_room.get_dashboard_rooms(db, filter_by=BadgeTexts.SAFE, lodge_id=lodge_id, skip=skip,
-                                                   limit=limit)
-        rooms.expiring = crud_room.get_dashboard_rooms(db, filter_by=BadgeTexts.EXPIRING, lodge_id=lodge_id, skip=skip,
-                                                       limit=limit)
-        rooms.overdue = crud_room.get_dashboard_rooms(db, filter_by=BadgeTexts.OVERDUE, lodge_id=lodge_id, skip=skip,
-                                                      limit=limit)
-        rooms.owing = crud_room.get_dashboard_rooms(db, filter_by=BadgeTexts.OWING, lodge_id=lodge_id, skip=skip,
-                                                    limit=limit)
-        # vacant rooms
-        rooms.vacant = crud_room.get_dashboard_rooms(db, filter_by=RoomStatus.VACANT, lodge_id=lodge_id, skip=skip,
-                                                     limit=limit)
-        #maintenance rooms
-        rooms.maintenance = crud_room.get_dashboard_rooms(db, filter_by=RoomStatus.MAINTENANCE, lodge_id=lodge_id,
-                                                          skip=skip, limit=limit)
+    raw_rooms = crud_room.get_dashboard_rooms(db, filter_by=filter_by, lodge_id=lodge_id, skip=skip, limit=limit)
+    print(raw_rooms)
+    categorized_rooms = [RoomGridSummary(**row) for row in raw_rooms]
 
-    else:
-        filtered_rooms = crud_room.get_dashboard_rooms(db, filter_by=filter_by, lodge_id=lodge_id, skip=skip,
-                                                       limit=limit)
+    rooms.safe = [room for room in categorized_rooms if room.badge_text == BadgeTexts.SAFE]
+    rooms.expiring = [room for room in categorized_rooms if room.badge_text == BadgeTexts.EXPIRING]
+    rooms.overdue = [room for room in categorized_rooms if room.badge_text == BadgeTexts.OVERDUE]
 
-        filter_badge_text = filtered_rooms[0].badge_text.lower()
-        setattr(rooms, filter_badge_text, filtered_rooms)
+    rooms.owing = [room for room in categorized_rooms if room.badge_text == BadgeTexts.OWING]
+    # vacant rooms
+    rooms.vacant = [room for room in categorized_rooms if room.badge_text == RoomStatus.VACANT]
+    #maintenance rooms
+    rooms.maintenance = [room for room in categorized_rooms if room.badge_text == RoomStatus.MAINTENANCE]
 
     return OccupiedRoomLeasesResponse(
         safe=rooms.safe,
@@ -89,7 +80,7 @@ def get_landlord_dashboard(
         db: Session,
         lodge_id: int,
         landlord_id: int,
-        filter_by: Union[BadgeTexts, RoomStatus] = None,
+        filter_by: DashboardFilters,
         skip: Optional[int] = None,
         limit: Optional[int] = None
 ):

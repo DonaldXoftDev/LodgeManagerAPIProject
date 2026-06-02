@@ -10,6 +10,7 @@ from app.api.deps import get_landlord_user, get_db
 from app.core.enums import RoomStatus, BadgeTexts
 from app.models.user import User
 from app.schemas import dashboard as schema_dashboard
+from app.schemas.dashboard import DashboardFilters
 from app.services import dashboard_service
 
 
@@ -33,4 +34,11 @@ def get_landlord_dashboard(
     #financial summary, total entities count, dictionary of dashboard rooms categories
     # that match a specific filter and is paginated
     #does the lodge exist and is owned by the landlord??
-    return dashboard_service.get_landlord_dashboard(db, lodge_id=lodge_id, landlord_id=landlord_user.id)
+    all_filters = DashboardFilters(
+        room_status_filters= room_statuses,
+        financial_filters=financial_filters
+    )
+    return dashboard_service.get_landlord_dashboard(
+        db, lodge_id=lodge_id,skip=skip,limit=limit,
+        filter_by=all_filters, landlord_id=landlord_user.id
+    )
