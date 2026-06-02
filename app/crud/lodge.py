@@ -1,17 +1,13 @@
-from sqlalchemy import or_, literal, func, select, and_, RowMapping, case, Integer
+from sqlalchemy import or_, literal, func, select, and_, case
 from sqlalchemy.orm import Session
-from sqlalchemy.sql.expression import cast
-
-from app.core.enums import RoomStatus, BadgeTexts, LeaseStatus
-from app.crud.payment import crud_payment
+from app.core.enums import RoomStatus, LeaseStatus, BadgeTexts
 from app.models.lease import Lease
 from app.models.lodge import Lodge
 from app.models.room import Room
 from app.models.tenantprofile import TenantProfile
-from app.schemas.entity_count import EntityCountResponse, OccupiedCounts
 from app.schemas.lodge import LodgeCreate, LodgeUpdate
 from app.crud.base_crud import CRUDBase
-from app.schemas.room import RoomStatusCounts
+from app.core import constants as const
 
 
 class CRUDLodge(CRUDBase[Lodge, LodgeCreate, LodgeUpdate]):
@@ -39,16 +35,16 @@ class CRUDLodge(CRUDBase[Lodge, LodgeCreate, LodgeUpdate]):
         ).offset(skip).limit(limit).all()
 
     def get_room_status_counts(self, db: Session, lodge_id: int):
-        occupied_expr = func.count(case((Room.status == RoomStatus.OCCUPIED, 1), else_=None))
+        occupied_count_expr = func.count(case((const.occupied_expr, 1), else_=None))
 
-        vacant_expr = func.count(case((Room.status == RoomStatus.VACANT, 1), else_=None))
+        vacant_count_expr = func.count(case((const.vacant_expr, 1), else_=None))
 
-        maintenance_expr = func.count(case((Room.status == RoomStatus.MAINTENANCE, 1), else_=None))
+        maintenance_count_expr = func.count(case((const.maintenance_expr, 1), else_=None))
 
         stmt = select(
-            occupied_expr.label('occupied'),
-            vacant_expr.label('vacant'),
-            maintenance_expr.label('maintenance')
+            occupied_count_expr.label('occupied'),
+            vacant_count_expr.label('vacant'),
+            maintenance_count_expr.label('maintenance')
         ).where(
             Room.lodge_id == lodge_id
         )
@@ -65,53 +61,42 @@ class CRUDLodge(CRUDBase[Lodge, LodgeCreate, LodgeUpdate]):
         return result
 
     def get_occupied_counts(self, db: Session, lodge_id: int):
-        payment_subq = crud_payment.get_payment_subq() #use DI to get the payment subq from the payment crud
 
-        days_left = cast(func.julianday(Lease.end_date) - func.julianday('now'), Integer) #only supported by sqlite,
-        #change in production to postgres
 
-        total_paid = func.coalesce(payment_subq.c.total_amt_paid, 0)
-
-        has_payed = total_paid == Lease.agreed_rent_amt
-        incomplete_payment = total_paid < Lease.agreed_rent_amt
-
-        owing_expr = func.count(
+        owing_count_expr = func.count(
             case(
-                (and_(incomplete_payment), 1), else_=None
+                (and_(*const.filter_menu.get(BadgeTexts.OWING)), 1), else_=None
             )
         )
 
 
-
-        safe_expr = func.count(
+        safe_count_expr = func.count(
             case(
-                (and_(days_left >= 90, has_payed), 1), else_=None
+                (and_(*const.filter_menu.get(BadgeTexts.SAFE)), 1), else_=None
             )
         )
 
-        expiring_expr = func.count(
+        expiring_count_expr = func.count(
             case(
-                (and_(days_left.between(0, 89), has_payed), 1), else_=None
+                (and_(*const.filter_menu.get(BadgeTexts.EXPIRING)), 1), else_=None
             )
         )
 
         overdue_expr = func.count(
             case(
-                (and_(days_left < 0, has_payed), 1), else_=None
+                (and_(*const.filter_menu.get(BadgeTexts.OVERDUE)), 1), else_=None
             )
         )
 
-
-
         stmt = select(
-            safe_expr.label('safe'),
-            expiring_expr.label('expiring'),
+            safe_count_expr.label('safe'),
+            expiring_count_expr.label('expiring'),
             overdue_expr.label('overdue'),
-            owing_expr.label('owing')
+            owing_count_expr.label('owing')
         ).select_from(Lease).outerjoin(
             Room, Lease.room_id == Room.id
         ).outerjoin(
-            payment_subq, payment_subq.c.lease_id == Lease.id
+            const.payment_subq, const.payment_subq.c.lease_id == Lease.id
         ).where(
             Room.lodge_id == lodge_id,
             Lease.status == LeaseStatus.ACTIVE,

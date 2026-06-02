@@ -16,10 +16,10 @@ from typing import Union
 from app.core.enums import RoomStatus
 
 
-def get_financial_summary(db: Session, lodge_id: int):
+def get_financial_summary(db: Session, lodge_id: int, filter_by: DashboardFilters):
     potential_revenue = crud_payment.get_potential_income_from_rooms(db, lodge_id=lodge_id)
-    active_lease_financials = crud_payment.get_financials_for_active_leases(db, lodge_id=lodge_id)
-    unpaid_rent = crud_payment.get_total_unpaid_rent(db, lodge_id=lodge_id)
+    active_lease_financials = crud_payment.get_financials_for_active_leases(db, lodge_id=lodge_id, filter_by=filter_by)
+    unpaid_rent = crud_payment.get_total_unpaid_rent(db, lodge_id=lodge_id, filter_by=filter_by)
 
     return FinancialResponse(
         potential_revenue=potential_revenue,
@@ -39,14 +39,13 @@ def get_room_dashboard_summary(
 ):
     # occupied rooms
     raw_rooms = crud_room.get_dashboard_rooms(db, filter_by=filter_by, lodge_id=lodge_id, skip=skip, limit=limit)
-    print(raw_rooms)
     categorized_rooms = [RoomGridSummary(**row) for row in raw_rooms]
 
     rooms.safe = [room for room in categorized_rooms if room.badge_text == BadgeTexts.SAFE]
     rooms.expiring = [room for room in categorized_rooms if room.badge_text == BadgeTexts.EXPIRING]
     rooms.overdue = [room for room in categorized_rooms if room.badge_text == BadgeTexts.OVERDUE]
-
     rooms.owing = [room for room in categorized_rooms if room.badge_text == BadgeTexts.OWING]
+
     # vacant rooms
     rooms.vacant = [room for room in categorized_rooms if room.badge_text == RoomStatus.VACANT]
     #maintenance rooms
@@ -88,7 +87,7 @@ def get_landlord_dashboard(
     lodge_service.verify_lodge_ownership(db, lodge_id=lodge_id, landlord_id=landlord_id)
 
     #TODO: SUM ALL financial for the landlords revenue(expected, collected & outstanding)
-    financials = get_financial_summary(db, lodge_id=lodge_id)
+    financials = get_financial_summary(db, lodge_id=lodge_id, filter_by=filter_by)
     print(financials.model_dump_json(indent=4))
     # Todo: count all the entities tied to the landlord's lodge( rooms, tenant, room statuses)
     entity_count = get_entity_count_summary(db, lodge_id=lodge_id)

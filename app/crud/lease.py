@@ -91,7 +91,10 @@ class CRUDLease(CRUDBase[Lease, LeaseCreate, LeaseUpdate]):
 
     def update_lease(self, db: Session, lease_data: LeaseUpdate, db_lease: Lease) -> Lease:
         update_data = lease_data.model_dump(exclude_unset=True)
-
+        #if the update_data is trying to update the lease status, make the lease's room occupied
+        if lease_data.status:
+            db_lease.room.status  =  RoomStatus.OCCUPIED
+            
         for k, v in update_data.items():
             setattr(db_lease, k, v)
 

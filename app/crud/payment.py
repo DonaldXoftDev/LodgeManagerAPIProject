@@ -1,11 +1,16 @@
 from sqlalchemy.orm import Session
+
+from app.core import constants
 from app.core.enums import LeaseStatus
 from app.models.lease import Lease
 from app.models.payment import Payment
 from app.models.room import Room
+from app.schemas.dashboard import DashboardFilters
 from app.schemas.payment import PaymentCreate, PaymentResponse
 from app.crud.base_crud import CRUDBase
 from sqlalchemy import func, select
+
+from utilities.dashboard_utilities import apply_dashboard_filters
 
 
 class CRUDPayment(CRUDBase[Payment, PaymentCreate, PaymentResponse]):
@@ -31,7 +36,7 @@ class CRUDPayment(CRUDBase[Payment, PaymentCreate, PaymentResponse]):
 
         return payment_subq
 
-    def get_financials_for_active_leases(self, db: Session, lodge_id: int):
+    def get_financials_for_active_leases(self, db: Session, lodge_id: int, filter_by: DashboardFilters):
         payment_subq = self.get_payment_subq()
 
         expected_revenue_expr = func.coalesce(func.sum(Lease.agreed_rent_amt), 0)
@@ -49,9 +54,11 @@ class CRUDPayment(CRUDBase[Payment, PaymentCreate, PaymentResponse]):
             Room.lodge_id == lodge_id, Lease.status == LeaseStatus.ACTIVE
         ))
 
+        stmt = apply_dashboard_filters(filter_by=filter_by, stmt=stmt, filters=constants.filter_menu)
+
         return db.execute(stmt).mappings().first()
 
-    def get_total_unpaid_rent(self, db: Session, lodge_id: int):
+    def get_total_unpaid_rent(self, db: Session, lodge_id: int, filter_by: DashboardFilters):
         payment_subq = self.get_payment_subq()
         agreed_rent_expr = func.coalesce(func.sum(Lease.agreed_rent_amt), 0)
         total_paid_expr = func.coalesce(func.sum(payment_subq.c.total_amt_paid), 0)
@@ -62,6 +69,7 @@ class CRUDPayment(CRUDBase[Payment, PaymentCreate, PaymentResponse]):
             payment_subq, payment_subq.c.lease_id == Lease.id).join(
             Room, Lease.room_id == Room.id).where(Room.lodge_id == lodge_id)
 
+        stmt = apply_dashboard_filters(filter_by=filter_by, stmt=stmt, filters=constants.filter_menu)
 
         return db.execute(stmt).scalar()
 
