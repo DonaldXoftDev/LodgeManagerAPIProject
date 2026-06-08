@@ -8,7 +8,7 @@ from app.main import app
 from app.db.session import Base
 from fastapi.testclient import TestClient
 from app.schemas import user as schema_user
-from app.services import user_service, lodge_service
+from app.services import user_service, lodge_service, tenant_services
 from app.schemas import tenantprofile as schema_tenant
 from app.schemas import lodge as schema_lodge
 
@@ -32,7 +32,7 @@ def test_db():
         db.close()
         Base.metadata.drop_all(bind=engine)
 
-
+base_url = "/api/v1"
 
 @pytest.fixture
 def client(test_db):
@@ -51,6 +51,7 @@ def authenticated_landlord_client(auth_client_factory, add_landlord_to_db, mock_
 
     client = auth_client_factory(email=l_schema.email, password=l_schema.password)
     return client
+
 
 @pytest.fixture
 def auth_client_factory(client):
@@ -108,6 +109,7 @@ def mock_tenant_schema(mock_tenant_user_schema):
     )
 
 
+
 @pytest.fixture
 def add_landlord_to_db(test_db, mock_landlord_schema):
     l_schema = mock_landlord_schema
@@ -115,7 +117,36 @@ def add_landlord_to_db(test_db, mock_landlord_schema):
 
 
 
+@pytest.fixture
+def add_lodge_to_db(test_db, add_landlord_to_db, mock_lodge_schema):
+    return lodge_service.create_new_lodge_for_landlord(test_db, landlord_id= add_landlord_to_db.id, lodge_in=mock_lodge_schema)
+
 
 @pytest.fixture
-def add_lodge_to_db(authenticated_landlord_client, test_db, add_landlord_to_db, mock_lodge_schema):
-    lodge_service.create_new_loge_for_landlord(test_db,landlord_id= add_landlord_to_db.id, lodge_in=mock_lodge_schema)
+def lodges_in_db(test_db, add_landlord_to_db):
+    lodge_credentials = [('Lodge A', 'Test Address A'), ('Lodge B', 'Test Address B')]
+
+    db_lodges: list[schema_lodge.LodgeResponse] = []
+    for cred in lodge_credentials:
+        lodge_schema = schema_lodge.LodgeCreate(name=cred[0], address=cred[1])
+        new_lodge = lodge_service.create_new_lodge_for_landlord(test_db, landlord_id=add_landlord_to_db.id,
+                                                                lodge_in=lodge_schema)
+        db_lodges.append(new_lodge)
+
+    return db_lodges
+
+
+@pytest.fixture
+def tenants_in_db(test_db, add_landlord_to_db):
+    pass
+
+@pytest.fixture
+def add_tenant_to_db(test_db, mock_tenant_schema, add_lodge_to_db):
+    t_schema = mock_tenant_schema
+    tenant_services.sign_up_tenant(test_db, tenant_in=t_schema)
+    return t_schema
+
+
+@pytest.fixture
+def authenticated_tenant_client(auth_client_factory, add_tenant_to_db):
+    return auth_client_factory(email=add_tenant_to_db.user_info.email, password=add_tenant_to_db.user_info.password)

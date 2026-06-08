@@ -19,7 +19,7 @@ def register_lodge(
 
 ):
 
-    return lodge_service.create_new_loge_for_landlord(
+    return lodge_service.create_new_lodge_for_landlord(
         db=db,
         landlord_id=landlord_user.id,
         lodge_in=lodge_in

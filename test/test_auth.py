@@ -1,8 +1,7 @@
 from fastapi import status
-from test.conftest import mock_landlord_schema
+from test.conftest import mock_landlord_schema, base_url
 
-url_base = "/api/v1"
-auth_url_base = f'{url_base}/auth'
+auth_url_base = f'{base_url}/auth'
 
 def test_register_landlord_returns_201(client, mock_landlord_schema):
     landlord_schema = mock_landlord_schema
@@ -85,7 +84,6 @@ def test_register_tenant_returns_201(client, mock_tenant_schema, add_lodge_to_db
 
     response = client.post(f'{auth_url_base}/register/tenant', json=t_payload)
     data = response.json()
-    print(data)
 
     assert response.status_code == status.HTTP_201_CREATED
     assert data['tenant_type'] == mock_tenant_schema.tenant_info.tenant_type
