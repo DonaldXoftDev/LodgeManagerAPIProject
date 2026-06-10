@@ -1,4 +1,4 @@
-
+import pytest
 from fastapi import status
 
 from test.conftest import base_url
@@ -19,6 +19,21 @@ def test_landlord_register_lodge_returns_200(authenticated_landlord_client, mock
     assert data['address'] == mock_lodge_schema.address
     assert 'id' in data
     assert 'landlord_id' in data
+
+#not going to test this bcz none of my schema rules have been set , -a later todo
+# @pytest.mark.parametrize("invalid_payload, expected_detail_part", [
+#     ({"address": "Some Address"}, "Field required"),  # Missing name
+#     ({"name": "Some Name"}, "Field required"),  # Missing address
+#     ({"name": "", "address": "Some Address"}, "String should have at least 1 character"),
+#     ({"name": "   ", "address": "Some Address"}, "String should have at least 1 character"),
+# ])
+# def test_register_lodge_with_invalid_data_returns_422(authenticated_landlord_client, invalid_payload,
+#                                                       expected_detail_part):
+#     """Tests that creating a lodge with invalid or missing data fails."""
+#     response = authenticated_landlord_client.post(f'{lodge_url}/register', json=invalid_payload)
+#     print(response.json())
+#     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+#     assert expected_detail_part in str(response.json())
 
 
 def test_register_duplicate_lodge_returns_400(authenticated_landlord_client, add_lodge_to_db, mock_lodge_schema):
@@ -91,7 +106,7 @@ def test_get_landlord_lodges_returns_200(authenticated_landlord_client, lodges_i
     """
     response = authenticated_landlord_client.get(f'{lodge_url}')
     data = response.json()
-    print(data)
+
     assert response.status_code == status.HTTP_200_OK
     assert len(data) == len(lodges_in_db)
 

@@ -1,9 +1,11 @@
+import pytest
 from fastapi import status
 
-
+from app.core.enums import RoomStatus
 from test.conftest import base_url
 
 room_url = f'{base_url}/rooms'
+
 
 def test_landlord_create_room_returns_200(authenticated_landlord_client, mock_room_schema):
     """
@@ -21,7 +23,7 @@ def test_landlord_create_room_returns_200(authenticated_landlord_client, mock_ro
     assert 'created_at' in data
 
 
-def test_create_duplicate_room_returns_400(authenticated_landlord_client,mock_room_schema, add_room_to_db):
+def test_create_duplicate_room_returns_400(authenticated_landlord_client, mock_room_schema, add_room_to_db):
     """
     Tests that creating a duplicate room returns a 400 status code.
     """
@@ -42,6 +44,7 @@ def test_tenant_create_room_returns_403(authenticated_tenant_client, mock_room_s
     assert response.status_code == status.HTTP_403_FORBIDDEN
     assert data['detail'] == 'Only landlords are allowed.'
 
+
 def test_landlord_get_room_details_by_id_returns_200(authenticated_landlord_client, add_room_to_db):
     """
     Tests that a landlord can get room details by ID and returns a 200 status code.
@@ -56,6 +59,7 @@ def test_landlord_get_room_details_by_id_returns_200(authenticated_landlord_clie
     assert data['lodge_id'] == add_room_to_db.lodge_id
     assert 'id' in data
     assert 'created_at' in data
+
 
 def test_landlord_update_room_by_id_returns_200(authenticated_landlord_client, add_room_to_db, mock_update_room_schema):
     """
@@ -88,7 +92,8 @@ def test_landlord_update_non_existent_room_returns_404(authenticated_landlord_cl
     assert data['detail'] == f'Room could not be found'
 
 
-def test_landlord_update_room_owned_by_another_landlord_returns_404(authenticated_landlord_client, add_diff_landlord_room, mock_update_room_schema):
+def test_landlord_update_room_owned_by_another_landlord_returns_404(authenticated_landlord_client,
+                                                                    add_diff_landlord_room, mock_update_room_schema):
     """
     Tests that a landlord cannot update a room owned by another landlord and returns a 404 status code.
     """
@@ -150,3 +155,54 @@ def test_get_rooms_pagination_skip_exceeds_total(authenticated_landlord_client, 
 
     assert response.status_code == status.HTTP_200_OK
     assert len(data) == 0
+
+def test_tenant_cannot_create_room_returns_403(authenticated_tenant_client, mock_room_schema):
+    """
+    Tests that a tenant cannot create a room and returns a 403 status code.
+    """
+    response = authenticated_tenant_client.post(url=room_url, json=mock_room_schema.model_dump())
+    data = response.json()
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert data['detail'] == 'Only landlords are allowed.'
+
+
+@pytest.mark.parametrize("update_fields", [
+    {"room_no": "new-rm-101"},
+    {"description": "updated description for testing"},
+    {"base_rent_price": 500000},
+    {"room_no": "rm-202", "base_rent_price": 350000},
+    {"description": "luxury suite", "status": RoomStatus.MAINTENANCE}
+])
+def test_landlord_update_room_scenarios_returns_200(authenticated_landlord_client, add_room_to_db, update_fields):
+    """
+    Tests various scenarios for updating room details by a landlord.
+    """
+    response = authenticated_landlord_client.patch(
+        url=f'{room_url}/{add_room_to_db.id}',
+        json=update_fields
+    )
+    data = response.json()
+
+    assert response.status_code == status.HTTP_200_OK
+    for key, value in update_fields.items():
+        if isinstance(value, str):
+            if isinstance(value, RoomStatus):
+                assert data[key] == RoomStatus.MAINTENANCE
+            else:
+                assert data[key] == value.lower()
+        else:
+            assert data[key] == value
+
+def test_tenant_cannot_update_room_returns_403(authenticated_tenant_client, add_room_to_db, mock_update_room_schema):
+    """
+    Tests that a tenant is forbidden from updating room details.
+    """
+    response = authenticated_tenant_client.patch(
+        url=f'{room_url}/{add_room_to_db.id}',
+        json=mock_update_room_schema.model_dump()
+    )
+    data = response.json()
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert data['detail'] == 'Only landlords are allowed.'
