@@ -65,9 +65,16 @@ class CRUDPayment(CRUDBase[Payment, PaymentCreate, PaymentResponse]):
 
         stmt = select(
             (agreed_rent_expr - total_paid_expr).label('unpaid_rent')
-        ).select_from(Lease).join(
-            payment_subq, payment_subq.c.lease_id == Lease.id).join(
-            Room, Lease.room_id == Room.id).where(Room.lodge_id == lodge_id)
+        ).select_from(
+            Lease
+        ).outerjoin(
+            payment_subq, payment_subq.c.lease_id == Lease.id
+        ).join(
+            Room, Lease.room_id == Room.id
+        ).where(
+            Room.lodge_id == lodge_id,
+            Lease.status == LeaseStatus.ACTIVE
+        )
 
         stmt = apply_dashboard_filters(filter_by=filter_by, stmt=stmt, filters=constants.filter_menu)
 

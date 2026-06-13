@@ -61,7 +61,7 @@ class CRUDLease(CRUDBase[Lease, LeaseCreate, LeaseUpdate]):
             db_payment = Payment(lease_id=db_lease.id, amount_paid=lease_data.total_amt_paid)
             db.add(db_payment)
 
-            room.status = RoomStatus.OCCUPIED
+            room.status = RoomStatus.OCCUPIED if db_lease.status == LeaseStatus.ACTIVE else RoomStatus.VACANT
             db.commit()
             db.refresh(db_lease)
 

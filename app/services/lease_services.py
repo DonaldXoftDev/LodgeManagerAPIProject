@@ -9,7 +9,7 @@ from app.schemas.lease import LeaseCreate, LeaseUpdate
 from app.services import lodge_service, room_service
 from app.crud.lease import crud_lease
 from app.core.exceptions import (RoomNotFoundError, UserNotFoundError,
-                                 LodgeNotFoundError, LeaseNotFoundError,  InvalidLeaseActionError)
+                                  LeaseNotFoundError,  InvalidLeaseActionError)
 
 
 def create_new_lease(
@@ -104,9 +104,10 @@ def filter_leases(
 def verify_lease_to_terminate(
         db: Session,
         lease_id: int,
+
 ):
     lease = crud_lease.get(db, item_id=lease_id)
-    if not lease:
+    if not lease :
         raise LeaseNotFoundError()
 
     # don't terminate a lease if it has already been terminated or is expired

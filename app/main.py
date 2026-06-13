@@ -40,7 +40,8 @@ app.include_router(lease_router, prefix='/api/v1/leases', tags=['Leases'])
 app.include_router(payment_router, prefix='/api/v1/payments', tags=['Payments'])
 
 
-app.include_router(landlord_dashboard_router, prefix='/api/v1/dashboard', tags=['Dashboards'])
+app.include_router(landlord_dashboard_router, prefix='/api/v1/dashboard-landlord', tags=['Dashboards'])
+
 @app.get("/healthy")
 def health_status():
     return {"message": f"Your {settings.PROJECT_NAME} is working well"}

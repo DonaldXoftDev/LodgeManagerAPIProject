@@ -39,6 +39,7 @@ class BadgeTexts(str, Enum):
     EXPIRING = 'Expiring'
     OVERDUE = 'Overdue'
     OWING = 'Owing'
+    UNKNOWN_BADGE_TEXT = 'Unknown_badge_text'
 
 class BadgeVariants(str, Enum):
     SUCCESS = 'Success'
@@ -47,3 +48,4 @@ class BadgeVariants(str, Enum):
     INACTIVE = 'Inactive'
     NEED_REPAIR = 'Need_Repair',
     INFO = 'Info'
+    UNKNOWN_VARIANT = 'Unknown_variant'

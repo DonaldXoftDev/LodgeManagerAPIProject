@@ -8,9 +8,12 @@ from datetime import date, timedelta
 from app.api.deps import get_db
 from app.core import security
 from app.core.enums import StudentLevel, TenantType, RoomStatus, LeaseStatus
+from app.crud.payment import crud_payment
 from app.main import app
 from app.db.session import Base
 from fastapi.testclient import TestClient
+
+from app.models.lease import Lease
 from app.schemas import user as schema_user
 from app.services import user_service, lodge_service, tenant_services, room_service, lease_services, payment_service
 from app.schemas import tenantprofile as schema_tenant
@@ -204,11 +207,11 @@ def room_schema_factory():
     return _create
 
 @pytest.fixture
-def mock_room_schema(room_schema_factory):
+def mock_room_schema(room_schema_factory, add_lodge_to_db):
     """
     A pytest fixture that provides a mock room schema.
     """
-    return room_schema_factory()
+    return room_schema_factory(lodge_id=add_lodge_to_db.id)
 
 @pytest.fixture
 def mock_update_room_schema():
@@ -285,11 +288,33 @@ def lodges_in_db(test_db, add_landlord_to_db, lodge_schema_factory):
     return db_lodges
 
 @pytest.fixture
-def rooms_in_db(test_db, room_schema_factory, add_landlord_to_db, add_lodge_to_db):
+def maintenance_rooms_in_db(test_db, room_schema_factory, add_landlord_to_db, add_lodge_to_db):
+    max_maintenance_rooms = 5
+
+    db_maintenance_rooms = []
+    for i in range(max_maintenance_rooms):
+        room_data = room_schema_factory(
+            room_no=f'maintenance room {i + 1}',
+            lodge_id=add_lodge_to_db.id,
+            status=RoomStatus.MAINTENANCE
+        )
+        new_maintenance_room = room_service.create_room_for_lodge(
+            test_db,
+            room_in=room_data,
+            landlord_id=add_landlord_to_db.id
+        )
+        db_maintenance_rooms.append(new_maintenance_room)
+
+    return db_maintenance_rooms
+
+
+
+@pytest.fixture
+def vacant_rooms_in_db(test_db, room_schema_factory, add_landlord_to_db, add_lodge_to_db):
     """
     A pytest fixture that adds multiple rooms to a lodge in the database.
     """
-    max_rooms = 50
+    max_rooms = 20
     db_rooms = []
     for i in range(max_rooms):
         rm_schema = room_schema_factory(
@@ -403,11 +428,11 @@ def lease_schema_factory():
     return _create
 
 @pytest.fixture
-def mock_lease_schema(lease_schema_factory):
+def mock_lease_schema(lease_schema_factory, add_room_to_db, add_tenant_to_db):
     """
     A pytest fixture that provides a mock lease schema using the lease_schema_factory.
     """
-    return lease_schema_factory()
+    return lease_schema_factory(room_id=add_room_to_db.id, tenant_id=add_tenant_to_db.id)
 
 @pytest.fixture
 def add_active_lease_to_db(test_db, lease_schema_factory,add_room_to_db, add_tenant_to_db, add_landlord_to_db):
@@ -485,18 +510,18 @@ def add_active_lease_to_diff_landlord_lodge(test_db, lease_schema_factory, add_d
     )
 
 @pytest.fixture
-def leases_in_db(test_db, lease_schema_factory, add_landlord_to_db, tenants_in_db, rooms_in_db):
+def leases_in_db(test_db, lease_schema_factory, add_landlord_to_db, tenants_in_db, vacant_rooms_in_db):
     """
     A pytest fixture that adds multiple leases to the database.
     It creates a mix of ACTIVE and INACTIVE leases.
     """
     db_leases = []
     # Ensure we have enough rooms and tenants for leases
-    num_leases_to_create = min(len(tenants_in_db), len(rooms_in_db), 15) # Limit to 15 or fewer
+    num_leases_to_create = min(len(tenants_in_db), len(vacant_rooms_in_db), 15) # Limit to 15 or fewer
 
     for i in range(num_leases_to_create):
         tenant = tenants_in_db[i]
-        room = rooms_in_db[i]
+        room = vacant_rooms_in_db[i]
         
         # Make every 3rd lease INACTIVE for testing status filters
         status = LeaseStatus.EXPIRED if i % 3 == 0 else LeaseStatus.ACTIVE
@@ -670,3 +695,29 @@ def tenant_safe_payments_in_db(test_db, payment_schema_factory, add_landlord_to_
         limit=None
     )
     return tenant_payments, lease
+
+
+@pytest.fixture
+def add_dashboard_stats(test_db,leases_in_db, add_lodge_to_db, add_landlord_to_db, payment_schema_factory, maintenance_rooms_in_db):
+
+    lodge_id = add_lodge_to_db.id
+
+    for lease in leases_in_db:
+        if lease.status == LeaseStatus.ACTIVE:
+
+            already_paid = crud_payment.get_payments_aggregate_by_lease_id(test_db, lease_id=lease.id)
+            remaining_balance = lease.agreed_rent_amt - already_paid
+
+            min_payment = min(remaining_balance, 20000)
+            payment_amt = remaining_balance if lease.id % 2 == 0 else random.randint(min_payment, remaining_balance)
+            payment_data = payment_schema_factory(
+                lease_id=lease.id,
+                amount_paid=payment_amt
+            )
+            payment_service.add_payment_record(
+                test_db,
+                current_landlord_id=add_landlord_to_db.id,
+                payment_data=payment_data
+            )
+    return lodge_id
+

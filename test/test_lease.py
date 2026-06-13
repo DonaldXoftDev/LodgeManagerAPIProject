@@ -204,7 +204,6 @@ def test_landlord_cannot_get_leases_for_non_existent_lodge_returns_404(authentic
     assert response.status_code == status.HTTP_404_NOT_FOUND
     assert data['detail'] == 'Lodge could not be found'
 
-
 # --- Pagination Tests for Getting Leases (Tenant) ---
 
 def test_tenant_get_personal_lease_history_returns_200(auth_client_factory, tenant_lease_history_in_db):
@@ -385,14 +384,14 @@ def test_tenant_appeal_non_existent_lease_returns_404(authenticated_tenant_clien
     assert response.status_code == status.HTTP_404_NOT_FOUND
     assert data['detail'] == 'Lease could not be found'
 
-def test_tenant_appeal_lease_not_owned_returns_404(authenticated_tenant_client, add_second_tenant_to_db):
+def test_tenant_appeal_lease_not_owned_returns_404(auth_client_factory, add_second_tenant_to_db, add_active_lease_to_db):
     """
     Tests that a tenant cannot appeal a lease that belongs to another tenant.
     """
-    # Authenticate as Tenant B
-    diff_tenant_id = add_second_tenant_to_db.id
+    lease_id = add_active_lease_to_db.id
+    client = auth_client_factory(user_id=add_second_tenant_to_db.user_id)
 
-    response = authenticated_tenant_client.patch(f'{lease_url}/me/terminate/{diff_tenant_id}')
+    response = client.patch(f'{lease_url}/me/terminate/{lease_id}')
     data = response.json()
 
     assert response.status_code == status.HTTP_404_NOT_FOUND

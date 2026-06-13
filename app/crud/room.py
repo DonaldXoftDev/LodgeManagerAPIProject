@@ -50,7 +50,7 @@ class CRUDRoom(CRUDBase[Room, RoomCreate, RoomUpdate]):
                 (and_(*const.filter_menu.get(BadgeTexts.OWING)), BadgeTexts.OWING),
                 (const.vacant_expr, RoomStatus.VACANT),
                 (const.maintenance_expr, RoomStatus.MAINTENANCE),
-                else_='Unknown_badge_text'
+                else_=BadgeTexts.UNKNOWN_BADGE_TEXT
             ).label('badge_text'),
 
             case(
@@ -60,7 +60,7 @@ class CRUDRoom(CRUDBase[Room, RoomCreate, RoomUpdate]):
                 (and_(*const.filter_menu.get(BadgeTexts.OWING)), BadgeVariants.INFO),
                 (const.vacant_expr, BadgeVariants.INACTIVE),
                 (const.maintenance_expr, BadgeVariants.NEED_REPAIR),
-                else_= 'Unknown_variant'
+                else_= BadgeVariants.UNKNOWN_VARIANT
             ).label('badge_variant'),
 
             case(

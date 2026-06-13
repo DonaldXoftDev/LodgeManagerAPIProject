@@ -24,5 +24,5 @@ filter_menu = {
     BadgeTexts.SAFE: (occupied_expr, has_payed_in_full, days_left >= 90),
     BadgeTexts.EXPIRING: (occupied_expr, has_payed_in_full, days_left.between(0, 89)),
     BadgeTexts.OVERDUE: (occupied_expr, has_payed_in_full, days_left < 0),
-    BadgeTexts.OWING: (occupied_expr, has_payed_in_full, incomplete_payment)
+    BadgeTexts.OWING: (occupied_expr, incomplete_payment)
 }
