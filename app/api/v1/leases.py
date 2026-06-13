@@ -64,9 +64,9 @@ def get_tenant_leases(
     #leases must belong to the tenant
     #leases can be filtered by active
 
-    return lease_services.filter_leases(
+    return lease_services.get_filtered_leases_tenant(
             db,
-            tenant_id=tenant_user.id,
+            tenant_profile=tenant_user.tenant_profile,
             skip=skip,
             max_limit=max_limit,
             status=status

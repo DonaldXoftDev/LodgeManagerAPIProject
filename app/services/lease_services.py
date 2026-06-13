@@ -2,6 +2,7 @@ from typing import Optional
 from app.core.enums import LeaseStatus
 from app.crud.tenantprofile import crud_tenant
 from app.models.lease import Lease
+from app.models.tenantprofile import TenantProfile
 from app.models.user import User
 from sqlalchemy.orm import Session
 from app.schemas.lease import LeaseCreate, LeaseUpdate
@@ -57,6 +58,28 @@ def get_filtered_landlord_leases(
         status=status
     )
 
+def get_filtered_leases_tenant(
+db: Session,
+        tenant_profile: TenantProfile,
+        skip: Optional[int] = None,
+        max_limit: Optional[int] = None,
+        status: Optional[LeaseStatus] = None
+):
+
+    if not tenant_profile:
+        raise UserNotFoundError()
+
+    lodge = tenant_profile.lodge
+
+    return filter_leases(
+        db,
+        tenant_id=tenant_profile.id,
+        skip=skip,
+        max_limit=max_limit,
+        status=status,
+        lodge_id=lodge.id
+    )
+
 
 def filter_leases(
         db: Session,
@@ -67,6 +90,7 @@ def filter_leases(
         max_limit: Optional[int] = None,
         status: Optional[LeaseStatus] = None
 ):
+
     return crud_lease.get_tenant_leases(
         db,
         lodge_id=lodge_id,

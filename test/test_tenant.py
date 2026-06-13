@@ -1,6 +1,10 @@
 import pytest
 from fastapi import status
-from test.conftest import base_url
+
+from app.crud.lease import crud_lease
+from app.crud.tenantprofile import crud_tenant
+from app.services import lease_services
+from test.conftest import base_url, test_db
 
 tenant_url = f'{base_url}/tenants'
 
@@ -18,6 +22,10 @@ def test_tenant_get_personal_details_returns_200(authenticated_tenant_client, ad
     assert data['tenant_type'] == add_tenant_to_db.tenant_type
 
 
+def test_mock_get_tenant_history(test_db, add_tenant_to_db, tenant_lease_history_in_db):
+    db_items = lease_services.get_filtered_leases_tenant(test_db, tenant_profile=add_tenant_to_db)
+    print(db_items)
+
 @pytest.mark.parametrize("update_payload, field_to_check, expected_value", [
     ({'user_info': {"first_name": "John"}}, "first_name", "John"),
     ({'user_info': {"last_name": "Doe"}}, "last_name", "Doe"),
@@ -33,6 +41,7 @@ def test_tenant_can_update_own_profile_returns_200(authenticated_tenant_client, 
 
     response = authenticated_tenant_client.patch(f'{tenant_url}/profiles/me', json=update_payload)
     data = response.json()
+
 
     assert response.status_code == status.HTTP_200_OK
 

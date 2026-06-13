@@ -12,11 +12,12 @@ from app.main import app
 from app.db.session import Base
 from fastapi.testclient import TestClient
 from app.schemas import user as schema_user
-from app.services import user_service, lodge_service, tenant_services, room_service, lease_services
+from app.services import user_service, lodge_service, tenant_services, room_service, lease_services, payment_service
 from app.schemas import tenantprofile as schema_tenant
 from app.schemas import lodge as schema_lodge
 from app.schemas import room as schema_room
 from app.schemas import lease as schema_lease
+from app.schemas import payment as schema_payment
 
 SQLALCHEMY_DATABASE_URL = 'sqlite:///:memory:'
 
@@ -138,7 +139,7 @@ def mock_update_lodge_schema():
     )
 
 @pytest.fixture
-def tenant_schema_factory(add_lodge_to_db):
+def tenant_schema_factory():
     """
     A pytest fixture that provides a factory for creating tenant schemas.
     """
@@ -146,7 +147,7 @@ def tenant_schema_factory(add_lodge_to_db):
             first_name: str = 'Tenant',
             last_name: str = 'A',
             email: str = 'tenant@test.com',
-            lodge_id: int = add_lodge_to_db.id,
+            lodge_id: int = 1,
             level: StudentLevel = StudentLevel.LEVEL_200,
             tenant_type: TenantType = TenantType.STUDENT
     ):
@@ -180,7 +181,7 @@ def mock_tenant_schema(tenant_schema_factory):
     return tenant_schema_factory()
 
 @pytest.fixture
-def room_schema_factory(add_lodge_to_db):
+def room_schema_factory():
     """
     A pytest fixture that provides a factory for creating room schemas.
     """
@@ -189,7 +190,7 @@ def room_schema_factory(add_lodge_to_db):
             description: str = 'spacious self con',
             base_rent_price: int = 210000,
             status: RoomStatus = RoomStatus.VACANT,
-            lodge_id: int = add_lodge_to_db.id
+            lodge_id: int = 1
 
     ):
         return schema_room.RoomCreate(
@@ -298,7 +299,11 @@ def rooms_in_db(test_db, room_schema_factory, add_landlord_to_db, add_lodge_to_d
             status= RoomStatus.VACANT,
             lodge_id=add_lodge_to_db.id
         )
-        new_room = room_service.create_room_for_lodge(test_db, landlord_id=add_landlord_to_db.id, room_in=rm_schema)
+        new_room = room_service.create_room_for_lodge(
+            test_db,
+            landlord_id=add_landlord_to_db.id,
+            room_in=rm_schema
+        )
         db_rooms.append(new_room)
     print(f"\n--- Fixture: rooms_in_ created {len(db_rooms)} tenants. First ID: {db_rooms[0].id}, Last ID: {db_rooms[-1].id} ---")
     return db_rooms
@@ -332,19 +337,19 @@ def add_tenant_to_db(test_db, mock_tenant_schema, add_lodge_to_db):
 
 
 @pytest.fixture
-def add_room_to_db(test_db, mock_room_schema, add_landlord_to_db):
+def add_room_to_db(test_db, mock_room_schema, add_lodge_to_db):
     """
     A pytest fixture that adds a room to the database.
     """
-    return room_service.create_room_for_lodge(test_db, room_in=mock_room_schema, landlord_id=add_landlord_to_db.id)
+    return room_service.create_room_for_lodge(test_db, room_in=mock_room_schema, landlord_id=add_lodge_to_db.landlord_id)
     
 @pytest.fixture
-def add_diff_landlord_room(test_db, room_schema_factory, add_different_landlord, add_diff_landlord_lodge):
+def add_diff_landlord_room(test_db, room_schema_factory, add_diff_landlord_lodge):
     """
     A pytest fixture that adds a room belonging to a different landlord.
     """
     rm_schema = room_schema_factory(lodge_id=add_diff_landlord_lodge.id)
-    return room_service.create_room_for_lodge(test_db, landlord_id=add_different_landlord.id, room_in=rm_schema)
+    return room_service.create_room_for_lodge(test_db, landlord_id=add_diff_landlord_lodge.landlord_id, room_in=rm_schema)
 
 @pytest.fixture
 def authenticated_tenant_client(auth_client_factory, add_tenant_to_db):
@@ -361,7 +366,7 @@ def add_second_tenant_to_db(test_db, tenant_schema_factory, add_lodge_to_db):
     """
     A pytest fixture that adds a second tenant to the same lodge.
     """
-    t_schema = tenant_schema_factory(email="tenant2@test.com", first_name="TenantB")
+    t_schema = tenant_schema_factory(email="tenant2@test.com", first_name="TenantB", lodge_id=add_lodge_to_db.id)
     return tenant_services.sign_up_tenant(test_db, tenant_in=t_schema)
 
 @pytest.fixture
@@ -373,13 +378,13 @@ def add_diff_landlord_tenant(test_db, tenant_schema_factory, add_diff_landlord_l
     return tenant_services.sign_up_tenant(test_db, tenant_in=t_schema)
 
 @pytest.fixture
-def lease_schema_factory(add_tenant_to_db, add_room_to_db):
+def lease_schema_factory():
     """
     A pytest fixture that provides a factory for creating LeaseCreate schemas.
     """
     def _create(
-        tenant_id: int = add_tenant_to_db.id,
-        room_id: int = add_room_to_db.id,
+        tenant_id: int = 1,
+        room_id: int = 1,
         agreed_rent_amt: int = 210000,
         total_amt_paid: int = 105000,
         start_date: date = date.today(),
@@ -405,14 +410,78 @@ def mock_lease_schema(lease_schema_factory):
     return lease_schema_factory()
 
 @pytest.fixture
-def add_active_lease_to_db_direct(test_db, mock_lease_schema, add_landlord_to_db):
+def add_active_lease_to_db(test_db, lease_schema_factory,add_room_to_db, add_tenant_to_db, add_landlord_to_db):
     """
     Fixture to create and add an active lease to the database directly via the service.
     """
+    tenant_id = add_tenant_to_db.id
+    room_id = add_room_to_db.id
+
+    lease_schema = lease_schema_factory(status=LeaseStatus.ACTIVE, room_id=room_id, tenant_id=tenant_id)
+
     return lease_services.create_new_lease(
         db=test_db,
-        lease_data=mock_lease_schema,
+        lease_data=lease_schema,
         landlord_user=add_landlord_to_db
+    )
+
+@pytest.fixture
+def add_expired_lease_to_db(test_db, lease_schema_factory, add_landlord_to_db, add_tenant_to_db, add_room_to_db):
+    """
+    Fixture to create and add an expired lease to the database.
+    """
+    tenant_id = add_tenant_to_db.id
+    room_id = add_room_to_db.id
+    return lease_services.create_new_lease(
+        db=test_db,
+        lease_data=lease_schema_factory(status=LeaseStatus.EXPIRED, room_id=room_id, tenant_id=tenant_id),
+        landlord_user=add_landlord_to_db
+    )
+
+@pytest.fixture
+def add_terminated_lease_to_db(test_db, lease_schema_factory, add_landlord_to_db, add_tenant_to_db, add_room_to_db):
+    """
+    Fixture to create and add a terminated lease to the database.
+    """
+    tenant_id = add_tenant_to_db.id
+    room_id = add_room_to_db.id
+
+    return lease_services.create_new_lease(
+        db=test_db,
+        lease_data=lease_schema_factory(status=LeaseStatus.TERMINATED, room_id=room_id, tenant_id=tenant_id),
+        landlord_user=add_landlord_to_db
+    )
+
+@pytest.fixture
+def add_pending_termination_lease_to_db(test_db, lease_schema_factory, add_landlord_to_db, add_tenant_to_db,
+                                        add_room_to_db):
+    """
+    Fixture to create and add a lease pending termination to the database.
+    """
+    tenant_id = add_tenant_to_db.id
+    room_id = add_room_to_db.id
+
+    return lease_services.create_new_lease(
+        db=test_db,
+        lease_data=lease_schema_factory(status=LeaseStatus.PENDING_TERMINATION, tenant_id=tenant_id, room_id=room_id),
+        landlord_user=add_landlord_to_db
+    )
+
+@pytest.fixture
+def add_active_lease_to_diff_landlord_lodge(test_db, lease_schema_factory, add_different_landlord,
+                                            add_diff_landlord_tenant, add_diff_landlord_room):
+    """
+    Fixture to create and add an active lease to a different landlord's lodge.
+    """
+    lease_data = lease_schema_factory(
+        tenant_id=add_diff_landlord_tenant.id,
+        room_id=add_diff_landlord_room.id,
+        status=LeaseStatus.ACTIVE
+    )
+    return lease_services.create_new_lease(
+        db=test_db,
+        lease_data=lease_data,
+        landlord_user=add_different_landlord
     )
 
 @pytest.fixture
@@ -449,3 +518,155 @@ def leases_in_db(test_db, lease_schema_factory, add_landlord_to_db, tenants_in_d
     print(
         f"\n--- Fixture: leases_in_db created {len(db_leases)} tenants. First ID: {db_leases[0].id}, Last ID: {db_leases[-1].id} ---")
     return db_leases
+
+@pytest.fixture
+def tenant_lease_history_in_db(test_db, lease_schema_factory, add_landlord_to_db, add_tenant_to_db, room_schema_factory, add_lodge_to_db):
+    """
+    Fixture to create a history of leases for a single tenant.
+    Creates 3 EXPIRED leases and 2 ACTIVE leases.
+    """
+    tenant = add_tenant_to_db
+    db_leases = []
+    max_history = 5
+    # Create 5 rooms for the 5 leases
+    for i in range(max_history):
+        rm_schema = room_schema_factory(
+            room_no=f'History Rm-{i+1}',
+            description=f'Room for history test {i+1}',
+            base_rent_price= 250000,
+            status= RoomStatus.VACANT,
+            lodge_id=add_lodge_to_db.id
+        )
+        new_room = room_service.create_room_for_lodge(test_db, landlord_id=add_landlord_to_db.id, room_in=rm_schema)
+        
+        # Create 3 EXPIRED and 2 ACTIVE leases
+        status = LeaseStatus.EXPIRED if i < 3 else LeaseStatus.ACTIVE
+        
+        lease_data = lease_schema_factory(
+            tenant_id=tenant.id,
+            room_id=new_room.id,
+            agreed_rent_amt=new_room.base_rent_price,
+            start_date=date.today() - timedelta(days=365 * (i+1)) if status == LeaseStatus.EXPIRED else date.today() - timedelta(days=20 * (i + 1)),# Start date in the past
+            end_date=date.today() - timedelta(days=365 * i) if status == LeaseStatus.EXPIRED else (date.today() - timedelta(days=20 * (i + 1)))+ timedelta(days=365),
+            status=status
+        )
+        
+        new_lease = lease_services.create_new_lease(
+            db=test_db,
+            lease_data=lease_data,
+            landlord_user=add_landlord_to_db
+        )
+        db_leases.append(new_lease)
+        
+    return tenant, db_leases
+
+@pytest.fixture
+def payment_schema_factory():
+    """
+    A pytest fixture that provides a factory for creating PaymentCreate schemas.
+    """
+    def _create(
+        amount_paid: int = 50000,
+        lease_id: int = 1
+    ):
+        return schema_payment.PaymentCreate(
+            amount_paid=amount_paid,
+            lease_id=lease_id
+        )
+    return _create
+
+@pytest.fixture
+def mock_payment_schema(payment_schema_factory):
+    """
+    A pytest fixture that provides a mock payment schema using the payment_schema_factory.
+    """
+    return payment_schema_factory()
+
+@pytest.fixture
+def add_payment_to_db(test_db, payment_schema_factory, add_active_lease_to_db, add_landlord_to_db):
+    """
+    Fixture to create and add a payment to the database.
+    """
+    p_schema = payment_schema_factory(
+        lease_id=add_active_lease_to_db.id
+    )
+    return payment_service.add_payment_record(
+        db=test_db,
+        current_landlord_id=add_landlord_to_db.id,
+        payment_data=p_schema
+    )
+
+@pytest.fixture
+def multiple_safe_payments_in_db(test_db, payment_schema_factory, add_landlord_to_db, add_active_lease_to_db):
+    """
+    Fixture to create multiple payments for a tenant's lease that stay within the agreed rent amount.
+    Calculates remaining balance after lease creation and distributes it evenly across payments.
+    Returns (list of all payments on the lease, the lease object).
+    """
+    from app.crud.payment import crud_payment
+
+    lease = add_active_lease_to_db
+    num_payments = 5
+
+    # Find out how much has already been paid (from lease creation's initial payment)
+    already_paid = crud_payment.get_payments_aggregate_by_lease_id(test_db, lease_id=lease.id)
+    remaining_balance = lease.agreed_rent_amt - already_paid
+
+    # Divide the remaining balance evenly, ensuring we don't exceed it
+    amount_per_payment = remaining_balance // num_payments
+
+    for i in range(num_payments):
+        payment_data = payment_schema_factory(
+            amount_paid=amount_per_payment,
+            lease_id=lease.id
+        )
+        payment_service.add_payment_record(
+            db=test_db,
+            current_landlord_id=add_landlord_to_db.id,
+            payment_data=payment_data
+        )
+
+    all_payments = payment_service.fetch_payments_by_lease(
+        db=test_db,
+        lease_id=lease.id,
+        landlord_id=add_landlord_to_db.id
+    )
+    return all_payments, lease
+
+@pytest.fixture
+def tenant_safe_payments_in_db(test_db, payment_schema_factory, add_landlord_to_db, add_active_lease_to_db):
+    """
+    Fixture to create multiple safe payments for a specific tenant's lease.
+    Designed for tenant-side payment fetch tests (e.g. /payments/me/{lease_id}).
+    Calculates remaining balance and distributes it across payments without exceeding agreed rent.
+    Returns (list of all payments on the lease, the lease object).
+    """
+    from app.crud.payment import crud_payment
+
+    lease = add_active_lease_to_db
+    num_payments = 5
+
+    already_paid = crud_payment.get_payments_aggregate_by_lease_id(test_db, lease_id=lease.id)
+    remaining_balance = lease.agreed_rent_amt - already_paid
+    amount_per_payment = remaining_balance // num_payments
+
+    for i in range(num_payments):
+        payment_data = payment_schema_factory(
+            amount_paid=amount_per_payment,
+            lease_id=lease.id
+        )
+        payment_service.add_payment_record(
+            db=test_db,
+            current_landlord_id=add_landlord_to_db.id,
+            payment_data=payment_data
+        )
+
+    # Fetch payments through the tenant path to mirror how tenant tests will consume them
+    tenant_payments = payment_service.fetch_tenant_lease_payments(
+        db=test_db,
+        lease_id=lease.id,
+        tenant_id=lease.tenant_id,
+        skip=None,
+        limit=None
+    )
+    return tenant_payments, lease
