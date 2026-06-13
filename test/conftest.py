@@ -15,6 +15,7 @@ from fastapi.testclient import TestClient
 
 from app.models.lease import Lease
 from app.schemas import user as schema_user
+from app.schemas.dashboard import DashboardFilters
 from app.services import user_service, lodge_service, tenant_services, room_service, lease_services, payment_service, \
     dashboard_service
 from app.schemas import tenantprofile as schema_tenant
@@ -720,6 +721,15 @@ def add_dashboard_stats(test_db,leases_in_db, add_lodge_to_db, add_landlord_to_d
                 current_landlord_id=add_landlord_to_db.id,
                 payment_data=payment_data
             )
-
-    return lodge_id
+    all_filters = DashboardFilters(
+        room_status_filters=[],
+        financial_filters=[]
+    )
+    db_landlord_dashboard_stats = dashboard_service.get_landlord_dashboard(
+        test_db,
+        lodge_id=lodge_id,
+        landlord_id=add_landlord_to_db.id,
+        filter_by=all_filters
+    )
+    return lodge_id, db_landlord_dashboard_stats
 
