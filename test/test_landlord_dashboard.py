@@ -6,7 +6,7 @@ from test.conftest import base_url
 
 dashboard_url = f'{base_url}/dashboard-landlord'
 
-def test_landlord_dashboard_stats_paginated_success(authenticated_landlord_client, add_dashboard_stats):
+def test_landlord_dashboard_stats_paginated_returns_200(authenticated_landlord_client, add_dashboard_stats):
     """
     Tests that the landlord dashboard successfully returns paginated stats without any explicit filters.
     Verifies that all expected keys (financials, entity_counts, occupied_rooms_lease, etc.) are present.
@@ -24,13 +24,13 @@ def test_landlord_dashboard_stats_paginated_success(authenticated_landlord_clien
     assert 'vacant_rooms' in data
 
 
-def test_landlord_dashboard_pagination_skip_success(authenticated_landlord_client, add_dashboard_stats):
+def test_landlord_dashboard_pagination_skip_returns_200(authenticated_landlord_client, add_dashboard_stats):
     """
     Tests the pagination 'skip' parameter on the dashboard endpoint.
     Asserts that passing skip=2 properly offsets the returned room arrays.
     """
     lodge_id, db_stats = add_dashboard_stats
-
+    
     response = authenticated_landlord_client.get(url=f'{dashboard_url}/me/landlord/{lodge_id}?skip=2')
     data = response.json()
 
@@ -48,7 +48,7 @@ def test_landlord_dashboard_pagination_skip_success(authenticated_landlord_clien
     assert total_rooms_in_arrays >= 0
 
 
-def test_landlord_dashboard_pagination_limit_success(authenticated_landlord_client, add_dashboard_stats):
+def test_landlord_dashboard_pagination_limit_returns_200(authenticated_landlord_client, add_dashboard_stats):
     """
     Tests the pagination 'limit' parameter on the dashboard endpoint.
     Asserts that passing limit=1 restricts the total items returned in the room grid arrays to 1.
@@ -71,7 +71,7 @@ def test_landlord_dashboard_pagination_limit_success(authenticated_landlord_clie
     assert total_rooms_in_arrays <= 1
 
 
-def test_landlord_dashboard_pagination_exceed_limit_success(authenticated_landlord_client, add_dashboard_stats):
+def test_landlord_dashboard_pagination_exceed_limit_returns_200(authenticated_landlord_client, add_dashboard_stats):
     """
     Tests the pagination limit when the limit provided vastly exceeds the total number of items available.
     It should gracefully return all items up to the maximum available without throwing an error.
@@ -102,7 +102,7 @@ def test_landlord_dashboard_pagination_exceed_limit_success(authenticated_landlo
     assert total_rooms_in_arrays == total_rooms_db_landlord_dashboard
 
 
-def test_landlord_dashboard_filter_room_status_success(authenticated_landlord_client, add_dashboard_stats):
+def test_landlord_dashboard_filter_room_status_returns_200(authenticated_landlord_client, add_dashboard_stats):
     """
     Tests the room status filtering parameter.
     When querying for VACANT rooms, it ensures only vacant rooms are returned in the grids, 
@@ -124,7 +124,7 @@ def test_landlord_dashboard_filter_room_status_success(authenticated_landlord_cl
     assert len(data['occupied_rooms_lease']['owing']) == 0
 
 
-def test_landlord_dashboard_filter_multiple_combo_success(authenticated_landlord_client, add_dashboard_stats):
+def test_landlord_dashboard_filter_multiple_combo_returns_200(authenticated_landlord_client, add_dashboard_stats):
     """
     Tests passing mutually exclusive multi-select filters simultaneously.
     When querying for VACANT (room status) and OWING (financial status), 
@@ -148,7 +148,7 @@ def test_landlord_dashboard_filter_multiple_combo_success(authenticated_landlord
     assert len(data['occupied_rooms_lease']['safe']) == 0
 
 
-def test_landlord_dashboard_unauthorized_snooper_not_found(authenticated_landlord_client, add_diff_landlord_lodge):
+def test_landlord_dashboard_unauthorized_snooper_returns_404(authenticated_landlord_client, add_diff_landlord_lodge):
     """
     Tests the authorization edge case where a landlord attempts to fetch dashboard stats 
     for a lodge_id they do not own. It must return a 404 Not Found.
@@ -159,7 +159,7 @@ def test_landlord_dashboard_unauthorized_snooper_not_found(authenticated_landlor
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
-def test_landlord_dashboard_empty_lodge_success(authenticated_landlord_client, add_lodge_to_db):
+def test_landlord_dashboard_empty_lodge_returns_200(authenticated_landlord_client, add_lodge_to_db):
     """
     Tests the mathematical stability of the endpoint when a lodge has absolutely zero rooms, 
     tenants, or leases. Ensures that sum aggregations gracefully coalesce to 0 instead of crashing.
