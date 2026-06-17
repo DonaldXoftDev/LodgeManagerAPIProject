@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LodgeOps — My Properties</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .container { max-width: 800px; margin: 40px auto; padding: 0 20px; }
+        .property-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; margin-top: 24px; }
+        .lodge-card { background: var(--surface); border: 1.5px solid var(--border); border-radius: 12px; padding: 20px; cursor: pointer; transition: all 0.2s; }
+        .lodge-card:hover { border-color: var(--accent); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1); transform: translateY(-2px); }
+        .lodge-name { font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+        .lodge-address { font-size: 13px; color: var(--muted); }
+        .empty-state { text-align: center; padding: 40px; background: var(--surface); border: 1px dashed var(--border); border-radius: 12px; margin-top: 24px; }
+        
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
+        .modal.active { display: flex; }
+        .modal-content { background: var(--surface); padding: 32px; border-radius: 12px; width: 100%; max-width: 400px; }
+        .modal-title { font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; margin-bottom: 16px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="page-header">
+            <div>
+                <div class="page-title">My Properties</div>
+                <div class="page-subtitle">Select a lodge to manage</div>
+            </div>
+            <button class="btn btn-primary" onclick="openModal()">+ Add New Lodge</button>
+        </div>
+
+        <div id="error-msg" class="error-msg"></div>
+        
+        <div id="lodges-grid" class="property-grid">
+            <!-- Lodges will be injected here -->
+        </div>
+        
+        <div id="empty-state" class="empty-state" style="display:none;">
+            <h3>No properties found</h3>
+            <p style="color:var(--muted); font-size:14px; margin-top:8px; margin-bottom:16px;">You haven't added any lodges yet.</p>
+            <button class="btn btn-primary" onclick="openModal()">Create First Lodge</button>
+        </div>
+    </div>
+
+    <!-- Create Lodge Modal -->
+    <div id="lodge-modal" class="modal">
+        <div class="modal-content">
+            <h2 class="modal-title">Register New Lodge</h2>
+            <form id="create-lodge-form">
+                <div class="form-group">
+                    <label class="form-label">Lodge Name</label>
+                    <input type="text" id="lodge-name" class="form-input" required placeholder="Chukwuemeka Lodge">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Address</label>
+                    <input type="text" id="lodge-address" class="form-input" required placeholder="123 Example Street">
+                </div>
+                <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:24px;">
+                    <button type="button" class="btn" style="background:var(--surface2); color:var(--text)" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Lodge</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        async function fetchLodges() {
+            try {
+                // skip=0, limit=50 is standard
+                const lodges = await apiFetch('/lodges/?skip=0&limit=50');
+                renderLodges(lodges);
+            } catch (err) {
+                document.getElementById('error-msg').textContent = err.message;
+                document.getElementById('error-msg').style.display = 'block';
+            }
+        }
+
+        function renderLodges(lodges) {
+            const grid = document.getElementById('lodges-grid');
+            const emptyState = document.getElementById('empty-state');
+            
+            grid.innerHTML = '';
+            
+            if (lodges.length === 0) {
+                emptyState.style.display = 'block';
+            } else {
+                emptyState.style.display = 'none';
+                lodges.forEach(lodge => {
+                    const card = document.createElement('div');
+                    card.className = 'lodge-card';
+                    card.innerHTML = `
+                        <div class="lodge-name">${lodge.name}</div>
+                        <div class="lodge-address">${lodge.address}</div>
+                    `;
+                    card.onclick = () => {
+                        localStorage.setItem('active_lodge_id', lodge.id);
+                        localStorage.setItem('active_lodge_name', lodge.name);
+                        window.location.href = 'dashboard.html';
+                    };
+                    grid.appendChild(card);
+                });
+            }
+        }
+
+        // Modal Logic
+        function openModal() { document.getElementById('lodge-modal').classList.add('active'); }
+        function closeModal() { document.getElementById('lodge-modal').classList.remove('active'); }
+
+        document.getElementById('create-lodge-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const payload = {
+                name: document.getElementById('lodge-name').value,
+                address: document.getElementById('lodge-address').value
+            };
+
+            try {
+                const newLodge = await apiFetch('/lodges/register', {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+                closeModal();
+                showToast('Lodge created successfully!');
+                fetchLodges(); // Refresh list
+            } catch (err) {
+                alert(err.message);
+            }
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', fetchLodges);
+    </script>
+</body>
+</html>

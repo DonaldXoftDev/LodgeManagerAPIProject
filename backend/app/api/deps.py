@@ -74,12 +74,12 @@ def get_current_user(
     except (jwt.PyJWTError, ValueError, ValidationError):
         raise credentials_exception
 
-    current_user = crud_user.get(db=db, item_id=user_id)
+    current_user: User = crud_user.get(db=db, item_id=user_id)
 
     if not current_user or not current_user.is_active:
         raise UserNotFoundError()
 
-    return cast(User, current_user)
+    return current_user
 
 
 #dependency for ensuring the user is a landlord

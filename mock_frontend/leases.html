@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LodgeOps — Leases</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
+        .modal.active { display: flex; }
+        .modal-content { background: var(--surface); padding: 32px; border-radius: 12px; width: 100%; max-width: 450px; max-height: 90vh; overflow-y: auto; }
+        .modal-title { font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; margin-bottom: 16px; }
+    </style>
+</head>
+<body>
+    <div class="layout">
+        <!-- SIDEBAR -->
+        <aside class="sidebar" id="sidebar">
+            <div class="logo">
+                Lodge<span>Ops</span>
+                <button class="toggle-btn mobile-close" onclick="document.getElementById('sidebar').classList.remove('mobile-open')">✕</button>
+            </div>
+            
+            <a href="dashboard.html" class="nav-item">Dashboard</a>
+            <a href="rooms.html" class="nav-item">Rooms</a>
+            <a href="leases.html" class="nav-item active">Leases</a>
+            <a href="payments.html" class="nav-item">Payments</a>
+            
+            <div class="sidebar-bottom">
+                <a href="lodges.html" class="nav-item">Switch Property</a>
+                <div class="nav-item" style="color:var(--owing)" onclick="logout()">Log Out</div>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main">
+            <header class="page-header">
+                <div class="header-left">
+                    <button class="mobile-menu-btn" onclick="document.getElementById('sidebar').classList.add('mobile-open')">☰</button>
+                    <div>
+                        <h1 class="page-title">Active Leases</h1>
+                        <p class="page-subtitle" id="lodge-name-display">Loading...</p>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <button class="btn btn-primary" onclick="openLeaseModal()">+ Create New Lease</button>
+                </div>
+            </header>
+
+            <div id="error-msg" class="error-msg"></div>
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Room</th>
+                        <th>Tenant</th>
+                        <th>Start Date</th>
+                        <th>End Date</th>
+                        <th>Rent Amount</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="leases-tbody">
+                    <!-- Leases will load here -->
+                </tbody>
+            </table>
+        </main>
+    </div>
+
+    <!-- Create Lease Modal -->
+    <div id="lease-modal" class="modal">
+        <div class="modal-content">
+            <h2 class="modal-title">Create Lease</h2>
+            <form id="create-lease-form">
+                <div class="form-group">
+                    <label class="form-label">Select Room</label>
+                    <select id="lease-room" class="form-input" required>
+                        <option value="">Loading rooms...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Select Tenant</label>
+                    <select id="lease-tenant" class="form-input" required>
+                        <option value="">Loading tenants...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Start Date</label>
+                    <input type="date" id="lease-start" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">End Date</label>
+                    <input type="date" id="lease-end" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Rent Amount</label>
+                    <input type="number" id="lease-rent" class="form-input" required>
+                </div>
+                <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:24px;">
+                    <button type="button" class="btn" style="background:var(--surface2); color:var(--text)" onclick="closeLeaseModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Sign Lease</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/leases.js"></script>
+    <script>
+        function logout() {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('active_lodge_id');
+            localStorage.removeItem('active_lodge_name');
+            window.location.href = 'auth.html';
+        }
+    </script>
+</body>
+</html>

@@ -3,6 +3,7 @@ API routes for landlord dashboards.
 
 Provides endpoints to retrieve dashboard statistics and summaries for landlords.
 """
+from typing import Optional
 
 from fastapi import APIRouter, Depends
 from fastapi.params import Query
@@ -24,10 +25,10 @@ router = APIRouter()
 @router.get('/me/landlord/{lodge_id}', response_model=schema_dashboard.LandlordDashboardStats)
 def get_landlord_dashboard(
         lodge_id: int,
+        skip: Optional[int] = None,
+        limit: Optional[int] = None,
         room_statuses: list[RoomStatus] = Query(default=[]),
         financial_filters: list[BadgeTexts] = Query(default=[]),
-        skip: int | None = None,
-        limit: int | None = None,
         db: Session = Depends(get_db),
         landlord_user: User = Depends(get_landlord_user),
 

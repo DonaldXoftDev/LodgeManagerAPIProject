@@ -23,6 +23,7 @@ class EntityCountResponse(BaseModel):
     total_tenants: int
     room_status_counts : RoomStatusCounts
     occupied_counts: OccupiedCounts
+    occupancy_rate: int
 
     model_config = ConfigDict(from_attributes=True)
 

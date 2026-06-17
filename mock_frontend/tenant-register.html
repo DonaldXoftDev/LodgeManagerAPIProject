@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LodgeOps — Accept Tenant Invite</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="logo">Lodge<span>Ops</span></div>
+            <p style="text-align:center; color:var(--muted); font-size:13px; margin-bottom:24px;">
+                You've been invited to join LodgeOps as a Tenant. Create your profile below.
+            </p>
+            
+            <div id="error-msg" class="error-msg"></div>
+
+            <form id="tenant-reg-form">
+                <div class="form-group">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" id="reg-name" class="form-input" required placeholder="John Doe">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" id="reg-email" class="form-input" required placeholder="name@example.com">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Phone Number</label>
+                    <input type="tel" id="reg-phone" class="form-input" required placeholder="+234...">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Create Password</label>
+                    <input type="password" id="reg-password" class="form-input" required placeholder="••••••••">
+                </div>
+                <!-- Tenant Type and Dynamic Fields -->
+                <div class="form-group">
+                    <label class="form-label">Tenant Type</label>
+                    <select id="reg-tenant-type" class="form-input" onchange="toggleStudentFields()">
+                        <option value="Student">Student</option>
+                        <option value="Others">Others</option>
+                    </select>
+                </div>
+                
+                <div id="student-fields">
+                    <div class="form-group">
+                        <label class="form-label">Student Level</label>
+                        <select id="reg-level" class="form-input">
+                            <option value="100">100 Level</option>
+                            <option value="200">200 Level</option>
+                            <option value="300">300 Level</option>
+                            <option value="400">400 Level</option>
+                            <option value="500">500 Level</option>
+                            <option value="600">600 Level</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Registration / Matric Number</label>
+                        <input type="number" id="reg-no" class="form-input" placeholder="e.g. 2018123456">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Department</label>
+                        <input type="text" id="reg-department" class="form-input" placeholder="e.g. Computer Science">
+                    </div>
+                </div>
+
+                <!-- Emergency Contact -->
+                <div class="form-group">
+                    <label class="form-label">Emergency Contact Name</label>
+                    <input type="text" id="reg-em-name" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Emergency Contact Phone</label>
+                    <input type="tel" id="reg-em-phone" class="form-input" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block">Complete Profile</button>
+                <div class="auth-links">
+                    <p>Already registered? <a href="auth.html">Log In</a></p>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        function toggleStudentFields() {
+            const isStudent = document.getElementById('reg-tenant-type').value === 'Student';
+            document.getElementById('student-fields').style.display = isStudent ? 'block' : 'none';
+        }
+
+        document.getElementById('tenant-reg-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const fullName = document.getElementById('reg-name').value.trim();
+            const parts = fullName.split(' ');
+            const firstName = parts[0];
+            const lastName = parts.slice(1).join(' ') || 'N/A';
+            
+            // Get lodgeId from the invite link URL e.g. tenant-register.html?lodge_id=123
+            const urlParams = new URLSearchParams(window.location.search);
+            let lodgeId = parseInt(urlParams.get('lodge_id'), 10);
+            
+            // Fallback for mock environment testing
+            if (!lodgeId || isNaN(lodgeId)) {
+                lodgeId = parseInt(localStorage.getItem('active_lodge_id'), 10);
+            }
+            
+            if (!lodgeId || isNaN(lodgeId)) {
+                const errorEl = document.getElementById('error-msg');
+                errorEl.textContent = "Invalid invite link. Missing Lodge ID.";
+                errorEl.style.display = 'block';
+                return;
+            }
+            
+            const tenantType = document.getElementById('reg-tenant-type').value;
+            const tenantInfo = {
+                lodge_id: lodgeId,
+                tenant_type: tenantType,
+                emergency_contact_name: document.getElementById('reg-em-name').value,
+                emergency_contact_phone_no: document.getElementById('reg-em-phone').value
+            };
+            
+            if (tenantType === 'Student') {
+                tenantInfo.level = document.getElementById('reg-level').value;
+                const regNo = document.getElementById('reg-no').value;
+                if (regNo) tenantInfo.reg_no = parseInt(regNo, 10);
+                const dept = document.getElementById('reg-department').value;
+                if (dept) tenantInfo.department = dept;
+            }
+            
+            const payload = {
+                user_info: {
+                    first_name: firstName,
+                    last_name: lastName,
+                    email: document.getElementById('reg-email').value,
+                    phone_no: document.getElementById('reg-phone').value,
+                    password: document.getElementById('reg-password').value
+                },
+                tenant_info: tenantInfo
+            };
+
+            const errorEl = document.getElementById('error-msg');
+            try {
+                await apiFetch('/auth/register/tenant', {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+                
+                showToast('Profile created successfully! The landlord can now assign you to a room.');
+                setTimeout(() => window.location.href = 'auth.html', 3000);
+            } catch (err) {
+                errorEl.textContent = err.message;
+                errorEl.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>

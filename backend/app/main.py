@@ -16,6 +16,8 @@ app = FastAPI(title=settings.PROJECT_NAME, exception_handlers=lodge_ops_handlers
 origins = [
     "http://localhost:5173", # Default for Vite React apps
     "http://localhost:3000", # Default for Create React App
+    "http://localhost:8080", # Local python server
+    "null",                  # Opening file:/// directly in browser
 ]
 
 app.add_middleware(

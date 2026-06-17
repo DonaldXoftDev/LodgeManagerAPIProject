@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LodgeOps — Tenants</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); justify-content: center; align-items: center; z-index: 1000; }
+        .modal.active { display: flex; }
+        .tenant-modal-content { background: var(--surface); border-radius: 16px; width: 100%; max-width: 480px; overflow: hidden; position: relative; box-shadow: 0 24px 48px rgba(0,0,0,0.2); animation: slideUp 0.3s ease-out; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .tenant-modal-cover { height: 120px; background: linear-gradient(135deg, var(--accent), #4f46e5, #9333ea); position: relative; }
+        .close-modal-btn { position: absolute; top: 16px; right: 16px; background: rgba(255,255,255,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); font-size: 16px; transition: all 0.2s; }
+        .close-modal-btn:hover { background: rgba(255,255,255,0.3); transform: scale(1.05); }
+        
+        .tenant-modal-body { padding: 0 32px 32px 32px; }
+        .tenant-avatar-large { width: 88px; height: 88px; border-radius: 50%; background: var(--surface); color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 700; margin-top: -44px; border: 4px solid var(--surface); box-shadow: 0 8px 16px rgba(0,0,0,0.1); margin-bottom: 12px; position: relative; z-index: 2; }
+        
+        .tenant-header-info { margin-bottom: 24px; }
+        .tenant-name { font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 700; color: var(--text); line-height: 1.2; margin-bottom: 4px; }
+        .tenant-id { font-size: 13px; color: var(--muted); }
+        .tenant-badge { display: inline-flex; align-items: center; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; background: rgba(59, 130, 246, 0.1); color: #3b82f6; margin-top: 8px; border: 1px solid rgba(59, 130, 246, 0.2); }
+        
+        .tenant-section { margin-top: 24px; background: var(--surface2); border-radius: 12px; padding: 20px; border: 1px solid var(--border); }
+        .tenant-section-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+        .tenant-section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+        
+        .tenant-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .tenant-info-box { display: flex; flex-direction: column; gap: 4px; }
+        .tenant-info-label { font-size: 12px; color: var(--muted); font-weight: 500; }
+        .tenant-info-val { font-size: 14px; font-weight: 600; color: var(--text); word-break: break-word; }
+    </style>
+</head>
+<body>
+    <div class="layout">
+        <!-- SIDEBAR -->
+        <aside class="sidebar" id="sidebar">
+            <div class="logo">
+                Lodge<span>Ops</span>
+                <button class="toggle-btn mobile-close" onclick="document.getElementById('sidebar').classList.remove('mobile-open')">✕</button>
+            </div>
+            
+            <a href="dashboard.html" class="nav-item">Dashboard</a>
+            <a href="rooms.html" class="nav-item">Rooms</a>
+            <a href="leases.html" class="nav-item">Leases</a>
+            <a href="payments.html" class="nav-item">Payments</a>
+            <a href="tenants.html" class="nav-item active">Tenants</a>
+            
+            <div class="sidebar-bottom">
+                <a href="lodges.html" class="nav-item">Switch Property</a>
+                <div class="nav-item" style="color:var(--owing)" onclick="logout()">Log Out</div>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main">
+            <header class="page-header">
+                <div class="header-left">
+                    <button class="mobile-menu-btn" onclick="document.getElementById('sidebar').classList.add('mobile-open')">☰</button>
+                    <div>
+                        <h1 class="page-title">Tenant Directory</h1>
+                        <p class="page-subtitle" id="lodge-name-display">Loading...</p>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <button class="btn btn-primary" onclick="alert('Invite tenant feature coming soon!')">+ Invite Tenant</button>
+                </div>
+            </header>
+
+            <div id="error-msg" class="error-msg"></div>
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Phone Number</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="tenants-tbody">
+                    <!-- Tenants will load here -->
+                </tbody>
+            </table>
+        </main>
+    </div>
+
+    <!-- Sleek Tenant Profile Modal -->
+    <div id="tenant-modal" class="modal">
+        <div class="tenant-modal-content">
+            <div class="tenant-modal-cover">
+                <button class="close-modal-btn" onclick="closeTenantModal()">✕</button>
+            </div>
+            
+            <div class="tenant-modal-body">
+                <div class="tenant-avatar-large" id="modal-avatar">T</div>
+                
+                <div class="tenant-header-info">
+                    <h2 class="tenant-name" id="modal-name">Tenant Name</h2>
+                    <div class="tenant-id" id="modal-id">ID: --</div>
+                    <div class="tenant-badge" id="modal-tenant-type">--</div>
+                </div>
+                
+                <div class="tenant-section">
+                    <div class="tenant-section-title">Contact Information</div>
+                    <div class="tenant-grid">
+                        <div class="tenant-info-box">
+                            <span class="tenant-info-label">Email Address</span>
+                            <span class="tenant-info-val" id="modal-email">--</span>
+                        </div>
+                        <div class="tenant-info-box">
+                            <span class="tenant-info-label">Phone Number</span>
+                            <span class="tenant-info-val" id="modal-phone">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Student Specific Fields -->
+                <div class="tenant-section" id="modal-student-fields" style="display:none;">
+                    <div class="tenant-section-title">Academic Details</div>
+                    <div class="tenant-grid">
+                        <div class="tenant-info-box">
+                            <span class="tenant-info-label">Student Level</span>
+                            <span class="tenant-info-val" id="modal-level">--</span>
+                        </div>
+                        <div class="tenant-info-box">
+                            <span class="tenant-info-label">Reg / Matric No</span>
+                            <span class="tenant-info-val" id="modal-reg-no">--</span>
+                        </div>
+                        <div class="tenant-info-box" style="grid-column: 1 / -1;">
+                            <span class="tenant-info-label">Department</span>
+                            <span class="tenant-info-val" id="modal-department">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tenant-section" style="margin-bottom: 8px;">
+                    <div class="tenant-section-title" style="color:var(--warning)">Emergency Contact</div>
+                    <div class="tenant-grid">
+                        <div class="tenant-info-box">
+                            <span class="tenant-info-label">Contact Name</span>
+                            <span class="tenant-info-val" id="modal-em-name">--</span>
+                        </div>
+                        <div class="tenant-info-box">
+                            <span class="tenant-info-label">Contact Phone</span>
+                            <span class="tenant-info-val" id="modal-em-phone">--</span>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/tenants.js"></script>
+    <script>
+        function logout() {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('active_lodge_id');
+            localStorage.removeItem('active_lodge_name');
+            window.location.href = 'auth.html';
+        }
+    </script>
+</body>
+</html>
