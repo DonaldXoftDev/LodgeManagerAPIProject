@@ -47,7 +47,7 @@ class CRUDLease(CRUDBase[Lease, LeaseCreate, LeaseUpdate]):
         """
 
         # 1. Initialize the statement
-        stmt = select(Lease).select_from(Lease).join(TenantProfile).join(Room)
+        stmt = select(Lease).join(TenantProfile).join(Room)
 
         if tenant_id:
             stmt = stmt.where(TenantProfile.id == tenant_id)
@@ -65,21 +65,6 @@ class CRUDLease(CRUDBase[Lease, LeaseCreate, LeaseUpdate]):
         leases: list[Lease] = list(result.scalars().all())
         return leases
 
-
-    def get_room_leases(self, db: Session, room_id: int, skip: int = 0, max_limit: int = 50) -> list[type[Lease]]:
-        """
-        Get leases for a specific room.
-
-        Args:
-            db (Session): The database session.
-            room_id (int): The ID of the room.
-            skip (int, optional): Number of records to skip. Defaults to 0.
-            max_limit (int, optional): Maximum number of records to return. Defaults to 50.
-
-        Returns:
-            list[type[Lease]]: A list of leases for the room.
-        """
-        return db.query(self.model).filter(self.model.room_id == room_id).offset(skip).limit(max_limit).all()
 
     def create_lease(self, db: Session, lease_data: LeaseCreate, room: Room):
         """
@@ -130,12 +115,13 @@ class CRUDLease(CRUDBase[Lease, LeaseCreate, LeaseUpdate]):
         Returns:
             Lease: The active lease or None.
         """
-        return db.query(self.model).filter(
+        stmt =  select(self.model).where(
             self.model.room_id == room_id,
             self.model.tenant_id == tenant_id,
             self.model.status.is_(None),
             self.model.end_date >= date.today()
-        ).first()
+        )
+        return db.execute(stmt).scalar_one_or_none()
 
     def lease_terminate(self, db: Session, db_lease: Lease) -> Lease:
         """

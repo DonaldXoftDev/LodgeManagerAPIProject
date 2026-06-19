@@ -7,14 +7,15 @@ from typing import Optional
 from app.core.enums import LeaseStatus
 from app.crud.tenantprofile import crud_tenant
 from app.models.lease import Lease
+from app.models.room import Room
 from app.models.tenantprofile import TenantProfile
 from app.models.user import User
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from app.schemas.lease import LeaseCreate, LeaseUpdate
 from app.services import lodge_service, room_service
 from app.crud.lease import crud_lease
 from app.core.exceptions import (RoomNotFoundError, UserNotFoundError,
-                                 LeaseNotFoundError, InvalidLeaseActionError)
+                                 LeaseNotFoundError, InvalidLeaseActionError, TenantProfileNotFoundError)
 
 
 def create_new_lease(
@@ -37,8 +38,8 @@ def create_new_lease(
 
     tenant = crud_tenant.get(db, item_id=lease_data.tenant_id)
 
-    if not tenant or tenant.lodge.landlord_id != landlord_user.id:
-        raise UserNotFoundError()
+    if not tenant or room.lodge_id != tenant.lodge_id:
+        raise TenantProfileNotFoundError()
 
     active_lease = crud_lease.get_active_room_and_tenant_lease(
         db,
@@ -113,7 +114,7 @@ def get_filtered_leases_tenant(
     """
 
     if not tenant_profile:
-        raise UserNotFoundError()
+        raise TenantProfileNotFoundError()
 
     lodge = tenant_profile.lodge
 
@@ -178,7 +179,8 @@ def verify_lease_to_terminate(
     Returns:
         Lease: The verified lease.
     """
-    lease = crud_lease.get(db, item_id=lease_id)
+    options = joinedload(Lease.room).joinedload(Room.lodge)
+    lease = crud_lease.get(db, lease_id, options)
 
     if not lease:
         raise LeaseNotFoundError()
@@ -211,7 +213,7 @@ def terminate_lease(
 
     room = lease.room
 
-    if room.lodge.landlord_id != landlord_id:
+    if not lodge_service.landlord_owns_room_lodge(room=room, landlord_id=landlord_id):
         raise RoomNotFoundError()
 
     return crud_lease.lease_terminate(db, db_lease=lease)
@@ -235,12 +237,13 @@ def update_lease_details(
     Returns:
         Lease: The updated lease.
     """
-    lease = crud_lease.get(db, item_id=lease_id)
+    options = joinedload(Lease.room).joinedload(Room.lodge)
+    lease = crud_lease.get(db, lease_id, options)
 
     if not lease:
         return LeaseNotFoundError()
 
-    if lease.room.lodge.landlord_id != landlord_id:
+    if not lodge_service.landlord_owns_room_lodge(room=lease.room, landlord_id=landlord_id):
         return LeaseNotFoundError()
 
     return crud_lease.update(db, db_obj=lease, update_data=update_data)

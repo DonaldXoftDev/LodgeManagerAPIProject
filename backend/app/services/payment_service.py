@@ -8,7 +8,10 @@ from app.core.exceptions import LeaseNotFoundError, RoomNotFoundError, InvalidLe
 from app.crud.payment import crud_payment
 from app.crud.lease import crud_lease
 from typing import Optional
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
+
+from app.models.lease import Lease
+from app.models.room import Room
 from app.models.user import User
 from app.schemas.payment import PaymentCreate
 from app.services import lodge_service
@@ -52,7 +55,8 @@ def add_payment_record(
     #you can't add payment record to a lease whose agreed_rent_amt is equal to the aggregate of the payments made for that lease
     #can't add payment for leases that are not active
 
-    lease = crud_lease.get(db, item_id=payment_data.lease_id)
+    options = joinedload(Lease.room).joinedload(Room.lodge)
+    lease = crud_lease.get(db, payment_data.lease_id, options)
 
     if not lease:
         raise LeaseNotFoundError()
@@ -99,7 +103,8 @@ def fetch_payments_by_lease(
     Returns:
         list[Payment]: A list of payments for the lease.
     """
-    lease = crud_lease.get(db, item_id=lease_id)
+    options = joinedload(Lease.room).joinedload(Room.lodge)
+    lease = crud_lease.get(db, lease_id, options)
 
     if not lease:
         raise LeaseNotFoundError()

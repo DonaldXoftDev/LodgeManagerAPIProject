@@ -33,9 +33,8 @@ class CRUDLodge(CRUDBase[Lodge, LodgeCreate, LodgeUpdate]):
         Returns:
             Lodge: The found lodge or None.
         """
-        return db.query(self.model).filter(
-            self.model.landlord_id == landlord_id, self.model.id == lodge_id
-        ).first()
+        stmt = select(self.model).where(self.model.landlord_id == landlord_id, self.model.id == lodge_id)
+        return db.execute(stmt).scalar()
 
     #method to getting lodge owned by a specific landlord with a specific lodge name
     def get_by_name_and_landlord(self, db: Session, landlord_id: int, lodge_name: str):
@@ -51,15 +50,16 @@ class CRUDLodge(CRUDBase[Lodge, LodgeCreate, LodgeUpdate]):
             Lodge: The found lodge or None.
         """
         search = f'%{lodge_name}%'
-        return db.query(self.model).filter(
+        stmt = select(self.model).where(
             self.model.landlord_id == landlord_id,
             or_(
                 self.model.name.ilike(search),
                 literal(search).ilike(self.model.name.concat('%'))
             )
-        ).first()
+        )
+        return db.execute(stmt).scalar()
 
-    #method to get lodges owned by a specific landlord
+
     def get_lodges_by_owner(self, db: Session, landlord_id: int, skip: int = 0, limit: int = 100):
         """
         Get multiple lodges owned by a specific landlord.
@@ -73,9 +73,8 @@ class CRUDLodge(CRUDBase[Lodge, LodgeCreate, LodgeUpdate]):
         Returns:
             List[Lodge]: A list of lodges owned by the landlord.
         """
-        return db.query(self.model).filter(
-            self.model.landlord_id == landlord_id
-        ).offset(skip).limit(limit).all()
+        stmt = select(self.model).where( self.model.landlord_id == landlord_id).offset(skip).limit(limit)
+        return db.execute(stmt).scalars().all()
 
     def get_room_status_counts(self, db: Session, lodge_id: int):
         """

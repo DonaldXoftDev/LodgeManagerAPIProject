@@ -39,25 +39,29 @@ class CRUDRoom(CRUDBase[Room, RoomCreate, RoomUpdate]):
         Returns:
             Room: The found room or None.
         """
-
-        return db.query(self.model).filter(
+        stmt = select(self.model).where(
             self.model.lodge_id == lodge_id,
             self.model.room_no == room_no
-        ).first()
+        )
+        return db.execute(stmt).scalar()
 
-    def get_rooms(self, db: Session, skip: int = 0, max_limit: int = 50):
+    def get_rooms(self, db: Session, landlord_id: int, skip: int = 0, max_limit: int = 50):
         """
         Retrieve a list of rooms with pagination support.
 
         Args:
             db (Session): The database session.
+            landlord_id (int): The ID of the landlord to filter by.
             skip (int, optional): Number of records to skip. Defaults to 0.
             max_limit (int, optional): Maximum number of records to return. Defaults to 50.
 
         Returns:
             List[Room]: A list of retrieved rooms.
         """
-        stmt = select(self.model).join(Lodge).offset(skip).limit(limit=max_limit)
+        stmt = (select(self.model)
+                .join(Lodge)
+                .where(Lodge.landlord_id == landlord_id)
+                .offset(skip).limit(limit=max_limit))
         return db.execute(stmt).scalars().all()
 
 

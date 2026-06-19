@@ -5,6 +5,8 @@ This module contains the CRUD operations for TenantProfile models.
 """
 from typing import Dict, Any, Optional
 
+from sqlalchemy import select
+
 from app.core.enums import UserRole
 from app.core.security import get_password_hash
 from app.crud.user import crud_user
@@ -54,7 +56,7 @@ class CRUDTenantProfile(CRUDBase[TenantProfile, TenantProfileCreate, TenantProfi
             db.rollback()
             raise e
 
-    def get_tenants(self, db: Session, lodge_id: int, skip: int = 0, max_limit:int =50) -> list[type[TenantProfile]]:
+    def get_tenants(self, db: Session, lodge_id: int, skip: int = 0, max_limit:int =50):
         """
         Get a list of tenants in a specific lodge.
 
@@ -67,7 +69,9 @@ class CRUDTenantProfile(CRUDBase[TenantProfile, TenantProfileCreate, TenantProfi
         Returns:
             list[type[TenantProfile]]: A list of retrieved tenant profiles.
         """
-        return db.query(self.model).filter(self.model.lodge_id == lodge_id).offset(skip).limit(max_limit).all()
+        stmt = select(TenantProfile).where(self.model.lodge_id == lodge_id).offset(skip).limit(max_limit)
+        tenants: list[TenantProfile] =  list(db.execute(stmt).scalars().all())
+        return tenants
 
 
     def update_tenant(self, db: Session, update_data: TenantProfileUpdate, base_user: User,

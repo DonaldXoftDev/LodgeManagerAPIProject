@@ -9,14 +9,14 @@ from app.core.enums import RoomStatus
 from app.models.room import Room
 from app.schemas import room as schema_room
 from app.crud.room import crud_room
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.schemas.room import RoomResponse
 from app.services import lodge_service
 from app.core.exceptions import RoomAlreadyExistError, RoomNotFoundError, RoomIsOccupiedError
 
 
-def create_room_for_lodge(db: Session, room_in: schema_room.RoomCreate, landlord_id: int) -> RoomResponse:
+def create_room_for_lodge(db: Session, room_in: schema_room.RoomCreate, landlord_id: int) -> Room:
     """
     Create a new room in a specific lodge for a landlord.
 
@@ -38,7 +38,7 @@ def create_room_for_lodge(db: Session, room_in: schema_room.RoomCreate, landlord
     return crud_room.create(db=db, obj_in=room_in)
 
 
-def get_lodge_rooms(db: Session, landlord_id, skip: Optional[int] = None, limit: Optional[int] = None):
+def get_lodge_rooms(db: Session, landlord_id: int, skip: Optional[int] = None, limit: Optional[int] = None):
     """
     Get all rooms for a specific landlord's lodges.
 
@@ -51,7 +51,7 @@ def get_lodge_rooms(db: Session, landlord_id, skip: Optional[int] = None, limit:
     Returns:
         List[Room]: A list of rooms.
     """
-    return crud_room.get_rooms(db, skip=skip, max_limit=limit)
+    return crud_room.get_rooms(db, landlord_id=landlord_id, skip=skip, max_limit=limit)
 
 
 def verify_room_existence(db: Session, landlord_id: int, room_id: int):
@@ -66,9 +66,10 @@ def verify_room_existence(db: Session, landlord_id: int, room_id: int):
     Returns:
         Room: The verified room.
     """
-    room = crud_room.get(db, item_id=room_id)
+    options = joinedload(Room.lodge)
+    room = crud_room.get(db, room_id, options)
 
-    if not room or room.lodge.landlord_id != landlord_id:
+    if not room or not lodge_service.landlord_owns_room_lodge(room=room, landlord_id=landlord_id):
         raise RoomNotFoundError()
 
     return room

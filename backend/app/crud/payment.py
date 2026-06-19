@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from app.core import constants
 from app.core.enums import LeaseStatus
 from app.models.lease import Lease
+from app.models.lodge import Lodge
 from app.models.payment import Payment
 from app.models.room import Room
 from app.schemas.dashboard import DashboardFilters
@@ -33,17 +34,24 @@ class CRUDPayment(CRUDBase[Payment, PaymentCreate, PaymentResponse]):
         Get the aggregated payment amount for a lease.
 
         Args:
+            landlord_id: The ID of the authenticated landlord
             db (Session): The database session.
             lease_id (int): The ID of the lease.
 
         Returns:
             int: The total amount paid for the lease.
         """
-        amt_paid_expr = func.coalesce(func.sum(self.model.amount_paid), 0)
-        total_payments: int = db.query(amt_paid_expr).filter(Payment.lease_id == lease_id).scalar()
+        amt_paid_expr = func.coalesce(func.sum(Payment.amount_paid), 0)
+        stmt = (select(
+            amt_paid_expr
+        ).where(
+            Payment.lease_id == lease_id
+        ))
+
+        total_payments = db.execute(stmt).scalar() or 0
         return total_payments
 
-    def get_lease_payments(self, db: Session, lease_id: int, skip: int = 0, limit: int = 50) -> list[type[Payment]]:
+    def get_lease_payments(self, db: Session, lease_id: int, skip: int = 0, limit: int = 50):
         """
         Get all payments for a specific lease.
 
@@ -56,7 +64,10 @@ class CRUDPayment(CRUDBase[Payment, PaymentCreate, PaymentResponse]):
         Returns:
             list[type[Payment]]: A list of payments for the lease.
         """
-        return db.query(self.model).filter(self.model.lease_id == lease_id).offset(skip).limit(limit).all()
+        stmt = select(self.model).where(self.model.lease_id == lease_id).offset(skip).limit(limit)
+
+        lease_payments: list[Payment] = list(db.execute(stmt).scalars().all())
+        return lease_payments
 
     def get_potential_income_from_rooms(self, db: Session, lodge_id: int):
         """

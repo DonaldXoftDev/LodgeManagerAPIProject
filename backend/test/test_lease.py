@@ -63,7 +63,7 @@ def test_landlord_create_lease_tenant_does_not_exist_returns_404(authenticated_l
     data = response.json()
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
-    assert "User could not be found" in data['detail']
+    assert "Tenantprofile could not be found" in data['detail']
 
 def test_landlord_create_lease_tenant_not_in_landlords_lodge_returns_404(authenticated_landlord_client, mock_lease_schema, add_diff_landlord_tenant):
     """
@@ -76,7 +76,7 @@ def test_landlord_create_lease_tenant_not_in_landlords_lodge_returns_404(authent
     data = response.json()
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
-    assert "User could not be found" in data['detail']
+    assert "Tenantprofile could not be found" in data['detail']
 
 def test_landlord_create_lease_room_already_has_active_lease_returns_400(authenticated_landlord_client, mock_lease_schema,
                                                                          add_active_lease_to_db):

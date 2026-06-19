@@ -5,13 +5,13 @@ This module contains services for managing tenants and their profiles.
 """
 from typing import cast
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.crud.lodge import crud_lodge
 from app.crud.user import crud_user
 from app.crud.tenantprofile import crud_tenant
 from app.core.enums import UserRole
-from app.core.exceptions import UserAlreadyExistError, LodgeNotFoundError, UserNotFoundError
+from app.core.exceptions import UserAlreadyExistError, LodgeNotFoundError, UserNotFoundError, TenantProfileNotFoundError
 from app.core.security import get_password_hash
 from app.models.lodge import Lodge
 from app.models.tenantprofile import TenantProfile
@@ -118,7 +118,7 @@ def fetch_tenant(
     tenant_profile = current_user.tenant_profile
 
     if not tenant_profile:
-        raise  UserNotFoundError()
+        raise  TenantProfileNotFoundError()
 
     return tenant_profile
 
@@ -139,14 +139,16 @@ def fetch_tenant_by_landlord(
     Returns:
         TenantProfile: The retrieved tenant profile.
     """
-    tenant = crud_tenant.get(db, item_id=tenant_id)
+    options = joinedload(TenantProfile.lodge)
+
+    tenant = crud_tenant.get(db, tenant_id, options)
 
     if not tenant:
-        raise UserNotFoundError()
+        raise TenantProfileNotFoundError()
 
     lodge = tenant.lodge
 
     if lodge.landlord_id != current_user.id:
-        raise UserNotFoundError()
+        raise TenantProfileNotFoundError()
 
     return tenant

@@ -87,7 +87,7 @@ def test_landlord_get_tenant_profile_wrong_lodge_returns_404(authenticated_landl
     data = response.json()
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
-    assert data['detail'] == 'User could not be found'
+    assert data['detail'] == 'Tenantprofile could not be found'
 
 
 def test_landlord_get_non_existing_tenant_profile_returns_404(authenticated_landlord_client):
@@ -96,7 +96,7 @@ def test_landlord_get_non_existing_tenant_profile_returns_404(authenticated_land
     data = response.json()
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
-    assert data['detail'] == 'User could not be found'
+    assert data['detail'] == 'Tenantprofile could not be found'
 
 
 def test_landlord_cannot_hit_tenant_me_endpoint_returns_403(authenticated_landlord_client, add_tenant_to_db):

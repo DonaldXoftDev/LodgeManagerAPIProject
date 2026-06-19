@@ -6,6 +6,7 @@ the base CRUD functionality.
 """
 from typing import Unpack
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.security import get_password_hash
@@ -32,7 +33,8 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         Returns:
             User: The found user or None.
         """
-        return db.query(self.model).filter(self.model.email == email).first()
+        stmt = select(self.model).filter(self.model.email == email)
+        return db.execute(stmt).scalar_one_or_none()
 
 
 

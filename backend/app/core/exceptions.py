@@ -82,6 +82,9 @@ class LeaseNotFoundError(BaseNotFoundError):
     def __init__(self):
         super().__init__(name='Lease')
 
+class TenantProfileNotFoundError(BaseNotFoundError):
+    def __init__(self):
+        super().__init__(name='TenantProfile')
 
 
 class UnauthorizedAccessError(BaseLodgeOpsError):
