@@ -62,7 +62,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             List[ModelType]: A list of retrieved records.
         """
         stmt = select(self.model).where(self.model.id == item_id).offset(skip).limit(limit)
-        return db.execute(stmt).scalars().all()
+        return list(db.execute(stmt).scalars().all())
 
     def create(self, db: Session, *, obj_in: CreateSchemaType, **kwargs: Unpack[GenericExtras]):
         """

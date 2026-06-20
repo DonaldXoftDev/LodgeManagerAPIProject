@@ -28,10 +28,18 @@ class LodgeBase(BaseModel):
     def clean_name(cls, value: str) -> str:
         return value.strip().lower()
 
+class RoomGenerator(BaseModel):
+    prefix: str = ""
+    start_number: int
+    end_number: int
+    default_rent: int
+    default_description: str
 
 class LodgeCreate(LodgeBase):
-    pass
+    room_generator: Optional[RoomGenerator] = None
 
+class LodgeInternal(LodgeBase):
+    pass
 
 
 class LodgeResponse(LodgeBase):

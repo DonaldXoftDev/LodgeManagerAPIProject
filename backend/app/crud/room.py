@@ -45,11 +45,12 @@ class CRUDRoom(CRUDBase[Room, RoomCreate, RoomUpdate]):
         )
         return db.execute(stmt).scalar()
 
-    def get_rooms(self, db: Session, landlord_id: int, skip: int = 0, max_limit: int = 50):
+    def get_rooms(self, db: Session, lodge_id:int, landlord_id: int, skip: int = 0, max_limit: int = 50):
         """
-        Retrieve a list of rooms with pagination support.
+        Retrieve a list of rooms with pagination support
 
         Args:
+            lodge_id(int): The iD of the lodge to filter by
             db (Session): The database session.
             landlord_id (int): The ID of the landlord to filter by.
             skip (int, optional): Number of records to skip. Defaults to 0.
@@ -60,9 +61,12 @@ class CRUDRoom(CRUDBase[Room, RoomCreate, RoomUpdate]):
         """
         stmt = (select(self.model)
                 .join(Lodge)
-                .where(Lodge.landlord_id == landlord_id)
+                .where(Lodge.landlord_id == landlord_id,
+                       Lodge.id == lodge_id)
                 .offset(skip).limit(limit=max_limit))
-        return db.execute(stmt).scalars().all()
+
+        rooms: list[Room] = list(db.execute(stmt).scalars().all())
+        return rooms
 
 
     def get_dashboard_rooms(
@@ -176,6 +180,7 @@ class CRUDRoom(CRUDBase[Room, RoomCreate, RoomUpdate]):
         stmt = filtered_stmt.offset(skip).limit(limit)
 
         return db.execute(stmt).mappings().all()
+
 
 
 crud_room = CRUDRoom(Room)

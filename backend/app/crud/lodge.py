@@ -14,6 +14,7 @@ from app.models.user import User
 from app.schemas.lodge import LodgeCreate, LodgeUpdate
 from app.crud.base_crud import CRUDBase
 from app.core import constants as const
+from app.schemas.room import RoomCreate
 
 
 class CRUDLodge(CRUDBase[Lodge, LodgeCreate, LodgeUpdate]):
@@ -243,6 +244,12 @@ class CRUDLodge(CRUDBase[Lodge, LodgeCreate, LodgeUpdate]):
         )
 
         return db.execute(stmt).mappings().first()
+
+    def insert_lodge_tree(self, db: Session, db_lodge: Lodge):
+        db.add(db_lodge)
+        db.refresh(db_lodge)
+        db.commit()
+        return db_lodge
 
 
 crud_lodge = CRUDLodge(Lodge)

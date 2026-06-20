@@ -15,8 +15,9 @@ from app.services import room_service
 router = APIRouter()
 
 
-@router.get('/', response_model=List[schema_room.RoomResponse])
+@router.get('/{lodge_id}/rooms', response_model=List[schema_room.RoomResponse])
 def get_landlord_rooms(
+        lodge_id: int,
         skip: Optional[int] = None,
         limit:  Optional[int] = None,
         db: Session = Depends(get_db),
@@ -26,6 +27,7 @@ def get_landlord_rooms(
     Retrieve all rooms for lodges owned by the authenticated landlord.
 
     Args:
+        lodge_id:
         skip (Optional[int]): Number of records to skip.
         limit (Optional[int]): Maximum number of records to return.
         db (Session): The database session.
@@ -37,6 +39,7 @@ def get_landlord_rooms(
     return room_service.get_lodge_rooms(
         db,
         landlord_id=landlord_user.id,
+        lodge_id=lodge_id,
         skip=skip,
         limit=limit
     )

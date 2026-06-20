@@ -22,6 +22,7 @@ origins = [
     "http://localhost:63342", # PyCharm Built-in Server
     "http://127.0.0.1:63342", # PyCharm Built-in Server
     "null",                  # Opening file:/// directly in browser
+    "*"
 ]
 
 app.add_middleware(

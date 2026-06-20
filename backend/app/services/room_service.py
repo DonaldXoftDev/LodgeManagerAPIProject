@@ -3,6 +3,7 @@ Module providing room-related business logic.
 
 This module contains services for managing rooms.
 """
+from sys import prefix
 from typing import Optional
 
 from app.core.enums import RoomStatus
@@ -11,7 +12,8 @@ from app.schemas import room as schema_room
 from app.crud.room import crud_room
 from sqlalchemy.orm import Session, joinedload
 
-from app.schemas.room import RoomResponse
+from app.schemas.lodge import LodgeCreate
+from app.schemas.room import RoomResponse, RoomCreate
 from app.services import lodge_service
 from app.core.exceptions import RoomAlreadyExistError, RoomNotFoundError, RoomIsOccupiedError
 
@@ -38,11 +40,18 @@ def create_room_for_lodge(db: Session, room_in: schema_room.RoomCreate, landlord
     return crud_room.create(db=db, obj_in=room_in)
 
 
-def get_lodge_rooms(db: Session, landlord_id: int, skip: Optional[int] = None, limit: Optional[int] = None):
+
+def get_lodge_rooms(db: Session,
+                    lodge_id:int,
+                    landlord_id: int,
+                    skip: Optional[int] = None,
+                    limit: Optional[int] = None
+                    ):
     """
     Get all rooms for a specific landlord's lodges.
 
     Args:
+        lodge_id:
         db (Session): The database session.
         landlord_id (int): The ID of the landlord.
         skip (Optional[int]): Number of records to skip. Defaults to None.
@@ -51,7 +60,9 @@ def get_lodge_rooms(db: Session, landlord_id: int, skip: Optional[int] = None, l
     Returns:
         List[Room]: A list of rooms.
     """
-    return crud_room.get_rooms(db, landlord_id=landlord_id, skip=skip, max_limit=limit)
+    lodge_service.verify_lodge_ownership(db, lodge_id=lodge_id, landlord_id=landlord_id)
+
+    return crud_room.get_rooms(db, landlord_id=landlord_id, lodge_id= lodge_id, skip=skip, max_limit=limit)
 
 
 def verify_room_existence(db: Session, landlord_id: int, room_id: int):
