@@ -4,14 +4,14 @@ Module providing lodge-related business logic.
 This module contains services for managing lodges.
 """
 from sqlalchemy.orm import Session
-from app.core.enums import UserRole
+from app.core.enums import UserRole, RoomStatus
 from app.crud.room import crud_room
 from app.models.lodge import Lodge
 from app.models.room import Room
 from app.schemas.lodge import LodgeCreate, LodgeUpdate, LodgeResponse, LodgeInternal
-from app.core.exceptions import LodgeAlreadyExistError, LodgeNotFoundError
+from app.core.exceptions import LodgeAlreadyExistError, LodgeNotFoundError, RoomNotFoundError, RoomIsOccupiedError
 from app.crud.lodge import crud_lodge
-from app.schemas.room import RoomCreate
+from app.schemas.room import RoomCreate, BulkRoomUpdate
 from app.services import room_service
 
 
@@ -138,4 +138,6 @@ def landlord_owns_room_lodge(room: Room, landlord_id: int):
         bool: True if the landlord owns the lodge, False otherwise.
     """
     return room.lodge.landlord_id == landlord_id
+
+
 

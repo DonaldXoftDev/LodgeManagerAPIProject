@@ -10,6 +10,7 @@ from app.schemas import room as schema_room
 from sqlalchemy.orm import Session
 from app.api.deps import get_db, get_current_user, get_landlord_user
 from app.models.user import User
+from app.schemas.room import BulkRoomUpdate, RoomResponse
 from app.services import room_service
 
 router = APIRouter()
@@ -114,3 +115,19 @@ def update_room_by_id(
         landlord_id=landlord_user.id
     )
     return updated_room
+
+@router.patch('/{lodge_id}/rooms/bulk', response_model=list[RoomResponse])
+def bulk_update_room_base_rent(
+        lodge_id: int,
+        update_data: BulkRoomUpdate,
+        db: Session = Depends(get_db),
+        landlord_user: User = Depends(get_landlord_user),
+
+):
+    return room_service.bulk_update_base_rent(
+        db,
+        lodge_id=lodge_id,
+        landlord_id=landlord_user.id,
+        update_data=update_data
+    )
+

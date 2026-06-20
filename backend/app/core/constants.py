@@ -29,3 +29,5 @@ filter_menu = {
     BadgeTexts.PENDING: (occupied_expr, Lease.status == LeaseStatus.PENDING_TERMINATION),
     BadgeTexts.OWING: (occupied_expr, incomplete_payment)
 }
+
+UPDATABLE_ROOM_STATUSES = [RoomStatus.VACANT, RoomStatus.MAINTENANCE]

@@ -2,7 +2,8 @@ from typing import Optional, Any
 
 from starlette import status
 
-from app.core.enums import LeaseStatus
+from app.core.enums import LeaseStatus, RoomStatus
+
 
 class BaseLodgeOpsError(Exception):
     def __init__(self, detail: str, meta: dict = None, status_code: int = 400 ):
@@ -62,7 +63,7 @@ class RentAmtExceededError(BaseMaxLimitReachedError):
 class BaseNotFoundError(BaseLodgeOpsError):
     def __init__(self, name:str):
         self.detail = f'{name.title()} could not be found'
-        super().__init__(detail=self.detail, status_code=404)
+        super().__init__(detail=self.detail, status_code=404, meta=self.meta)
         
         
 class UserNotFoundError(BaseNotFoundError):
@@ -75,8 +76,11 @@ class LodgeNotFoundError(BaseNotFoundError):
 
 
 class RoomNotFoundError(BaseNotFoundError):
-    def __init__(self):
-        super().__init__(name='Room')
+    def __init__(self, room_no: str = None):
+        self.meta = {
+            'room_no': room_no
+        }
+        super().__init__(name='Room' )
 
 class LeaseNotFoundError(BaseNotFoundError):
     def __init__(self):
@@ -114,7 +118,20 @@ class InvalidCredentialsError(BaseLodgeOpsError):
         super().__init__(detail=self.detail, status_code=status.HTTP_401_UNAUTHORIZED)
 
 class RoomIsOccupiedError(BaseLodgeOpsError):
-    def __init__(self):
+    def __init__(self, occupied_room_no: str):
         self.detail = "Cannot update an occupied room. Terminate the lease first."
+        self.meta = {
+            'occupied_room_no ': occupied_room_no
+        }
+
         super().__init__(detail=self.detail, status_code=status.HTTP_400_BAD_REQUEST)
 
+class NotUpdatableOptionError(BaseLodgeOpsError):
+    def __init__(self, update_status: RoomStatus, allowed_options: list[RoomStatus]):
+        self.message = f'{update_status.value} is not an updatable option'
+
+        self.meta = {
+            'provided': f'{update_status.value}' ,
+            'allowed_options': ', '.join([opt.value for opt in allowed_options])
+        }
+        super().__init__(detail=self.message, status_code=status.HTTP_400_BAD_REQUEST)

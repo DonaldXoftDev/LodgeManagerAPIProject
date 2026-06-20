@@ -12,8 +12,8 @@ from app.models.room import Room
 from app.models.tenantprofile import TenantProfile
 from app.models.user import User
 from app.schemas.dashboard import DashboardFilters
-from app.schemas.room import RoomCreate, RoomUpdate
-from sqlalchemy.orm import Session
+from app.schemas.room import RoomCreate, RoomUpdate, BulkRoomUpdate
+from sqlalchemy.orm import Session, joinedload
 from app.crud.base_crud import CRUDBase
 from sqlalchemy import select, case, and_, func, RowMapping, or_
 from app.core import constants as const
@@ -181,6 +181,13 @@ class CRUDRoom(CRUDBase[Room, RoomCreate, RoomUpdate]):
 
         return db.execute(stmt).mappings().all()
 
+    def get_updatable_rooms(self, db: Session, lodge_id: int, room_ids: list[str]):
+        stmt = select(self.model).where(
+            self.model.lodge_id == lodge_id,
+            and_(Room.id.in_(room_ids))
+        )
+        rooms: list[Room] =  list(db.execute(stmt).scalars().all())
+        return rooms
 
 
 crud_room = CRUDRoom(Room)

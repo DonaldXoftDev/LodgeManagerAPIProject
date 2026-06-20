@@ -6,6 +6,7 @@ This module contains services for managing rooms.
 from sys import prefix
 from typing import Optional
 
+from app.core import constants
 from app.core.enums import RoomStatus
 from app.models.room import Room
 from app.schemas import room as schema_room
@@ -13,9 +14,10 @@ from app.crud.room import crud_room
 from sqlalchemy.orm import Session, joinedload
 
 from app.schemas.lodge import LodgeCreate
-from app.schemas.room import RoomResponse, RoomCreate
+from app.schemas.room import RoomResponse, RoomCreate, BulkRoomUpdate
 from app.services import lodge_service
-from app.core.exceptions import RoomAlreadyExistError, RoomNotFoundError, RoomIsOccupiedError
+from app.core.exceptions import RoomAlreadyExistError, RoomNotFoundError, RoomIsOccupiedError, NotUpdatableOptionError
+
 
 
 def create_room_for_lodge(db: Session, room_in: schema_room.RoomCreate, landlord_id: int) -> Room:
@@ -115,11 +117,46 @@ def update_room_details(db: Session, room_id: int, landlord_id: int, update_data
     Returns:
         Room: The updated room.
     """
+
     room = verify_room_existence(db, landlord_id=landlord_id, room_id=room_id)
 
     if room.status == RoomStatus.OCCUPIED:
-        raise RoomIsOccupiedError()
+        raise RoomIsOccupiedError(occupied_room_no=room.room_no)
+
+    if update_data.status not in constants.UPDATABLE_ROOM_STATUSES:
+        raise NotUpdatableOptionError(update_status=update_data.status)
 
     return crud_room.update(db, db_obj=room, update_data=update_data)
+
+def bulk_update_base_rent(
+        db: Session,
+        lodge_id: int,
+        update_data: BulkRoomUpdate,
+        landlord_id: int
+):
+    from app.services.lodge_service import verify_lodge_ownership
+
+    verify_lodge_ownership(db, lodge_id, landlord_id)
+
+    to_update_rooms = crud_room.get_updatable_rooms(
+        db,
+        room_ids= update_data.room_ids,
+        lodge_id=lodge_id
+    )
+
+    if not to_update_rooms:
+        raise RoomNotFoundError()
+
+
+    for room in to_update_rooms:
+        if room.status  == RoomStatus.OCCUPIED:
+            raise RoomIsOccupiedError(occupied_room_no=room.room_no)
+
+        room.base_rent_price = update_data.base_rent
+
+    db.commit()
+
+    return to_update_rooms
+
 
 

@@ -70,6 +70,10 @@ class RoomGridSummary(BaseModel):
     sub_display_text: str
     is_owing: bool = False
 
+class BulkRoomUpdate(BaseModel):
+    room_ids: list[int]
+    base_rent: int = Field(..., ge=0)
+
 
 if __name__ == '__main__':
 

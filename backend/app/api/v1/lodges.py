@@ -12,6 +12,7 @@ from app.schemas import lodge as lodge_schema
 from app.schemas import tenantprofile as schema_tenant
 from app.models.user import User
 from app.crud.lodge import crud_lodge
+from app.schemas.room import BulkRoomUpdate
 from app.services import lodge_service, tenant_services
 
 router = APIRouter()
@@ -142,7 +143,6 @@ def update_lodge_details(
         landlord_id=landlord_user.id,
         update_data=update_data
     )
-
 
 
 
