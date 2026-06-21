@@ -169,7 +169,7 @@ uvicorn app.main:app --reload
 ```
 
 ### Accessing the API:
-Once running, you can interact with the API documentation at:
+Once running, you can interact with the API documentations at:
 - **Swagger UI:** [http://localhost:8000/docs](http://localhost:8000/docs)
 - **ReDoc:** [http://localhost:8000/redoc](http://localhost:8000/redoc)
 
