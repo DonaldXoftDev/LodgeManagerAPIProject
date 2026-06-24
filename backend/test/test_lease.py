@@ -170,6 +170,8 @@ def test_landlord_get_leases_pagination_with_status_filter_returns_200(authentic
     # Check that all returned leases have the correct status
     for lease in data:
         assert lease['status'] == status_filter.value
+        assert 'tenant_name' in lease
+        assert 'room_no' in lease
 
 def test_tenant_cannot_get_lodge_leases_returns_403(authenticated_tenant_client, add_lodge_to_db):
     """
@@ -224,6 +226,8 @@ def test_tenant_get_personal_lease_history_returns_200(auth_client_factory, tena
     # Verify they all belong to the tenant
     for lease in data:
         assert lease['tenant_id'] == tenant.id
+        assert 'tenant_name' in lease
+        assert 'room_no' in lease
 
 def test_tenant_get_personal_lease_history_pagination_limit(auth_client_factory, tenant_lease_history_in_db):
     """
@@ -238,6 +242,9 @@ def test_tenant_get_personal_lease_history_pagination_limit(auth_client_factory,
 
     assert response.status_code == status.HTTP_200_OK
     assert len(data) == limit
+    if len(data) > 0:
+        assert 'tenant_name' in data[0]
+        assert 'room_no' in data[0]
 
 def test_tenant_get_personal_lease_history_pagination_skip(auth_client_factory, tenant_lease_history_in_db):
     """
@@ -254,6 +261,8 @@ def test_tenant_get_personal_lease_history_pagination_skip(auth_client_factory, 
     assert response.status_code == status.HTTP_200_OK
     assert len(data) == limit
     assert data[0]['id'] == db_leases[skip].id
+    assert 'tenant_name' in data[0]
+    assert 'room_no' in data[0]
 
 def test_tenant_get_personal_lease_history_skip_exceeds_total(auth_client_factory, tenant_lease_history_in_db):
     """
@@ -294,6 +303,8 @@ def test_tenant_get_personal_lease_history_with_status_filter_returns_200(auth_c
     for lease in data:
         assert lease['status'] == status_filter.value
         assert lease['tenant_id'] == tenant.id
+        assert 'tenant_name' in lease
+        assert 'room_no' in lease
 
 def test_landlord_cannot_get_tenant_lease_history_returns_403(authenticated_landlord_client):
     """

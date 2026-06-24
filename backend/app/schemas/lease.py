@@ -3,12 +3,9 @@ Pydantic schemas for the lease domain.
 
 This module contains schemas used to represent, create, and update lease agreements.
 """
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional
 from datetime import date, datetime
-
-from pydantic_core.core_schema import computed_field
-
 from app.core.enums import LeaseStatus
 from app.schemas.room import RoomGridSummary
 
@@ -42,7 +39,7 @@ class LeaseResponse(LeaseBase):
     created_at : datetime
     status: LeaseStatus = Field(validation_alias='computed_status')
 
-    model_config = {"from_attributes": True}
+    model_config = ConfigDict(from_attributes=True)
 
 
 class LeaseUpdate(BaseModel):
@@ -58,4 +55,10 @@ class OccupiedRoomLeasesResponse(BaseModel):
     overdue: list[RoomGridSummary]
     pending: list[RoomGridSummary]
     owing: list[RoomGridSummary]
+
+class LeaseHistoryResponse(LeaseResponse):
+    tenant_name: str
+    room_no: str
+
+
 

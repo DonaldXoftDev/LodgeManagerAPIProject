@@ -29,7 +29,7 @@ class Lease(Base):
         start_date (date): The start date of the lease.
         end_date (date): The end date of the lease.
         agreed_rent_amt (int): The agreed rental amount for the lease duration.
-        status (LeaseStatus): The current status of the lease (e.g., ACTIVE, EXPIRED).
+        status (LeaseStatus): The current status of the lease (e.g., Null, Terminated, Pending_Termination).
         tenant (TenantProfile): Relationship to the tenant profile.
         room (Room): Relationship to the leased room.
         created_at (datetime): Timestamp when the lease was created.
@@ -57,3 +57,10 @@ class Lease(Base):
             return LeaseStatus.ACTIVE
         return LeaseStatus.OVERDUE
 
+    @property
+    def tenant_name(self) -> str:
+        return f'{self.tenant.user.first_name} {self.tenant.user.last_name}' if self.tenant else 'Unknown'
+
+    @property
+    def room_no(self) -> str:
+        return f'{self.room.room_no}' if self.room else 'N/A'

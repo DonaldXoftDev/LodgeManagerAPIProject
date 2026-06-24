@@ -179,8 +179,8 @@ def verify_lease_to_terminate(
     Returns:
         Lease: The verified lease.
     """
-    options = joinedload(Lease.room).joinedload(Room.lodge)
-    lease = crud_lease.get(db, lease_id, options)
+    options = [joinedload(Lease.room).joinedload(Room.lodge), joinedload(Lease.tenant).joinedload(TenantProfile.user)]
+    lease = crud_lease.get(db, lease_id, *options)
 
     if not lease:
         raise LeaseNotFoundError()
@@ -237,7 +237,7 @@ def update_lease_details(
     Returns:
         Lease: The updated lease.
     """
-    options = joinedload(Lease.room).joinedload(Room.lodge)
+    options = [joinedload(Lease.room).joinedload(Room.lodge), joinedload(Lease.tenant).joinedload(TenantProfile.user)]
     lease = crud_lease.get(db, lease_id, options)
 
     if not lease:

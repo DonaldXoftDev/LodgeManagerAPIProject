@@ -23,6 +23,9 @@
       <assistant-state connection-id="708eb937-a62f-430f-8a34-e39e6eaaee95" assistant-type="PUBLIC" default-profile-name="" selected-chat-id="" availability="AVAILABLE" acknowledgement="NONE" selected="true">
         <tools />
       </assistant-state>
+      <assistant-state connection-id="virtual-sqlite-connection" assistant-type="PUBLIC" default-profile-name="" selected-chat-id="" availability="AVAILABLE" acknowledgement="NONE" selected="true">
+        <tools />
+      </assistant-state>
     </assistants>
     <selection-state>
       <model-selection />

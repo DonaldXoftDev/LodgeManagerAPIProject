@@ -63,11 +63,11 @@ def test_tenant_cannot_register_lodge_returns_403(authenticated_tenant_client,  
     assert data['detail'] == f'Only landlords are allowed.'
 
 
-def test_landlord_get_lodge_by_id_returns_200(authenticated_landlord_client, add_lodge_to_db):
+def test_landlord_get_lodge_by_id_returns_200(authenticated_landlord_client,add_landlord_to_db, add_lodge_to_db):
     """
     Tests that a landlord can get a lodge by ID and returns a 200 status code.
     """
-    response = authenticated_landlord_client.get(f'{lodge_url}/{authenticated_landlord_client.landlord.id}')
+    response = authenticated_landlord_client.get(f'{lodge_url}/{add_landlord_to_db.id}')
 
     data = response.json()
 

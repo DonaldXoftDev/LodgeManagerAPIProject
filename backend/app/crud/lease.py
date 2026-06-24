@@ -4,7 +4,7 @@ Module providing lease-related CRUD operations.
 This module contains the CRUD operations for Lease models.
 """
 from typing import Optional
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from app.core.enums import LeaseStatus
 from app.models.payment import Payment
 from app.models.room import RoomStatus, Room
@@ -47,7 +47,7 @@ class CRUDLease(CRUDBase[Lease, LeaseCreate, LeaseUpdate]):
         """
 
         # 1. Initialize the statement
-        stmt = select(Lease).join(TenantProfile).join(Room)
+        stmt = select(self.model).join(TenantProfile).join(Room)
 
         if tenant_id:
             stmt = stmt.where(TenantProfile.id == tenant_id)
@@ -59,6 +59,8 @@ class CRUDLease(CRUDBase[Lease, LeaseCreate, LeaseUpdate]):
             stmt = stmt.where(Lease.status == status)
 
         stmt = stmt.where(Room.lodge_id == lodge_id).offset(skip).limit(max_limit)
+        lease_option = [joinedload(self.model.room), joinedload(self.model.tenant).joinedload(TenantProfile.user)]
+        stmt = stmt.options(*lease_option)
 
         # 4. Execute
         result = db.execute(stmt)

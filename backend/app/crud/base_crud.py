@@ -30,7 +30,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         """
         self.model = model
 
-    def get(self, db: Session, item_id: int,  *options) -> Optional[ModelType]:
+    def get(self, db: Session, item_id: int, *db_options) -> Optional[ModelType]:
         """
         Get a single record by its ID.
 
@@ -43,8 +43,8 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         """
         stmt = select(self.model).where(self.model.id == item_id)
 
-        if options:
-            stmt = stmt.options(*options)
+        if db_options:
+            stmt = stmt.options(*db_options)
 
         return db.execute(stmt).scalar_one_or_none()
 

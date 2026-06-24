@@ -15,6 +15,7 @@ from app.core.enums import UserRole
 if TYPE_CHECKING:
     from app.models.tenantprofile import TenantProfile
     from app.models.lodge import Lodge
+    from app.models.refresh_token import RefreshToken
 
 
 
@@ -34,6 +35,7 @@ class User(Base):
         is_active (bool): Indicates if the user account is active.
         lodges (list[Lodge]): Relationship to the lodges owned by the user (if landlord).
         tenant_profile (TenantProfile): Relationship to the user's tenant profile (if tenant).
+        refresh_tokens (list[RefreshToken]): Relationship to the refresh tokens owned by this user
     """
     __tablename__ = 'users'
 
@@ -63,3 +65,4 @@ class User(Base):
         cascade='all, delete-orphan',
         single_parent=True
     )
+    refresh_tokens: Mapped[list["RefreshToken"]] = relationship(back_populates='user')

@@ -42,7 +42,7 @@ def create_new_lease(
 
 
 
-@router.get('/{lodge_id}', response_model=List[schema_lease.LeaseResponse])
+@router.get('/{lodge_id}', response_model=List[schema_lease.LeaseHistoryResponse])
 def get_leases_for_landlord(
         lodge_id: int,
         room_id: Optional[int] = None,
@@ -85,7 +85,7 @@ def get_leases_for_landlord(
 
 
 
-@router.get('/tenant/me', response_model=List[schema_lease.LeaseResponse])
+@router.get('/tenant/me', response_model=List[schema_lease.LeaseHistoryResponse])
 def get_tenant_leases(
         skip: Optional[int] = None,
         max_limit: Optional[int] = None,
@@ -143,7 +143,7 @@ def update_lease_by_id(
     return lease_services.update_lease_details(db, lease_id=lease_id, update_data=lease_data, landlord_id=current_user.id)
 
 
-@router.patch('/terminate/{lease_id}', response_model=schema_lease.LeaseResponse)
+@router.patch('/terminate/{lease_id}', response_model=schema_lease.LeaseHistoryResponse)
 def terminate_lease_by_id(
         lease_id: int,
         db: Session = Depends(get_db),
@@ -167,7 +167,7 @@ def terminate_lease_by_id(
                                                                               )
 
 
-@router.patch('/me/terminate/{lease_id}', response_model=schema_lease.LeaseResponse)
+@router.patch('/me/terminate/{lease_id}', response_model=schema_lease.LeaseHistoryResponse)
 def request_lease_termination(
         lease_id: int,
         db: Session = Depends(get_db),
