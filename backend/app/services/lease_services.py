@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session, joinedload
 from app.schemas.lease import LeaseCreate, LeaseUpdate
 from app.services import lodge_service, room_service
 from app.crud.lease import crud_lease
-from app.core.exceptions import (RoomNotFoundError, UserNotFoundError,
+from app.core.exceptions import (RoomNotFoundError,
                                  LeaseNotFoundError, InvalidLeaseActionError, TenantProfileNotFoundError)
 
 

@@ -4,14 +4,17 @@ Module providing tenant-related business logic.
 This module contains services for managing tenants and their profiles.
 """
 from typing import cast
+from uuid import UUID
 
 from sqlalchemy.orm import Session, joinedload
 
+from app.crud.invite import crud_invite
 from app.crud.lodge import crud_lodge
 from app.crud.user import crud_user
 from app.crud.tenantprofile import crud_tenant
-from app.core.enums import UserRole
-from app.core.exceptions import UserAlreadyExistError, LodgeNotFoundError, UserNotFoundError, TenantProfileNotFoundError
+from app.core.enums import UserRole, InviteStatus
+from app.core.exceptions import UserAlreadyExistError, LodgeNotFoundError, UserNotFoundError, \
+    TenantProfileNotFoundError, InviteNotFoundError, InvalidInvitation
 from app.core.security import get_password_hash
 from app.models.lodge import Lodge
 from app.models.tenantprofile import TenantProfile
@@ -36,7 +39,15 @@ def sign_up_tenant(
     Returns:
         TenantProfile: The newly created tenant profile.
     """
-    if not crud_lodge.get(db, item_id=tenant_in.tenant_info.lodge_id):
+    invite_record = crud_invite.get_invite_record_by_id(db, invite_id=tenant_in.invite_id)
+    
+    if not invite_record:
+        raise InviteNotFoundError()
+
+    if invite_record.status in [InviteStatus.EXPIRED, InviteStatus.ACCEPTED]:
+        raise InvalidInvitation(invite_status=invite_record.status)
+
+    if not crud_lodge.get(db, item_id=invite_record.lodge_id):
         raise LodgeNotFoundError()
 
     if crud_user.get_user_by_email(db, email=tenant_in.user_info.email):
@@ -53,7 +64,8 @@ def sign_up_tenant(
         role=UserRole.TENANT
     )
 
-    return crud_tenant.create_tenant(db, tenant_in=tenant_in, internal_user=base_user_data)
+    return crud_tenant.create_tenant(db, tenant_in=tenant_in, internal_user=base_user_data,
+                                     db_invite=invite_record)
 
 
 def fetch_lodge_tenants(

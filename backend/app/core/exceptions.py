@@ -1,8 +1,9 @@
 from typing import Optional, Any
+from uuid import UUID
 
 from starlette import status
 
-from app.core.enums import LeaseStatus, RoomStatus
+from app.core.enums import LeaseStatus, RoomStatus, InviteStatus
 
 
 class BaseLodgeOpsError(Exception):
@@ -43,6 +44,10 @@ class InvalidLeaseActionError(BaseLodgeOpsError):
         self.detail = f'Lease is already {status.value}'
         super().__init__(detail=self.detail, status_code=400)
 
+class InvalidInvitation(BaseLodgeOpsError):
+    def __init__(self, invite_status: InviteStatus):
+        self.detail = f'Invite is already {invite_status.value}'
+        super().__init__(detail=self.detail, self=status.HTTP_400_BAD_REQUEST)
 
 class BaseMaxLimitReachedError(BaseLodgeOpsError):
     def __init__(self, detail: str, meta: dict = None):
@@ -63,7 +68,7 @@ class RentAmtExceededError(BaseMaxLimitReachedError):
 class BaseNotFoundError(BaseLodgeOpsError):
     def __init__(self, name:str):
         self.detail = f'{name.title()} could not be found'
-        super().__init__(detail=self.detail, status_code=404)
+        super().__init__(detail=self.detail, status_code=404, )
         
         
 class UserNotFoundError(BaseNotFoundError):
@@ -136,3 +141,13 @@ class NotUpdatableOptionError(BaseLodgeOpsError):
             'allowed_options': ', '.join([opt.value for opt in allowed_options])
         }
         super().__init__(detail=self.message, status_code=status.HTTP_400_BAD_REQUEST)
+
+
+class InviteNotFoundError(BaseNotFoundError):
+    def __init__(self, invite_id: UUID):
+
+        self.meta = {
+            'invite_id': invite_id
+        }
+
+        super().__init__(name='Invite')

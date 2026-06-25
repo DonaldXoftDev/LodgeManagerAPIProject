@@ -47,7 +47,7 @@ class TenantProfile(Base):
     reg_no: Mapped[str | None] = mapped_column(nullable=True)
     user: Mapped["User"] = relationship(back_populates='tenant_profile', cascade='all, delete-orphan', single_parent=True)
     lodge: Mapped["Lodge"] = relationship(back_populates='tenantprofiles')
-    leases: Mapped["Lease"] = relationship(back_populates='tenant')
+    leases: Mapped[list["Lease"]] = relationship(back_populates='tenant')
 
     @property
     def is_active(self):
@@ -60,3 +60,7 @@ class TenantProfile(Base):
     @property
     def role(self):
         return self.user.role if self.user else None
+
+    @property
+    def is_onboarding(self) -> bool:
+        return len(self.leases) == 0

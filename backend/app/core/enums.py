@@ -51,3 +51,8 @@ class BadgeVariants(str, Enum):
     INFO = 'Info'
     PURPLE = 'Purple'
     UNKNOWN_VARIANT = 'Unknown_variant'
+
+class InviteStatus(str, Enum):
+    SENT = 'Sent'
+    ACCEPTED = 'Accepted'
+    EXPIRED = 'Expired'

@@ -3,6 +3,8 @@ API routes for user management.
 
 Provides endpoints for user registration (landlords and tenants) and authentication (login).
 """
+from uuid import UUID
+
 from fastapi import APIRouter, Depends
 from fastapi import Cookie
 from fastapi.security import OAuth2PasswordRequestForm

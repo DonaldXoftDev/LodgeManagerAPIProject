@@ -4,7 +4,9 @@ Pydantic schemas for the tenant profile domain.
 This module contains schemas used to represent, create, and update tenant profiles.
 """
 from datetime import datetime
-from pydantic import BaseModel, field_validator
+from uuid import UUID
+
+from pydantic import BaseModel, field_validator, ConfigDict
 
 from app.schemas.user import UserCreate, UserUpdate, UserResponse
 from typing import Optional
@@ -16,7 +18,6 @@ class TenantBase(BaseModel):
     Base schema for a tenant profile.
 
     Attributes:
-        lodge_id (int): The ID of the lodge where the tenant resides.
         tenant_type (TenantType): The type of tenant.
         emergency_contact_name (str): The name of the emergency contact.
         emergency_contact_phone_no (str): The phone number of the emergency contact.
@@ -24,7 +25,6 @@ class TenantBase(BaseModel):
         reg_no (Optional[int]): The registration number.
         department (Optional[str]): The academic department.
     """
-    lodge_id: int
     tenant_type: TenantType
     emergency_contact_name: str
     emergency_contact_phone_no: str
@@ -40,6 +40,7 @@ class TenantBase(BaseModel):
 
 
 class TenantProfileCreate(BaseModel):
+    invite_id: UUID
     user_info: UserCreate
     tenant_info: TenantBase
 
@@ -59,9 +60,10 @@ class TenantProfileResponse(TenantBase):
     user_id: int
     created_at: datetime
     is_active: bool
+    is_onboarding: bool
     user: UserResponse
 
-    model_config = {'from_attributes': True}
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TenantProfileUpdate(BaseModel):

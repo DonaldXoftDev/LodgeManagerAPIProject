@@ -13,6 +13,8 @@ from sqlalchemy.orm  import relationship,mapped_column, Mapped
 
 from typing import TYPE_CHECKING
 
+from app.models.invitation import Invite
+
 if TYPE_CHECKING:
     from app.models.user import  User
     from app.models.room import Room
@@ -44,4 +46,4 @@ class Lodge(Base):
     owner: Mapped["User"] = relationship(back_populates='lodges')
     rooms: Mapped[list["Room"]] = relationship(back_populates='lodge', cascade='all, delete-orphan')
     tenantprofiles: Mapped[list["TenantProfile"]] = relationship( back_populates='lodge', cascade='all, delete-orphan')
-
+    invites: Mapped[list['Invite']] = relationship(back_populates='lodge')

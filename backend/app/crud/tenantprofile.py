@@ -7,7 +7,8 @@ from typing import Dict, Any, Optional
 
 from sqlalchemy import select
 
-
+from app.core.enums import InviteStatus
+from app.models.invitation import Invite
 from app.models.tenantprofile import TenantProfile
 from app.models.user import User
 from app.schemas.tenantprofile import TenantProfileCreate, TenantProfileUpdate, TenantInfoUpdate
@@ -24,11 +25,13 @@ class CRUDTenantProfile(CRUDBase[TenantProfile, TenantProfileCreate, TenantProfi
     _TENANT_UPDATE_FIELDS = {'emergency_contact_name', 'emergency_contact_phone_no', 'level', 'reg_no', 'department'
                              'tenant_type'} #other specific fields for specific tenants will also be a security feature
 
-    def create_tenant(self, db: Session, tenant_in: TenantProfileCreate, internal_user: UserInternal):
+    def create_tenant(self, db: Session, tenant_in: TenantProfileCreate, internal_user: UserInternal,
+                      db_invite: Invite):
         """
         Create a new tenant and associated user profile.
 
         Args:
+            db_invite(Invite): The invite record that was used for the tenant invitation
             db (Session): The database session.
             tenant_in (TenantProfileCreate): The tenant creation data.
             internal_user (UserInternal): The internal user data.
@@ -37,9 +40,10 @@ class CRUDTenantProfile(CRUDBase[TenantProfile, TenantProfileCreate, TenantProfi
             TenantProfile: The newly created tenant profile.
         """
         db_user = User(**internal_user.model_dump())
-        db_tenant = self.model(**tenant_in.tenant_info.model_dump())
+        db_tenant = self.model(**tenant_in.tenant_info.model_dump(), lodge_id=db_invite.lodge_id)
         db_user.tenant_profile = db_tenant
         db.add(db_user)
+        db_invite.status = InviteStatus.ACCEPTED
         db.commit()
         db.refresh(db_tenant)
         return db_tenant

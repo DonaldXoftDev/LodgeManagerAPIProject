@@ -11,7 +11,7 @@ from sqlalchemy import UniqueConstraint
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy import func
 from app.db.session import Base
-from sqlalchemy import Integer, String, Enum, ForeignKey, DateTime
+from sqlalchemy import String, Enum, ForeignKey, DateTime
 from app.core.enums import RoomStatus
 
 from typing import TYPE_CHECKING

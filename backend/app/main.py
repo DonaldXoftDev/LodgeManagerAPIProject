@@ -10,6 +10,8 @@ from app.api.v1.payments import router as payment_router
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.handlers import lodge_ops_handlers
 from app.api.v1.dashboards.landlord_dashboard import router as landlord_dashboard_router
+from app.api.v1.invites import router as invite_router
+
 app = FastAPI(title=settings.PROJECT_NAME, exception_handlers=lodge_ops_handlers)
 
 # Explicitly list the allowed origins instead of using '*'
@@ -48,6 +50,8 @@ app.include_router(payment_router, prefix='/api/v1/payments', tags=['Payments'])
 
 
 app.include_router(landlord_dashboard_router, prefix='/api/v1/dashboard-landlord', tags=['Dashboards'])
+
+app.include_router(invite_router, prefix='/api/v1/invites', tags=['Invites'])
 
 @app.get("/healthy")
 def health_status():

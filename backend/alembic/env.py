@@ -28,6 +28,7 @@ from app.models.room import  Room
 from app.models.tenantprofile import TenantProfile
 from app.core import enums
 from app.models.refresh_token import RefreshToken
+from app.models.invitation import Invite
 from app.core.config import settings
 from app.db.session import Base
 target_metadata = Base.metadata
