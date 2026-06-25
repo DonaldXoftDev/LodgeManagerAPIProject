@@ -4,17 +4,16 @@ Module providing user-related CRUD operations.
 This module contains the CRUD operations for User models, inheriting from
 the base CRUD functionality.
 """
-from typing import Unpack
 
-from sqlalchemy import select
+from sqlalchemy import select, delete
 from sqlalchemy.orm import Session
-
-from app.core.security import get_password_hash
+from app.models.refresh_token import RefreshToken
 from app.models.user import User
-from app.schemas.user import UserCreate, UserUpdate, UserInternal
-from app.schemas.generic_extras import GenericExtras
+from app.schemas.refresh_token import RefreshTokenInternal
+from app.schemas.user import UserCreate, UserUpdate
 
-from app.crud.base_crud import CRUDBase, CreateSchemaType
+
+from app.crud.base_crud import CRUDBase
 
 
 class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
@@ -36,6 +35,31 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         stmt = select(self.model).filter(self.model.email == email)
         return db.execute(stmt).scalar_one_or_none()
 
+    def create_new_refresh_token_record(self, db: Session, refresh_in:RefreshTokenInternal):
+        db_refresh_token = RefreshToken(**refresh_in.model_dump())
+        db.add(db_refresh_token)
+        db.commit()
+        db.refresh(db_refresh_token)
+        return db_refresh_token
+
+    def get_refresh_token(self, db: Session, refresh_token: str, user_id: int):
+        stmt = select(RefreshToken).where(RefreshToken.token == refresh_token,
+                                          RefreshToken.user_id == user_id)
+        return db.execute(stmt).scalar()
+
+    def delete_refresh_token(self, db: Session, current_refresh_token: str, user_id: int ):
+        stmt = delete(RefreshToken).where(
+            RefreshToken.token == current_refresh_token,
+            RefreshToken.user_id == user_id
+        )
+        db.execute(stmt)
+        db.commit()
+
+
+    def delete_all_refresh_token(self,db: Session, user_id: int):
+        stmt = delete(RefreshToken).where(RefreshToken.user_id == user_id)
+        db.execute(stmt)
+        db.commit()
 
 
 

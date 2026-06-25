@@ -90,3 +90,13 @@ def get_me(
         authenticated_user: User = Depends(get_current_user)
 ):
     return authenticated_user
+
+@router.post('/logout')
+def logout_user(
+        response: Response,
+        db: Session = Depends(get_db),
+        refresh_token: str = Cookie(None),
+        current_user: User = Depends(get_current_user)
+):
+    return user_service.logout_authenticated_user(db, response=response, refresh_token=refresh_token,
+                                                  user_id=current_user.id)

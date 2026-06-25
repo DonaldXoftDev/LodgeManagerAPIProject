@@ -62,4 +62,5 @@ def create_refresh_token(subject: Union[str, Any],
         algorithm=settings.ALGORITHM,
         key=settings.REFRESH_SECRET_KEY
     )
+
     return encoded_refresh_token

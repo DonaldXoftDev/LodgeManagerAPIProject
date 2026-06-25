@@ -65,4 +65,4 @@ class User(Base):
         cascade='all, delete-orphan',
         single_parent=True
     )
-    refresh_tokens: Mapped[list["RefreshToken"]] = relationship(back_populates='user')
+    refresh_tokens: Mapped[list["RefreshToken"]] = relationship(back_populates='user', cascade='all, delete-orphan')

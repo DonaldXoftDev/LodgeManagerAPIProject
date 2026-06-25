@@ -1,3 +1,5 @@
+import time
+
 import pytest
 from fastapi import status
 from test.conftest import mock_landlord_schema, base_url
@@ -149,6 +151,46 @@ def test_get_me_not_exist_returns_404(test_db, authenticated_landlord_client, ad
     response = authenticated_landlord_client.get(f'{auth_url_base}/me')
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
+def test_logout_authenticated_user_returns_200(authenticated_landlord_client):
+    response = authenticated_landlord_client.post(f'{auth_url_base}/logout')
+
+    assert response.status_code == status.HTTP_200_OK
+    cookies = response.headers.get('set-cookie')
+
+    assert 'access_token=""' in cookies
+    assert 'refresh_token=""' in cookies
+    assert 'Max-Age' in cookies
 
 
+def test_refresh_stolen_refresh_token_for_logged_out_user_returns_401(authenticated_landlord_client):
+    authenticated_landlord_client.post(f'{auth_url_base}/logout')
 
+    response = authenticated_landlord_client.post(f'{auth_url_base}/refresh')
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+def test_token_rotation_blocks_stolen_token(authenticated_landlord_client):
+    # 1. Capture the FIRST (original) refresh token
+    first_refresh_token = authenticated_landlord_client.cookies.get(name='refresh_token')
+
+    time.sleep(1)
+
+    # 2. Hit /refresh. This will delete the first token from the DB and give the client a NEW token.
+    response1 = authenticated_landlord_client.post(f'{auth_url_base}/refresh')
+    assert response1.status_code == status.HTTP_200_OK
+
+    # 3. Simulate a hacker trying to use the FIRST token that they stole earlier
+    # We pass the cookies dictionary directly to override the client's internal cookie jar for this request
+    response2 = authenticated_landlord_client.post(
+        f'{auth_url_base}/refresh',
+        cookies={"refresh_token": first_refresh_token}
+    )
+
+    # 4. Prove the database blocked it because it was deleted during the rotation in Step 2
+    assert response2.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+def test_logout_while_not_logged_in_returns_401(client):
+    response = client.post(f'{auth_url_base}/logout')
+
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED

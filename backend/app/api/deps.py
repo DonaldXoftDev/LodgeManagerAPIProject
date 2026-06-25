@@ -75,7 +75,7 @@ def get_current_user(
             raise InvalidCredentialsError
 
     except (jwt.PyJWTError, ValueError, ValidationError):
-        raise InvalidCredentialsError
+        raise InvalidCredentialsError()
 
     current_user: User = crud_user.get(db=db, item_id=user_id)
 

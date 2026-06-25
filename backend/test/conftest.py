@@ -5,10 +5,13 @@ from sqlalchemy.pool import StaticPool
 import random
 from datetime import date, timedelta
 
+from starlette.responses import Response
+
 from app.api.deps import get_db
 from app.core import security
 from app.core.enums import StudentLevel, TenantType, RoomStatus, LeaseStatus
 from app.crud.payment import crud_payment
+from app.crud.user import crud_user
 from app.main import app
 from app.db.session import Base
 from fastapi.testclient import TestClient
@@ -78,19 +81,30 @@ def authenticated_landlord_client(auth_client_factory, add_landlord_to_db, mock_
 
 
 @pytest.fixture
-def auth_client_factory(client):
+def auth_client_factory(client, test_db):
     """
     A pytest fixture that provides a factory for creating authenticated clients.
     """
+
     def _authenticate(user_id: int):
+        from test.test_auth import auth_url_base
+        from app.core import security
+        from app.crud.user import crud_user
+        from app.schemas.refresh_token import RefreshTokenInternal
 
+        access_token = security.create_access_token(subject=str(user_id))
+        refresh_token = security.create_refresh_token(subject=str(user_id))
 
-        token = security.create_access_token(subject=user_id)
-        client.cookies.set(name='access_token', value=token)
+        refresh_token_schema = RefreshTokenInternal(user_id=user_id, token=refresh_token)
+        crud_user.create_new_refresh_token_record(test_db, refresh_in=refresh_token_schema)
+
+        client.cookies.set(name='access_token', value=access_token, path='/')
+        client.cookies.set(name='refresh_token', value=refresh_token, path=f'{auth_url_base}')
 
         return client
 
     return _authenticate
+
 
 
 @pytest.fixture
