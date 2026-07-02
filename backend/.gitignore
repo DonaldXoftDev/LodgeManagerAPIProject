@@ -4,7 +4,7 @@
 
 # Database files - Do not commit data
 *.db
-
+frontend_architecture.md
 
 app/todos.py
 test_main.http

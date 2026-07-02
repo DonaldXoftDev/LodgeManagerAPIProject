@@ -1,8 +1,8 @@
 """Initial migration
 
-Revision ID: 44b63cbeae9b
+Revision ID: 09beb1a895fb
 Revises: 
-Create Date: 2026-06-18 15:18:28.829355
+Create Date: 2026-06-30 14:54:47.540746
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '44b63cbeae9b'
+revision: str = '09beb1a895fb'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -47,6 +47,23 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['landlord_id'], ['users.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
+    op.create_table('refresh_tokens',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.Column('token', sa.String(), nullable=False),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('token')
+    )
+    op.create_table('invites',
+    sa.Column('id', sa.Uuid(), nullable=False),
+    sa.Column('lodge_id', sa.Integer(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
+    sa.Column('expires_at', sa.DateTime(), nullable=False),
+    sa.Column('status', sa.Enum('SENT', 'ACCEPTED', 'EXPIRED', name='invitestatus'), nullable=False),
+    sa.ForeignKeyConstraint(['lodge_id'], ['lodges.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
     op.create_table('rooms',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('lodge_id', sa.Integer(), nullable=False),
@@ -69,6 +86,7 @@ def upgrade() -> None:
     sa.Column('tenant_type', sa.Enum('STUDENT', 'OTHERS', name='tenanttype'), nullable=False),
     sa.Column('emergency_contact_name', sa.String(length=20), nullable=False),
     sa.Column('emergency_contact_phone_no', sa.String(), nullable=False),
+    sa.Column('status', sa.Enum('PENDING', 'APPROVED', 'REJECTED', name='tenantstatus'), nullable=False),
     sa.Column('level', sa.Enum('LEVEL_100', 'LEVEL_200', 'LEVEL_300', 'LEVEL_400', 'LEVEL_500', 'LEVEL_600', name='studentlevel'), nullable=True),
     sa.Column('department', sa.String(), nullable=True),
     sa.Column('reg_no', sa.String(), nullable=True),
@@ -104,7 +122,6 @@ def upgrade() -> None:
     with op.batch_alter_table('payments', schema=None) as batch_op:
         batch_op.create_index(batch_op.f('ix_payments_lease_id'), ['lease_id'], unique=False)
 
-    op.execute('UPDATE leases SET status = NULL')
     # ### end Alembic commands ###
 
 
@@ -124,6 +141,8 @@ def downgrade() -> None:
         batch_op.drop_index(batch_op.f('ix_rooms_room_no'))
 
     op.drop_table('rooms')
+    op.drop_table('invites')
+    op.drop_table('refresh_tokens')
     op.drop_table('lodges')
     with op.batch_alter_table('users', schema=None) as batch_op:
         batch_op.drop_index(batch_op.f('ix_users_phone_no'))

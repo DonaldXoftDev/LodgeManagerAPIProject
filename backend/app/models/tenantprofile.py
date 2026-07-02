@@ -4,7 +4,9 @@ SQLAlchemy models for the tenant profile domain.
 This module contains the TenantProfile model which represents the details
 and status of a tenant living in a lodge.
 """
-from app.core.enums import TenantType, StudentLevel
+from pygments.lexer import default
+
+from app.core.enums import TenantType, StudentLevel, TenantStatus
 from app.db.session import  Base
 from sqlalchemy import String, Enum, ForeignKey
 from sqlalchemy.orm import relationship, mapped_column, Mapped
@@ -42,6 +44,7 @@ class TenantProfile(Base):
     tenant_type: Mapped[TenantType] = mapped_column(Enum(TenantType), nullable=False, default=TenantType.STUDENT)
     emergency_contact_name: Mapped[str] = mapped_column(String(20), nullable=False,  index=True)
     emergency_contact_phone_no: Mapped[str] = mapped_column(nullable=False)
+    status: Mapped[TenantStatus] = mapped_column(Enum(TenantStatus), default=TenantStatus.PENDING)
     level: Mapped[StudentLevel | None] = mapped_column(Enum(StudentLevel), nullable=True)
     department: Mapped[str | None] = mapped_column(nullable=True)
     reg_no: Mapped[str | None] = mapped_column(nullable=True)

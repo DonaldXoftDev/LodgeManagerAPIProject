@@ -113,3 +113,17 @@ def delete_tenant_by_id(
         )
 
     crud_tenant.delete_tenant(db=db, db_tenant=tenant)
+
+@router.patch('/{tenant_id}', response_model=schema_tenant.TenantProfileResponse)
+def landlord_update_tenant_status(
+        tenant_id: int,
+        update_data: schema_tenant.TenantStatusUpdate,
+        db: Session = Depends(get_db),
+        landlord_user: User = Depends(get_landlord_user)
+):
+    return tenant_services.update_tenant_profile_status(
+        db,
+        tenant_id=tenant_id,
+        update_data=update_data,
+        landlord_id=landlord_user.id
+    )

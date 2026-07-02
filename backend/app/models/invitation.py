@@ -1,7 +1,7 @@
 
 from app.core.enums import InviteStatus
 from app.db.session import Base
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from sqlalchemy import ForeignKey, Enum, DateTime
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship, mapped_column, Mapped
@@ -25,3 +25,8 @@ class Invite(Base):
     @property
     def lodge_name(self):
         return self.lodge.name if self.lodge else 'N/A'
+
+    @property
+    def is_expired(self):
+        curr_time = datetime.now(timezone.utc).replace(tzinfo=None)
+        return curr_time > self.expires_at

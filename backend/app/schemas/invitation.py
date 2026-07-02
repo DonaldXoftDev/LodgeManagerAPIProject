@@ -13,8 +13,10 @@ class InviteCreate(BaseModel):
 
 class InviteResponse(InviteCreate):
     id: UUID
+    lodge_id: int
     status: InviteStatus
     created_at: datetime
+    is_expired: bool
 
 class InviteDetail(InviteResponse):
     lodge_name: str

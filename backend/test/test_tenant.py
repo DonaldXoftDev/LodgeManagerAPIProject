@@ -1,8 +1,7 @@
 import pytest
 from fastapi import status
 
-from app.crud.lease import crud_lease
-from app.crud.tenantprofile import crud_tenant
+from app.core.enums import TenantStatus
 from app.services import lease_services
 from test.conftest import base_url, test_db
 
@@ -108,3 +107,33 @@ def test_landlord_cannot_hit_tenant_me_endpoint_returns_403(authenticated_landlo
 
     assert response.status_code == status.HTTP_403_FORBIDDEN
     assert response.json()['detail'] == 'Only tenants are allowed.'
+
+def test_landlord_update_tenant_status_approved_returns_200(authenticated_landlord_client, add_tenant_to_db):
+    tenant_id = add_tenant_to_db.id
+
+    response = authenticated_landlord_client.patch(f'{tenant_url}/{tenant_id}', json={'status': 'Approved'})
+    data = response.json()
+
+    assert response.status_code == status.HTTP_200_OK
+    assert data['id'] == tenant_id
+    assert data['status'] == TenantStatus.APPROVED
+
+
+
+def test_landlord_update_tenant_status_pending_returns_400(authenticated_landlord_client, add_tenant_to_db):
+    tenant_id = add_tenant_to_db.id
+
+    response = authenticated_landlord_client.patch(f'{tenant_url}/{tenant_id}', json={'status': 'Pending'})
+    data = response.json()
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert data['detail'] == f'Tenant Status is already Pending'
+
+def test_landlord_cannot_update_tenant_status_in_diff_lodge_returns_400(authenticated_landlord_client, add_diff_landlord_tenant):
+    diff_tenant_id = add_diff_landlord_tenant.id
+
+    response = authenticated_landlord_client.patch(f'{tenant_url}/{diff_tenant_id}', json={'status': 'Approved'})
+    data = response.json()
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert data['detail'] == f'Tenantprofile could not be found'

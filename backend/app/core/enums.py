@@ -56,3 +56,8 @@ class InviteStatus(str, Enum):
     SENT = 'Sent'
     ACCEPTED = 'Accepted'
     EXPIRED = 'Expired'
+
+class TenantStatus(str, Enum):
+    PENDING = 'Pending'
+    APPROVED = 'Approved'
+    REJECTED = 'Rejected'

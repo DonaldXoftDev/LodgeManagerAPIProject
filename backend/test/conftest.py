@@ -1,27 +1,24 @@
+from uuid import UUID
+
 import pytest
 from sqlalchemy.engine import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 import random
-from datetime import date, timedelta
-
-from starlette.responses import Response
+from datetime import date, timedelta, datetime
 
 from app.api.deps import get_db
-from app.core import security
 from app.core.enums import StudentLevel, TenantType, RoomStatus, LeaseStatus
-from app.crud.payment import crud_payment
-from app.crud.user import crud_user
 from app.main import app
 from app.db.session import Base
 from fastapi.testclient import TestClient
-
+from app.schemas import invitation as schema_invite
 from app.models.lease import Lease
 from app.schemas import user as schema_user
 from app.schemas.dashboard import DashboardFilters
 from app.schemas.lodge import RoomGenerator
 from app.services import user_service, lodge_service, tenant_services, room_service, lease_services, payment_service, \
-    dashboard_service
+    dashboard_service, invite_service
 from app.schemas import tenantprofile as schema_tenant
 from app.schemas import lodge as schema_lodge
 from app.schemas import room as schema_room
@@ -159,10 +156,10 @@ def tenant_schema_factory():
     A pytest fixture that provides a factory for creating tenant schemas.
     """
     def _create(
+            invite_id: UUID,
             first_name: str = 'Tenant',
             last_name: str = 'A',
             email: str = 'tenant@test.com',
-            lodge_id: int = 1,
             level: StudentLevel = StudentLevel.LEVEL_200,
             tenant_type: TenantType = TenantType.STUDENT
     ):
@@ -176,24 +173,48 @@ def tenant_schema_factory():
         return schema_tenant.TenantProfileCreate(
             user_info=user_info,
             tenant_info=schema_tenant.TenantBase(
-                lodge_id=lodge_id,
                 level=level,
                 tenant_type=tenant_type,
                 emergency_contact_name='mrs bond',
                 emergency_contact_phone_no='0834124859',
                 reg_no=random.randint(1000000, 9999999)
-            )
+            ),
+            invite_id=invite_id
         )
     return _create
 
 #a factory fixture for creating a tenant in a lodge
 
 @pytest.fixture
-def mock_tenant_schema(tenant_schema_factory):
+def invite_schema_factory():
+    def _create(
+
+            lodge_id: int = 1,
+            expires_at: datetime = datetime.now()
+    ):
+
+        return schema_invite.InviteCreate(
+            lodge_id=lodge_id,
+            expires_at=expires_at
+        )
+    return _create
+
+@pytest.fixture
+def add_invite_to_db(test_db, invite_schema_factory, add_lodge_to_db, add_landlord_to_db):
+    inv_schema = invite_schema_factory(
+        lodge_id=add_lodge_to_db.id,
+    )
+    return invite_service.invite_tenant(
+        test_db, invite_in=inv_schema, landlord_id=add_landlord_to_db.id
+    )
+
+
+@pytest.fixture
+def mock_tenant_schema(tenant_schema_factory, add_invite_to_db):
     """
     A pytest fixture that provides a mock tenant schema.
     """
-    return tenant_schema_factory()
+    return tenant_schema_factory(invite_id=add_invite_to_db.id)
 
 @pytest.fixture
 def room_schema_factory():
@@ -367,18 +388,20 @@ def vacant_rooms_in_db(test_db, room_schema_factory, add_landlord_to_db, add_lod
     return db_rooms
 
 @pytest.fixture
-def tenants_in_db(test_db, tenant_schema_factory, add_lodge_to_db):
+def tenants_in_db(test_db, tenant_schema_factory, add_lodge_to_db, invite_schema_factory, add_landlord_to_db):
     """
     A pytest fixture that adds multiple tenants to the database in a specific lodge.
     """
     max_tenants = 10
     db_tenants = []
     for i in range(max_tenants):
+        inv_schema = invite_schema_factory(lodge_id=add_lodge_to_db.id)
+        db_invite = invite_service.invite_tenant(test_db, invite_in=inv_schema, landlord_id=add_landlord_to_db.id)
         t_schema = tenant_schema_factory(
             first_name=f'TenantFirst{i + 1}',
             last_name=f'TenantLast{i + 1}',
             email=f'tenant{i + 1}@test.com',
-            lodge_id=add_lodge_to_db.id
+            invite_id=db_invite.id
         )
         new_tenant = tenant_services.sign_up_tenant(test_db, tenant_in=t_schema)
         db_tenants.append(new_tenant)
@@ -419,19 +442,26 @@ def authenticated_tenant_client(auth_client_factory, add_tenant_to_db):
     return client
 
 @pytest.fixture
-def add_second_tenant_to_db(test_db, tenant_schema_factory, add_lodge_to_db):
+def add_second_tenant_to_db(test_db, tenant_schema_factory, add_lodge_to_db, invite_schema_factory, add_landlord_to_db):
     """
     A pytest fixture that adds a second tenant to the same lodge.
     """
-    t_schema = tenant_schema_factory(email="tenant2@test.com", first_name="TenantB", lodge_id=add_lodge_to_db.id)
-    return tenant_services.sign_up_tenant(test_db, tenant_in=t_schema)
+    inv_schema = invite_schema_factory(lodge_id=add_lodge_to_db.id)
+    db_invite = invite_service.invite_tenant(test_db, invite_in=inv_schema, landlord_id=add_landlord_to_db.id)
+
+    t_schema = tenant_schema_factory(email="tenant2@test.com", first_name="TenantB",
+                                      invite_id=db_invite.id)
+    return tenant_services.sign_up_tenant(test_db, tenant_in=t_schema, )
 
 @pytest.fixture
-def add_diff_landlord_tenant(test_db, tenant_schema_factory, add_diff_landlord_lodge):
+def add_diff_landlord_tenant(test_db, tenant_schema_factory, add_diff_landlord_lodge, add_different_landlord,
+                             invite_schema_factory):
     """
     A pytest fixture that adds a tenant to a different landlord's lodge.
     """
-    t_schema = tenant_schema_factory(lodge_id=add_diff_landlord_lodge.id, email="tenant3@test.com")
+    inv_schema = invite_schema_factory(lodge_id=add_diff_landlord_lodge.id)
+    db_invite = invite_service.invite_tenant(test_db, invite_in=inv_schema, landlord_id=add_different_landlord.id)
+    t_schema = tenant_schema_factory(email="tenant3@test.com", invite_id=db_invite.id)
     return tenant_services.sign_up_tenant(test_db, tenant_in=t_schema)
 
 @pytest.fixture
@@ -551,7 +581,6 @@ def leases_in_db(test_db, lease_schema_factory, lease_statuses, add_landlord_to_
         tenant = tenants_in_db[i]
         room = vacant_rooms_in_db[i]
 
-        status = random.choice(lease_statuses)
 
         lease_data = lease_schema_factory(
             tenant_id=tenant.id,
@@ -721,7 +750,8 @@ def tenant_safe_payments_in_db(test_db, payment_schema_factory, add_landlord_to_
 
 
 @pytest.fixture
-def add_dashboard_stats(test_db, add_lodge_to_db, add_landlord_to_db, room_schema_factory, tenant_schema_factory, lease_schema_factory, payment_schema_factory):
+def add_dashboard_stats(test_db, add_lodge_to_db, add_landlord_to_db, room_schema_factory, tenant_schema_factory,
+                        lease_schema_factory, payment_schema_factory, invite_schema_factory):
     lodge_id = add_lodge_to_db.id
     landlord_id = add_landlord_to_db.id
     
@@ -743,8 +773,11 @@ def add_dashboard_stats(test_db, add_lodge_to_db, add_landlord_to_db, room_schem
         elif scenario == "VACANT":
             room_counter += 1
             return
-        
-        t_schema = tenant_schema_factory(first_name=f"{scenario}{room_counter}", email=f"t{room_counter}@test.com", lodge_id=lodge_id)
+        inv_schema = invite_schema_factory(lodge_id=add_lodge_to_db.id)
+        db_invite = invite_service.invite_tenant(test_db, invite_in=inv_schema, landlord_id=add_landlord_to_db.id)
+
+        t_schema = tenant_schema_factory(first_name=f"{scenario}{room_counter}", email=f"t{room_counter}@test.com",
+                                         invite_id=db_invite.id)
         tenant = tenant_services.sign_up_tenant(test_db, tenant_in=t_schema)
         
         start_date = date.today() - timedelta(days=100)

@@ -22,7 +22,7 @@ class CrudInvite:
 
     def get_invite_record_by_id(self, db: Session, invite_id: UUID) -> Invite | None:
         options= joinedload(Invite.lodge)
-        stmt = select(self.model).where(self.model.id == invite_id).options(*options)
+        stmt = select(self.model).where(self.model.id == invite_id).options(options)
         return  db.execute(stmt).scalar()
 
 

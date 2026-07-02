@@ -1,8 +1,8 @@
-"""cleared the lease status column
+"""server default for tenant status column
 
-Revision ID: f704acab12ab
-Revises: 44b63cbeae9b
-Create Date: 2026-06-18 20:06:57.841710
+Revision ID: 944c6c016322
+Revises: 09beb1a895fb
+Create Date: 2026-06-30 14:56:45.519790
 
 """
 from typing import Sequence, Union
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'f704acab12ab'
-down_revision: Union[str, Sequence[str], None] = '44b63cbeae9b'
+revision: str = '944c6c016322'
+down_revision: Union[str, Sequence[str], None] = '09beb1a895fb'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

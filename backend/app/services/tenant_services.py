@@ -3,26 +3,21 @@ Module providing tenant-related business logic.
 
 This module contains services for managing tenants and their profiles.
 """
-from typing import cast
-from uuid import UUID
 
 from sqlalchemy.orm import Session, joinedload
 
 from app.crud.invite import crud_invite
-from app.crud.lodge import crud_lodge
 from app.crud.user import crud_user
 from app.crud.tenantprofile import crud_tenant
-from app.core.enums import UserRole, InviteStatus
-from app.core.exceptions import UserAlreadyExistError, LodgeNotFoundError, UserNotFoundError, \
-    TenantProfileNotFoundError, InviteNotFoundError, InvalidInvitation
+from app.core.enums import UserRole, InviteStatus, TenantStatus
+from app.core.exceptions import UserAlreadyExistError, LodgeNotFoundError,  \
+    TenantProfileNotFoundError, InviteNotFoundError, InvalidInvitation, InvalidActionError
 from app.core.security import get_password_hash
-from app.models.lodge import Lodge
 from app.models.tenantprofile import TenantProfile
 from app.models.user import User
-from app.schemas.tenantprofile import TenantProfileCreate, TenantProfileUpdate
+from app.schemas.tenantprofile import TenantProfileCreate, TenantProfileUpdate, TenantStatusUpdate
 from app.schemas.user import UserInternal
 from app.services import lodge_service
-from app.services.lodge_service import is_landlord, is_tenant
 
 
 def sign_up_tenant(
@@ -42,13 +37,13 @@ def sign_up_tenant(
     invite_record = crud_invite.get_invite_record_by_id(db, invite_id=tenant_in.invite_id)
     
     if not invite_record:
-        raise InviteNotFoundError()
+        raise InviteNotFoundError(invite_id=tenant_in.invite_id)
+
+    if invite_record.is_expired:
+        raise InvalidInvitation(invite_status=InviteStatus.EXPIRED)
 
     if invite_record.status in [InviteStatus.EXPIRED, InviteStatus.ACCEPTED]:
         raise InvalidInvitation(invite_status=invite_record.status)
-
-    if not crud_lodge.get(db, item_id=invite_record.lodge_id):
-        raise LodgeNotFoundError()
 
     if crud_user.get_user_by_email(db, email=tenant_in.user_info.email):
         raise UserAlreadyExistError(email=tenant_in.user_info.email)
@@ -164,3 +159,21 @@ def fetch_tenant_by_landlord(
         raise TenantProfileNotFoundError()
 
     return tenant
+
+def update_tenant_profile_status(db: Session, tenant_id: int, landlord_id: int, update_data: TenantStatusUpdate):
+    options = joinedload(TenantProfile.lodge)
+    tenant= crud_tenant.get(db, tenant_id, options)
+
+    if not tenant:
+        raise TenantProfileNotFoundError()
+
+    if tenant.lodge.landlord_id != landlord_id:
+        raise TenantProfileNotFoundError()
+
+    if update_data.status == TenantStatus.PENDING:
+        raise InvalidActionError(error_name='Tenant Status', error_value=update_data.status)
+
+
+    return crud_tenant.update(db, update_data=update_data, db_obj=tenant)
+
+

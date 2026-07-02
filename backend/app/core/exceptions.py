@@ -37,17 +37,23 @@ class RoomAlreadyExistError(BaseAlreadyExistError):
 
 
 
+class InvalidActionError(BaseLodgeOpsError):
+    def __init__(self, error_name: str, error_value: str, error_status: int= status.HTTP_400_BAD_REQUEST):
+        self.detail = f'{error_name.title()} is already {error_value.title()}'
+        super().__init__(detail=self.detail, status_code=error_status)
 
 
-class InvalidLeaseActionError(BaseLodgeOpsError):
-    def __init__(self, status: LeaseStatus ):
-        self.detail = f'Lease is already {status.value}'
-        super().__init__(detail=self.detail, status_code=400)
+class InvalidLeaseActionError(InvalidActionError):
+    def __init__(self, lease_status: LeaseStatus ):
+        super().__init__(error_name='Lease', error_value=lease_status.value)
 
-class InvalidInvitation(BaseLodgeOpsError):
+class InvalidInvitation(InvalidActionError):
     def __init__(self, invite_status: InviteStatus):
-        self.detail = f'Invite is already {invite_status.value}'
-        super().__init__(detail=self.detail, self=status.HTTP_400_BAD_REQUEST)
+        super().__init__(error_name='Invite', error_value=invite_status.value)
+
+
+
+
 
 class BaseMaxLimitReachedError(BaseLodgeOpsError):
     def __init__(self, detail: str, meta: dict = None):
@@ -144,7 +150,7 @@ class NotUpdatableOptionError(BaseLodgeOpsError):
 
 
 class InviteNotFoundError(BaseNotFoundError):
-    def __init__(self, invite_id: UUID):
+    def __init__(self, invite_id: UUID | None):
 
         self.meta = {
             'invite_id': invite_id

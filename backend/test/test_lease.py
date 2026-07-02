@@ -3,7 +3,7 @@ from fastapi import status
 from datetime import timedelta
 
 from app.core.enums import LeaseStatus
-from test.conftest import base_url, add_lodge_to_db
+from test.conftest import base_url
 
 lease_url = f'{base_url}/leases'
 

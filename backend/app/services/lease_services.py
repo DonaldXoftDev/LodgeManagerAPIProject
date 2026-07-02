@@ -48,7 +48,7 @@ def create_new_lease(
     )
 
     if active_lease:
-        raise InvalidLeaseActionError(status=active_lease.computed_status)
+        raise InvalidLeaseActionError(lease_status=active_lease.computed_status)
 
     return crud_lease.create_lease(db, lease_data=lease_data, room=room)
 
@@ -187,7 +187,7 @@ def verify_lease_to_terminate(
 
     # don't terminate a lease if it has already been terminated
     if lease.status == LeaseStatus.TERMINATED:
-        raise InvalidLeaseActionError(status=lease.status)
+        raise InvalidLeaseActionError(lease_status=lease.status)
 
     return lease
 
@@ -272,7 +272,7 @@ def appeal_for_lease_termination(
         raise LeaseNotFoundError()
 
     if lease.status == LeaseStatus.PENDING_TERMINATION:
-        raise InvalidLeaseActionError(status=lease.status)
+        raise InvalidLeaseActionError(lease_status=lease.status)
 
     return crud_lease.request_terminate_lease(db, db_lease=lease)
 

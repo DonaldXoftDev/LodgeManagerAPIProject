@@ -1,6 +1,7 @@
 from uuid import UUID
 
 from sqlalchemy.orm import Session
+from starlette import status
 
 from app.api.deps import get_db, get_landlord_user
 from app.models.user import User
@@ -11,7 +12,7 @@ from app.services import invite_service
 
 router = APIRouter()
 
-@router.post('/', response_model=schema_invite.InviteResponse)
+@router.post('/', response_model=schema_invite.InviteResponse, status_code=status.HTTP_201_CREATED)
 def invite_tenant(
         invite_in: schema_invite.InviteCreate,
         db: Session = Depends(get_db),

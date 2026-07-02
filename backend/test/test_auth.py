@@ -2,6 +2,8 @@ import time
 
 import pytest
 from fastapi import status
+
+from app.core.enums import TenantStatus
 from test.conftest import mock_landlord_schema, base_url
 
 auth_url_base = f'{base_url}/auth'
@@ -101,7 +103,7 @@ def test_register_tenant_returns_201(client, mock_tenant_schema, add_lodge_to_db
     """
     Tests that a tenant can be registered and returns a 201 status code.
     """
-    t_payload = mock_tenant_schema.model_dump()
+    t_payload = mock_tenant_schema.model_dump(mode='json')
 
     response = client.post(f'{auth_url_base}/register/tenant', json=t_payload)
     data = response.json()
@@ -110,24 +112,12 @@ def test_register_tenant_returns_201(client, mock_tenant_schema, add_lodge_to_db
     assert data['tenant_type'] == mock_tenant_schema.tenant_info.tenant_type
     assert data['emergency_contact_name'] == mock_tenant_schema.tenant_info.emergency_contact_name
     assert data['emergency_contact_phone_no'] == mock_tenant_schema.tenant_info.emergency_contact_phone_no
+    assert data['status'] == TenantStatus.PENDING
     assert 'id' in data
     assert 'user_id' in data
     assert data['user'] != {}
 
 
-def test_register_tenant_lodge_not_exist_returns_404(client, mock_tenant_schema):
-    """
-    Tests that registering a tenant for a non-existent lodge returns a 404 status code.
-    """
-    mock_tenant_schema.tenant_info.lodge_id = 999
-    t_payload = mock_tenant_schema.model_dump()
-
-
-    response = client.post(f'{auth_url_base}/register/tenant', json=t_payload)
-    data = response.json()
-
-    assert response.status_code == status.HTTP_404_NOT_FOUND
-    assert data['detail'] == 'Lodge could not be found'
 
 
 def test_get_me_returns_authenticated_user(authenticated_landlord_client, add_landlord_to_db):

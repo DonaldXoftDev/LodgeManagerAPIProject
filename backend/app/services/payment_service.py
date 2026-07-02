@@ -67,7 +67,7 @@ def add_payment_record(
         raise RoomNotFoundError()
 
     if lease.status == LeaseStatus.TERMINATED:
-        raise InvalidLeaseActionError(status=lease.status)
+        raise InvalidLeaseActionError(lease_status=lease.status)
 
     total_payments = crud_payment.get_payments_aggregate_by_lease_id(db, lease_id=lease.id)
 

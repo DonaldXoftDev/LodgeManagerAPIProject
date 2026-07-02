@@ -10,7 +10,7 @@ from pydantic import BaseModel, field_validator, ConfigDict
 
 from app.schemas.user import UserCreate, UserUpdate, UserResponse
 from typing import Optional
-from app.core.enums import TenantType, StudentLevel
+from app.core.enums import TenantType, StudentLevel, TenantStatus
 
 
 class TenantBase(BaseModel):
@@ -53,12 +53,15 @@ class TenantInfoUpdate(BaseModel):
     reg_no: Optional[int] = None
     department: Optional[str] = None
 
+class TenantStatusUpdate(BaseModel):
+    status: Optional[TenantStatus] = None
 
 
 class TenantProfileResponse(TenantBase):
     id: int
     user_id: int
     created_at: datetime
+    status: TenantStatus
     is_active: bool
     is_onboarding: bool
     user: UserResponse
