@@ -48,6 +48,7 @@ class DashboardFilters(BaseModel):
     financial_filters: list[BadgeTexts]
 
 class RoomSummary(BaseModel):
+    room_no: str
     description: str
     base_rent: int
     status: str
@@ -55,6 +56,7 @@ class RoomSummary(BaseModel):
 class LeaseSummary(BaseModel):
     start_date: date
     end_date: date
+    days_left: int
 
 class FinancialSummary(BaseModel):
     agreed_rent: int
@@ -65,13 +67,21 @@ class TenantSummary(BaseModel):
     name: str
     phone: str
 
-class RoomLeaseInfo(BaseModel):
+class RoomLeaseBase(BaseModel):
     room: RoomSummary
     lease: LeaseSummary
     finance: FinancialSummary
+    badge_text: BadgeTexts
+    badge_variant: BadgeVariants
+
+class RoomLeaseInfo(RoomLeaseBase):
     tenant: TenantSummary
 
+
+class TenantDashboardStats(RoomLeaseBase):
     pass
+
+
 if __name__ == "__main__":
     mock_dashboard_stats_dict = {
         'financials': {

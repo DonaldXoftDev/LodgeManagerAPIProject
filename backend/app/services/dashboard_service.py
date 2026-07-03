@@ -6,7 +6,7 @@ This module contains services for generating dashboard summaries.
 from datetime import date
 from typing import Optional
 
-from app.core.exceptions import LeaseNotFoundError
+from app.core.exceptions import LeaseNotFoundError, TenantProfileNotFoundError
 from app.crud.lease import crud_lease
 from app.crud.lodge import crud_lodge
 from app.models.lease import Lease
@@ -16,7 +16,7 @@ from app.core.enums import BadgeTexts
 from app.crud.payment import crud_payment
 from app.models.tenantprofile import TenantProfile
 from app.schemas.dashboard import LandlordDashboardStats, DashboardFilters, RoomSummary, LeaseSummary, FinancialSummary, \
-    TenantSummary, RoomLeaseInfo
+    TenantSummary, RoomLeaseInfo, TenantDashboardStats
 from app.schemas.entity_count import EntityCountResponse, OccupiedCounts
 from app.schemas.financial import FinancialResponse
 from app.schemas.lease import OccupiedRoomLeasesResponse
@@ -204,7 +204,10 @@ def _organise_room_lease_summary(
         room=room_summary,
         lease=lease_summary,
         tenant=tenant_summary,
-        finance=financial_summary
+        finance=financial_summary,
+        badge_text=raw_summary_row.get('badge_text'),
+        badge_variant=raw_summary_row.get('badge_variant'),
+
     )
 
 def get_dashboard_lease_info(
@@ -213,7 +216,7 @@ def get_dashboard_lease_info(
         landlord_id: int
 ):
     #lease exists and owned by landlord
-    #crud to build a query that joins the room, lease, tenant, user, payment_subq together and bundle the necessary
+    #crud to build a query that joins the room, lease, tenant, user, payment together and bundle the necessary
     #info into in the select
     #then calculates balance in python b4  putting in the RoomLeaseInfo schema
 
@@ -224,3 +227,36 @@ def get_dashboard_lease_info(
         lease_id=lease_id
     )
 
+def get_tenant_active_lease_stats(db: Session, tenant_id: int, lodge_id: int, skip: int | None, limit: int|None):
+
+    #tenant must exist and belong to the lodge he is trying to get the dashboard stats from
+    #query the room, the lease, the payment and organize the relevant data for the tenant
+    #return the list of stats if more than one...
+
+    row_summary_list =  crud_lodge.get_tenant_dashboard_stats(
+        db,
+        tenant_id=tenant_id,
+        lodge_id=lodge_id,
+        skip=skip,
+        limit=limit
+    )
+    if not row_summary_list:
+        return row_summary_list
+
+    tenant_stat_list: list[TenantDashboardStats] = []
+
+    for row in row_summary_list:
+        room_summary = RoomSummary(**row)
+        lease_summary = LeaseSummary(**row)
+        financial_summary = FinancialSummary(**row)
+
+        stat  = TenantDashboardStats(
+            room=room_summary,
+            lease=lease_summary,
+            finance=financial_summary,
+            badge_text=row.get('badge_text'),
+            badge_variant=row.get('badge_variant'),
+        )
+        tenant_stat_list.append(stat)
+
+    return tenant_stat_list

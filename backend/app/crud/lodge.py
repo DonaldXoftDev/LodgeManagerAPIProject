@@ -5,7 +5,7 @@ This module contains the CRUD operations for Lodge models.
 """
 from sqlalchemy import or_, literal, func, select, and_, case
 from sqlalchemy.orm import Session
-from app.core.enums import RoomStatus, LeaseStatus, BadgeTexts
+from app.core.enums import RoomStatus, LeaseStatus, BadgeTexts, BadgeVariants
 from app.models.lease import Lease
 from app.models.lodge import Lodge
 from app.models.room import Room
@@ -196,21 +196,42 @@ class CRUDLodge(CRUDBase[Lodge, LodgeCreate, LodgeUpdate]):
             lease_id: int
     ):
 
-        per_lease_payment_total = func.coalesce(const.PAYMENT_SUBQ.c.total_amt_paid, 0)
-        remaining_balance_expr = (Lease.agreed_rent_amt - per_lease_payment_total)
         tenant_full_name = func.concat(User.first_name, ' ', User.last_name)
         stmt = select(
+            Room.room_no.label('room_no'),
             Room.description.label('description'),
             Room.base_rent_price.label('base_rent'),
             Room.status.label('status'),
             Lease.start_date.label('start_date'),
             Lease.end_date.label('end_date'),
             Lease.agreed_rent_amt.label('agreed_rent'),
-            per_lease_payment_total.label('total_paid'),
-            remaining_balance_expr.label('remaining_balance'),
+            const.per_lease_payment_total.label('total_paid'),
+            const.remaining_balance_expr.label('remaining_balance'),
             tenant_full_name.label('name'),
-            User.phone_no.label('phone')
+            User.phone_no.label('phone'),
+            const.days_left.label('days_left'),
 
+            case(
+                (and_(*const.filter_menu.get(BadgeTexts.PENDING)), BadgeTexts.PENDING.value),
+                (and_(*const.filter_menu.get(BadgeTexts.SAFE)), BadgeTexts.SAFE.value),
+                (and_(*const.filter_menu.get(BadgeTexts.EXPIRING)), BadgeTexts.EXPIRING.value),
+                (and_(*const.filter_menu.get(BadgeTexts.OVERDUE)), BadgeTexts.OVERDUE.value),
+                (and_(*const.filter_menu.get(BadgeTexts.OWING)), BadgeTexts.OWING.value),
+                (const.vacant_expr, RoomStatus.VACANT.value),
+                (const.maintenance_expr, RoomStatus.MAINTENANCE.value),
+                else_=BadgeTexts.UNKNOWN_BADGE_TEXT.value
+            ).label('badge_text'),
+
+            case(
+                (and_(*const.filter_menu.get(BadgeTexts.PENDING)), BadgeVariants.PURPLE.value),
+                (and_(*const.filter_menu.get(BadgeTexts.SAFE)), BadgeVariants.SUCCESS.value),
+                (and_(*const.filter_menu.get(BadgeTexts.EXPIRING)), BadgeVariants.WARNING.value),
+                (and_(*const.filter_menu.get(BadgeTexts.OVERDUE)), BadgeVariants.ORANGE.value),
+                (and_(*const.filter_menu.get(BadgeTexts.OWING)), BadgeVariants.DANGER.value),
+                (const.vacant_expr, BadgeVariants.INFO.value),
+                (const.maintenance_expr, BadgeVariants.INACTIVE.value),
+                else_=BadgeVariants.UNKNOWN_VARIANT.value
+            ).label('badge_variant'),
         ).select_from(
             Lease
         ).join(
@@ -232,6 +253,7 @@ class CRUDLodge(CRUDBase[Lodge, LodgeCreate, LodgeUpdate]):
             )
         ).group_by(
             Lease.id,
+            Room.room_no,
             Room.description,
             Room.status,
             Room.base_rent_price,
@@ -251,5 +273,73 @@ class CRUDLodge(CRUDBase[Lodge, LodgeCreate, LodgeUpdate]):
         db.refresh(db_lodge)
         return db_lodge
 
+    def get_tenant_dashboard_stats(self, db:Session, tenant_id: int, lodge_id: int,
+                                   skip: int|None = 0, limit: int|None = 10):
+
+        stmt = select(
+            Lease.id,
+            Room.room_no.label('room_no'),
+            Room.description.label('description'),
+            Room.base_rent_price.label('base_rent'),
+            Room.status.label('status'),
+            Lease.start_date.label('start_date'),
+            Lease.end_date.label('end_date'),
+            Lease.agreed_rent_amt.label('agreed_rent'),
+            const.per_lease_payment_total.label('total_paid'),
+            const.remaining_balance_expr.label('remaining_balance'),
+
+            case(
+                (and_(*const.filter_menu.get(BadgeTexts.PENDING)), BadgeTexts.PENDING.value),
+                (and_(*const.filter_menu.get(BadgeTexts.SAFE)), BadgeTexts.SAFE.value),
+                (and_(*const.filter_menu.get(BadgeTexts.EXPIRING)), BadgeTexts.EXPIRING.value),
+                (and_(*const.filter_menu.get(BadgeTexts.OVERDUE)), BadgeTexts.OVERDUE.value),
+                (and_(*const.filter_menu.get(BadgeTexts.OWING)), BadgeTexts.OWING.value),
+                (const.vacant_expr, RoomStatus.VACANT.value),
+                (const.maintenance_expr, RoomStatus.MAINTENANCE.value),
+                else_=BadgeTexts.UNKNOWN_BADGE_TEXT.value
+            ).label('badge_text'),
+
+            case(
+                (and_(*const.filter_menu.get(BadgeTexts.PENDING)), BadgeVariants.PURPLE.value),
+                (and_(*const.filter_menu.get(BadgeTexts.SAFE)), BadgeVariants.SUCCESS.value),
+                (and_(*const.filter_menu.get(BadgeTexts.EXPIRING)), BadgeVariants.WARNING.value),
+                (and_(*const.filter_menu.get(BadgeTexts.OVERDUE)), BadgeVariants.ORANGE.value),
+                (and_(*const.filter_menu.get(BadgeTexts.OWING)), BadgeVariants.DANGER.value),
+                (const.vacant_expr, BadgeVariants.INFO.value),
+                (const.maintenance_expr, BadgeVariants.INACTIVE.value),
+                else_=BadgeVariants.UNKNOWN_VARIANT.value
+            ).label('badge_variant'),
+
+            const.days_left.label('days_left')
+        ).select_from(
+            Lease,
+        ).join(
+            Room, Room.id == Lease.room_id
+        ).outerjoin(
+            TenantProfile, TenantProfile.id == Lease.tenant_id
+        ).outerjoin(
+            const.PAYMENT_SUBQ, const.PAYMENT_SUBQ.c.lease_id == Lease.id
+        ).where(
+            Room.lodge_id == lodge_id,
+            or_(
+                Lease.status.is_(None),
+            Lease.status == LeaseStatus.PENDING_TERMINATION
+            ),
+            Lease.tenant_id == tenant_id
+        ).group_by(
+            Lease.id,
+            Room.room_no,
+            Room.description,
+            Room.base_rent_price,
+            Room.status,
+            Lease.start_date,
+            Lease.end_date,
+            Lease.agreed_rent_amt,
+            const.PAYMENT_SUBQ.c.total_amt_paid
+        )
+
+        stmt = stmt.offset(skip).limit(limit)
+
+        return db.execute(stmt).mappings().all()
 
 crud_lodge = CRUDLodge(Lodge)
