@@ -4,28 +4,42 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LodgeOps — Payments</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
     <style>
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
-        .modal.active { display: flex; }
-        .modal-content { background: var(--surface); padding: 32px; border-radius: 12px; width: 100%; max-width: 450px; }
-        .modal-title { font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; margin-bottom: 16px; }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); justify-content: center; align-items: center; z-index: 1000; opacity: 0; transition: opacity 0.3s; }
+        .modal.active { display: flex; opacity: 1; }
+        .modal-content { background: var(--surface); padding: 40px; border-radius: 20px; width: 100%; max-width: 480px; box-shadow: var(--shadow-glass); border: 1px solid var(--border); transform: translateY(20px); transition: transform 0.3s; }
+        .modal.active .modal-content { transform: translateY(0); }
+        .modal-title { font-family: 'Outfit', sans-serif; font-size: 24px; font-weight: 700; margin-bottom: 24px; color: var(--text); }
+        
+        /* Stub feature */
+        .tenant-pay-stub {
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.1), rgba(192, 38, 211, 0.1));
+            border: 1px dashed var(--accent);
+            border-radius: 16px;
+            padding: 32px;
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        .tenant-pay-stub h3 { font-family: 'Outfit', sans-serif; font-size: 20px; color: var(--text); margin-bottom: 12px; }
+        .tenant-pay-stub p { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
     </style>
 </head>
 <body>
-    <div class="layout">
+    <div class="layout fade-in">
         <!-- SIDEBAR -->
-        <aside class="sidebar" id="sidebar">
+        <aside class="sidebar glass-panel" id="sidebar">
             <div class="logo">
                 Lodge<span>Ops</span>
-                <button class="toggle-btn mobile-close" onclick="document.getElementById('sidebar').classList.remove('mobile-open')">✕</button>
+                <button class="toggle-btn mobile-close mobile-menu-btn" onclick="document.getElementById('sidebar').classList.remove('mobile-open')">✕</button>
             </div>
             
             <a href="dashboard.html" class="nav-item">Dashboard</a>
             <a href="rooms.html" class="nav-item">Rooms</a>
             <a href="leases.html" class="nav-item">Leases</a>
             <a href="payments.html" class="nav-item active">Payments</a>
+            <a href="tenants.html" class="nav-item">Tenants</a>
             
             <div class="sidebar-bottom">
                 <a href="lodges.html" class="nav-item">Switch Property</a>
@@ -35,64 +49,86 @@
 
         <!-- MAIN CONTENT -->
         <main class="main">
-            <header class="page-header">
+            <header class="page-header slide-up">
                 <div class="header-left">
-                    <button class="mobile-menu-btn" onclick="document.getElementById('sidebar').classList.add('mobile-open')">☰</button>
+                    <button class="mobile-menu-btn" onclick="document.getElementById('sidebar').classList.add('mobile-open')">☰ Menu</button>
                     <div>
-                        <h1 class="page-title">Rent Payments</h1>
+                        <h1 class="page-title">Payment Ledger</h1>
                         <p class="page-subtitle" id="lodge-name-display">Loading...</p>
                     </div>
                 </div>
                 <div class="header-right">
-                    <button class="btn btn-primary" onclick="openPaymentModal()">+ Record Payment</button>
+                    <!-- Landlord button -->
+                    <button id="record-payment-btn" class="btn btn-primary" onclick="openPaymentModal()" style="display:none;">+ Record Payment</button>
                 </div>
             </header>
 
-            <div id="error-msg" class="error-msg"></div>
+            <div id="toast-container" class="toast-container"></div>
+            
+            <!-- Tenant Stub (Only shown to tenants via JS, but here's the HTML) -->
+            <div id="tenant-pay-section" class="tenant-pay-stub slide-up" style="display:none; animation-delay: 0.1s;">
+                <h3>Pay Rent Online</h3>
+                <p>We're building an integrated payment gateway so you can pay your rent seamlessly from this portal. Coming in v2!</p>
+                <button class="btn btn-primary" style="opacity:0.6; cursor:not-allowed;" disabled>Pay via Gateway (Coming Soon)</button>
+            </div>
 
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Lease ID</th>
-                        <th>Amount</th>
-                        <th>Method</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody id="payments-tbody">
-                    <!-- Payments load here -->
-                    <tr><td colspan="5" style="text-align:center; padding: 24px; color: var(--muted)">Payments API is currently tied to specific leases. Use the "Record Payment" button to log one.</td></tr>
-                </tbody>
-            </table>
+            <div class="table-wrapper slide-up" style="animation-delay: 0.2s;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Lease ID</th>
+                            <th>Amount</th>
+                            <th>Method</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="payments-tbody">
+                        <tr class="skeleton-row">
+                            <td><div class="skeleton" style="height:20px; width:100px;"></div></td>
+                            <td><div class="skeleton" style="height:20px; width:60px;"></div></td>
+                            <td><div class="skeleton" style="height:20px; width:80px;"></div></td>
+                            <td><div class="skeleton" style="height:20px; width:80px;"></div></td>
+                            <td><div class="skeleton" style="height:20px; width:60px;"></div></td>
+                        </tr>
+                        <tr class="skeleton-row">
+                            <td><div class="skeleton" style="height:20px; width:100px;"></div></td>
+                            <td><div class="skeleton" style="height:20px; width:60px;"></div></td>
+                            <td><div class="skeleton" style="height:20px; width:80px;"></div></td>
+                            <td><div class="skeleton" style="height:20px; width:80px;"></div></td>
+                            <td><div class="skeleton" style="height:20px; width:60px;"></div></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </main>
     </div>
 
-    <!-- Record Payment Modal -->
+    <!-- Record Payment Modal (Landlord) -->
     <div id="payment-modal" class="modal">
         <div class="modal-content">
             <h2 class="modal-title">Record Payment</h2>
             <form id="create-payment-form">
-                <div class="form-group">
-                    <label class="form-label">Select Active Lease</label>
-                    <select id="payment-lease" class="form-input" required>
+                <div class="form-group floating" style="margin-bottom: 24px;">
+                    <select id="payment-lease" class="form-input" required style="padding-top: 20px; padding-bottom: 6px;">
                         <option value="">Loading leases...</option>
                     </select>
+                    <label class="form-label" style="top:6px; font-size:11px; color:var(--accent);">Select Active Lease</label>
                 </div>
-                <div class="form-group">
+                <div class="form-group floating">
+                    <input type="number" id="payment-amount" class="form-input" required placeholder=" ">
                     <label class="form-label">Amount Paid</label>
-                    <input type="number" id="payment-amount" class="form-input" required placeholder="50000">
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Payment Method</label>
-                    <select id="payment-method" class="form-input" required>
+                <div class="form-group floating" style="margin-bottom: 32px;">
+                    <select id="payment-method" class="form-input" required style="padding-top: 20px; padding-bottom: 6px;">
                         <option value="BANK_TRANSFER">Bank Transfer</option>
                         <option value="CASH">Cash</option>
                         <option value="CARD">Card</option>
                     </select>
+                    <label class="form-label" style="top:6px; font-size:11px; color:var(--accent);">Payment Method</label>
                 </div>
-                <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:24px;">
-                    <button type="button" class="btn" style="background:var(--surface2); color:var(--text)" onclick="closePaymentModal()">Cancel</button>
+                <div style="display:flex; justify-content:flex-end; gap:12px;">
+                    <button type="button" class="btn btn-outline" onclick="closePaymentModal()">Cancel</button>
                     <button type="submit" class="btn btn-primary">Save Payment</button>
                 </div>
             </form>
@@ -106,8 +142,33 @@
             localStorage.removeItem('access_token');
             localStorage.removeItem('active_lodge_id');
             localStorage.removeItem('active_lodge_name');
+            localStorage.removeItem('user_role');
             window.location.href = 'auth.html';
         }
+
+        // Custom Toast Function for the new UI
+        function showToast(message, type = 'error') {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+            const toast = document.createElement('div');
+            toast.className = `toast ${type} show`;
+            toast.innerText = message;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Mock setting up UI based on role
+        document.addEventListener('DOMContentLoaded', () => {
+            const role = localStorage.getItem('user_role') || 'Landlord'; // Mock
+            if (role === 'Tenant') {
+                document.getElementById('tenant-pay-section').style.display = 'block';
+            } else {
+                document.getElementById('record-payment-btn').style.display = 'inline-flex';
+            }
+        });
     </script>
 </body>
 </html>

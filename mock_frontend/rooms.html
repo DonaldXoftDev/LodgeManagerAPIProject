@@ -4,28 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LodgeOps — Rooms</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
     <style>
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
-        .modal.active { display: flex; }
-        .modal-content { background: var(--surface); padding: 32px; border-radius: 12px; width: 100%; max-width: 400px; }
-        .modal-title { font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; margin-bottom: 16px; }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); justify-content: center; align-items: center; z-index: 1000; opacity: 0; transition: opacity 0.3s; }
+        .modal.active { display: flex; opacity: 1; }
+        .modal-content { background: var(--surface); padding: 40px; border-radius: 20px; width: 100%; max-width: 480px; box-shadow: var(--shadow-glass); border: 1px solid var(--border); transform: translateY(20px); transition: transform 0.3s; }
+        .modal.active .modal-content { transform: translateY(0); }
+        .modal-title { font-family: 'Outfit', sans-serif; font-size: 24px; font-weight: 700; margin-bottom: 24px; color: var(--text); }
     </style>
 </head>
 <body>
-    <div class="layout">
+    <div class="layout fade-in">
         <!-- SIDEBAR -->
-        <aside class="sidebar" id="sidebar">
+        <aside class="sidebar glass-panel" id="sidebar">
             <div class="logo">
                 Lodge<span>Ops</span>
-                <button class="toggle-btn mobile-close" onclick="document.getElementById('sidebar').classList.remove('mobile-open')">✕</button>
+                <button class="toggle-btn mobile-close mobile-menu-btn" onclick="document.getElementById('sidebar').classList.remove('mobile-open')">✕</button>
             </div>
             
             <a href="dashboard.html" class="nav-item">Dashboard</a>
             <a href="rooms.html" class="nav-item active">Rooms</a>
             <a href="leases.html" class="nav-item">Leases</a>
             <a href="payments.html" class="nav-item">Payments</a>
+            <a href="tenants.html" class="nav-item">Tenants</a>
             
             <div class="sidebar-bottom">
                 <a href="lodges.html" class="nav-item">Switch Property</a>
@@ -35,11 +37,11 @@
 
         <!-- MAIN CONTENT -->
         <main class="main">
-            <header class="page-header">
+            <header class="page-header slide-up">
                 <div class="header-left">
-                    <button class="mobile-menu-btn" onclick="document.getElementById('sidebar').classList.add('mobile-open')">☰</button>
+                    <button class="mobile-menu-btn" onclick="document.getElementById('sidebar').classList.add('mobile-open')">☰ Menu</button>
                     <div>
-                        <h1 class="page-title">Rooms Management</h1>
+                        <h1 class="page-title">Manage Rooms</h1>
                         <p class="page-subtitle" id="lodge-name-display">Loading...</p>
                     </div>
                 </div>
@@ -48,48 +50,50 @@
                 </div>
             </header>
 
-            <div id="error-msg" class="error-msg"></div>
+            <div id="toast-container" class="toast-container"></div>
 
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Room No</th>
-                        <th>Type</th>
-                        <th>Floor</th>
-                        <th>Base Rent</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody id="rooms-tbody">
-                    <!-- Rooms will load here -->
-                </tbody>
-            </table>
+            <div class="table-wrapper slide-up" style="animation-delay: 0.1s;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Room No</th>
+                            <th>Base Rent</th>
+                            <th>Description</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rooms-tbody">
+                        <tr class="skeleton-row">
+                            <td><div class="skeleton" style="height:20px; width:60px;"></div></td>
+                            <td><div class="skeleton" style="height:20px; width:80px;"></div></td>
+                            <td><div class="skeleton" style="height:20px; width:150px;"></div></td>
+                            <td><div class="skeleton" style="height:20px; width:60px;"></div></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </main>
     </div>
 
     <!-- Add Room Modal -->
     <div id="room-modal" class="modal">
         <div class="modal-content">
-            <h2 class="modal-title">Add New Room</h2>
+            <h2 class="modal-title">Add Room</h2>
             <form id="create-room-form">
-                <div class="form-group">
+                <div class="form-group floating">
+                    <input type="text" id="room-no" class="form-input" required placeholder=" ">
                     <label class="form-label">Room Number</label>
-                    <input type="text" id="room-no" class="form-input" required placeholder="e.g. 101 or A1">
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Room Type</label>
-                    <input type="text" id="room-type" class="form-input" required placeholder="e.g. Self Contain">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Floor</label>
-                    <input type="text" id="room-floor" class="form-input" value="Ground" required>
-                </div>
-                <div class="form-group">
+                <div class="form-group floating">
+                    <input type="number" id="room-rent" class="form-input" required placeholder=" ">
                     <label class="form-label">Base Rent</label>
-                    <input type="number" id="room-rent" class="form-input" required placeholder="150000">
                 </div>
-                <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:24px;">
-                    <button type="button" class="btn" style="background:var(--surface2); color:var(--text)" onclick="closeRoomModal()">Cancel</button>
+                <div class="form-group floating" style="margin-bottom: 32px;">
+                    <input type="text" id="room-desc" class="form-input" placeholder=" ">
+                    <label class="form-label">Description (Optional)</label>
+                </div>
+                <div style="display:flex; justify-content:flex-end; gap:12px;">
+                    <button type="button" class="btn btn-outline" onclick="closeRoomModal()">Cancel</button>
                     <button type="submit" class="btn btn-primary">Save Room</button>
                 </div>
             </form>
@@ -104,6 +108,18 @@
             localStorage.removeItem('active_lodge_id');
             localStorage.removeItem('active_lodge_name');
             window.location.href = 'auth.html';
+        }
+        function showToast(message, type = 'error') {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+            const toast = document.createElement('div');
+            toast.className = `toast ${type} show`;
+            toast.innerText = message;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
         }
     </script>
 </body>
