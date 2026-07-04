@@ -21,9 +21,9 @@ class RoomBase(BaseModel):
         base_rent_price (int): The base rental price.
         status (RoomStatus): The current status of the room.
     """
-    room_no: str
-    description: Optional[str] = None
-    base_rent_price: int = Field(default=200000, ge=0)
+    room_no: str = Field(..., description="The room number or identifier.", examples=["A1", "101"])
+    description: Optional[str] = Field(None, description="The description of the room.", examples=["Spacious self-contain"])
+    base_rent_price: int = Field(default=200000, ge=0, description="The base rental price in KOBO.", examples=[20000000])
 
 
     @field_validator('room_no', 'description')
@@ -33,46 +33,46 @@ class RoomBase(BaseModel):
 
 
 class RoomCreate(RoomBase):
-    lodge_id: int
+    lodge_id: int = Field(..., description="The ID of the lodge this room belongs to.", examples=[1])
     pass
 
 
 class RoomResponse(RoomCreate):
-    id: int
-    status: RoomStatus
-    created_at: datetime
+    id: int = Field(..., description="The unique identifier for the room.", examples=[1])
+    status: RoomStatus = Field(..., description="The current status of the room.", examples=["vacant"])
+    created_at: datetime = Field(..., description="Timestamp when the room was created.", examples=["2026-07-04T06:05:02Z"])
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class RoomStatusCounts(BaseModel):
-    occupied: int
-    vacant: int
-    maintenance: int
+    occupied: int = Field(..., description="Number of occupied rooms.", examples=[10])
+    vacant: int = Field(..., description="Number of vacant rooms.", examples=[5])
+    maintenance: int = Field(..., description="Number of rooms under maintenance.", examples=[2])
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class RoomUpdate(BaseModel):
-    room_no: Optional[str] = None
-    description: Optional[str] = None
-    base_rent_price: Optional[int] = None
-    status: Optional[RoomStatus] = None
+    room_no: Optional[str] = Field(None, description="The room number or identifier.", examples=["A1", "101"])
+    description: Optional[str] = Field(None, description="The description of the room.", examples=["Spacious self-contain"])
+    base_rent_price: Optional[int] = Field(None, ge=0, description="The base rental price in KOBO.", examples=[20000000])
+    status: Optional[RoomStatus] = Field(None, description="The current status of the room.", examples=["maintenance"])
 
 
 class RoomGridSummary(BaseModel):
-    lease_id: Optional[int] = None
-    room_id: int
-    room_no: str
-    badge_text: Union[BadgeTexts, RoomStatus]
-    badge_variant: BadgeVariants
-    main_display_text: str
-    sub_display_text: str
-    is_owing: bool = False
+    lease_id: Optional[int] = Field(None, description="The ID of the active lease, if any.", examples=[1])
+    room_id: int = Field(..., description="The ID of the room.", examples=[1])
+    room_no: str = Field(..., description="The room number.", examples=["101"])
+    badge_text: Union[BadgeTexts, RoomStatus] = Field(..., description="The text to display on the badge.", examples=["Safe"])
+    badge_variant: BadgeVariants = Field(..., description="The visual variant of the badge.", examples=["success"])
+    main_display_text: str = Field(..., description="Main text displayed on the grid card.", examples=["Donald"])
+    sub_display_text: str = Field(..., description="Sub text displayed on the grid card.", examples=["91 days left"])
+    is_owing: bool = Field(False, description="Whether the room currently has an owing balance.", examples=[False])
 
 class BulkRoomUpdate(BaseModel):
-    room_ids: list[int]
-    base_rent: int = Field(..., ge=0)
+    room_ids: list[int] = Field(..., description="List of room IDs to update.", examples=[[1, 2, 3]])
+    base_rent: int = Field(..., ge=0, description="The new base rent amount in KOBO.", examples=[25000000])
 
 
 if __name__ == '__main__':

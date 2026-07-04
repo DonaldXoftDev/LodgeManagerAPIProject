@@ -22,43 +22,43 @@ class LeaseBase(BaseModel):
         start_date (date): The start date of the lease.
         end_date (date): The end date of the lease.
     """
-    tenant_id: int
-    room_id: int
-    agreed_rent_amt: int = Field(..., ge=0)
-    start_date: date
-    end_date: date
+    tenant_id: int = Field(..., description="The ID of the tenant.", examples=[1])
+    room_id: int = Field(..., description="The ID of the leased room.", examples=[1])
+    agreed_rent_amt: int = Field(..., ge=0, description="The agreed ANNUAL rental amount in KOBO.", examples=[20000000])
+    start_date: date = Field(..., description="The start date of the lease.", examples=["2026-01-01"])
+    end_date: date = Field(..., description="The end date of the lease.", examples=["2026-12-31"])
 
 
 
 class LeaseCreate(LeaseBase):
-    total_amt_paid: int = Field(..., ge=0)
+    total_amt_paid: int = Field(..., ge=0, description="The total amount paid so far in KOBO.", examples=[20000000])
 
 
 class LeaseResponse(LeaseBase):
-    id: int
-    created_at : datetime
-    status: LeaseStatus = Field(validation_alias='computed_status')
+    id: int = Field(..., description="The unique identifier for the lease.", examples=[1])
+    created_at : datetime = Field(..., description="Timestamp when the lease was created.", examples=["2026-07-04T06:05:02Z"])
+    status: LeaseStatus = Field(validation_alias='computed_status', description="The current status of the lease.", examples=["active"])
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class LeaseUpdate(BaseModel):
-    tenant_id: Optional[int] = None
-    room_id: Optional[int] = None
-    agreed_rent_amt: Optional[int]  = Field(None, ge=0)
-    start_date: Optional[date] = None
-    end_date: Optional[date] = None
+    tenant_id: Optional[int] = Field(None, description="The ID of the tenant.", examples=[1])
+    room_id: Optional[int] = Field(None, description="The ID of the leased room.", examples=[1])
+    agreed_rent_amt: Optional[int]  = Field(None, ge=0, description="The agreed ANNUAL rental amount in KOBO.", examples=[20000000])
+    start_date: Optional[date] = Field(None, description="The start date of the lease.", examples=["2026-01-01"])
+    end_date: Optional[date] = Field(None, description="The end date of the lease.", examples=["2026-12-31"])
 
 class OccupiedRoomLeasesResponse(BaseModel):
-    safe: list[RoomGridSummary]
-    expiring: list[RoomGridSummary]
-    overdue: list[RoomGridSummary]
-    pending: list[RoomGridSummary]
-    owing: list[RoomGridSummary]
+    safe: list[RoomGridSummary] = Field(..., description="List of rooms with safe leases.", examples=[[]])
+    expiring: list[RoomGridSummary] = Field(..., description="List of rooms with expiring leases.", examples=[[]])
+    overdue: list[RoomGridSummary] = Field(..., description="List of rooms with overdue payments.", examples=[[]])
+    pending: list[RoomGridSummary] = Field(..., description="List of rooms with pending leases.", examples=[[]])
+    owing: list[RoomGridSummary] = Field(..., description="List of rooms with owing balances.", examples=[[]])
 
 class LeaseHistoryResponse(LeaseResponse):
-    tenant_name: str
-    room_no: str
+    tenant_name: str = Field(..., description="The name of the tenant.", examples=["John Doe"])
+    room_no: str = Field(..., description="The room number.", examples=["A1"])
 
 
 

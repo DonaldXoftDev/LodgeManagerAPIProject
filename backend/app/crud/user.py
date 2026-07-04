@@ -47,12 +47,8 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
                                           RefreshToken.user_id == user_id)
         return db.execute(stmt).scalar()
 
-    def delete_refresh_token(self, db: Session, current_refresh_token: str, user_id: int ):
-        stmt = delete(RefreshToken).where(
-            RefreshToken.token == current_refresh_token,
-            RefreshToken.user_id == user_id
-        )
-        db.execute(stmt)
+    def delete_refresh_token(self, db: Session, db_refresh_token: RefreshToken, user_id: int ):
+        db.delete(db_refresh_token)
         db.commit()
 
 

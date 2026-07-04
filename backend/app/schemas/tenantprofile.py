@@ -6,7 +6,7 @@ This module contains schemas used to represent, create, and update tenant profil
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, field_validator, ConfigDict
+from pydantic import BaseModel, field_validator, ConfigDict, Field
 
 from app.schemas.user import UserCreate, UserUpdate, UserResponse
 from typing import Optional
@@ -25,12 +25,12 @@ class TenantBase(BaseModel):
         reg_no (Optional[int]): The registration number.
         department (Optional[str]): The academic department.
     """
-    tenant_type: TenantType
-    emergency_contact_name: str
-    emergency_contact_phone_no: str
-    level: Optional[StudentLevel] = None
-    reg_no: Optional[int] = None
-    department: Optional[str] = None
+    tenant_type: TenantType = Field(..., description="The type of tenant.", examples=["student"])
+    emergency_contact_name: str = Field(..., description="The name of the emergency contact.", examples=["Jane Doe"])
+    emergency_contact_phone_no: str = Field(..., description="The phone number of the emergency contact.", examples=["+2348012345678"])
+    level: Optional[StudentLevel] = Field(None, description="The academic level if the tenant is a student.", examples=["100L"])
+    reg_no: Optional[int] = Field(None, description="The registration number.", examples=[123456])
+    department: Optional[str] = Field(None, description="The academic department.", examples=["Computer Science"])
 
     @field_validator('emergency_contact_name', 'emergency_contact_phone_no',
                      mode='before')
@@ -40,37 +40,37 @@ class TenantBase(BaseModel):
 
 
 class TenantProfileCreate(BaseModel):
-    invite_id: UUID
-    user_info: UserCreate
-    tenant_info: TenantBase
+    invite_id: UUID = Field(..., description="The UUID of the invitation used to create this profile.", examples=["123e4567-e89b-12d3-a456-426614174000"])
+    user_info: UserCreate = Field(..., description="The user information for the new tenant.", examples=[{"first_name": "John", "last_name": "Doe", "email": "john@example.com", "phone_no": "+2348012345678", "password": "securepassword"}])
+    tenant_info: TenantBase = Field(..., description="The tenant profile information.", examples=[{"tenant_type": "student", "emergency_contact_name": "Jane Doe", "emergency_contact_phone_no": "+2348012345678"}])
 
 
 class TenantInfoUpdate(BaseModel):
-    tenant_type: Optional[TenantType] = None
-    emergency_contact_name: Optional[str] = None
-    emergency_contact_phone_no: Optional[str] = None
-    level: Optional[StudentLevel] = None
-    reg_no: Optional[int] = None
-    department: Optional[str] = None
+    tenant_type: Optional[TenantType] = Field(None, description="The type of tenant.", examples=["student"])
+    emergency_contact_name: Optional[str] = Field(None, description="The name of the emergency contact.", examples=["Jane Doe"])
+    emergency_contact_phone_no: Optional[str] = Field(None, description="The phone number of the emergency contact.", examples=["+2348012345678"])
+    level: Optional[StudentLevel] = Field(None, description="The academic level if the tenant is a student.", examples=["100L"])
+    reg_no: Optional[int] = Field(None, description="The registration number.", examples=[123456])
+    department: Optional[str] = Field(None, description="The academic department.", examples=["Computer Science"])
 
 class TenantStatusUpdate(BaseModel):
-    status: Optional[TenantStatus] = None
+    status: Optional[TenantStatus] = Field(None, description="The status of the tenant.", examples=["active"])
 
 
 class TenantProfileResponse(TenantBase):
-    id: int
-    user_id: int
-    created_at: datetime
-    status: TenantStatus
-    is_active: bool
-    is_onboarding: bool
-    user: UserResponse
+    id: int = Field(..., description="The unique identifier for the tenant profile.", examples=[1])
+    user_id: int = Field(..., description="The ID of the user associated with this profile.", examples=[1])
+    created_at: datetime = Field(..., description="Timestamp when the profile was created.", examples=["2026-07-04T06:05:02Z"])
+    status: TenantStatus = Field(..., description="The status of the tenant.", examples=["active"])
+    is_active: bool = Field(..., description="Whether the tenant is active.", examples=[True])
+    is_onboarding: bool = Field(..., description="Whether the tenant is currently in the onboarding process.", examples=[False])
+    user: UserResponse = Field(..., description="The user information associated with this profile.", examples=[{"first_name": "John", "last_name": "Doe", "email": "john@example.com", "phone_no": "+2348012345678", "id": 1, "is_active": True, "created_at": "2026-07-04T06:05:02Z", "role": "TENANT"}])
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class TenantProfileUpdate(BaseModel):
-    user_info: Optional[UserUpdate] = None
-    tenant_info: Optional[TenantInfoUpdate] = None
+    user_info: Optional[UserUpdate] = Field(None, description="The updated user information.", examples=[{"first_name": "Johnny"}])
+    tenant_info: Optional[TenantInfoUpdate] = Field(None, description="The updated tenant information.", examples=[{"department": "Mathematics"}])
 
 

@@ -3,9 +3,9 @@ API routes for managing payments.
 
 Provides endpoints for creating payments and fetching payment histories for both landlords and tenants.
 """
-from typing import Optional
+from typing import Optional, List
 from app.schemas import payment as schema_payment
-from typing import List
+from app.schemas.error import ErrorResponseSchema
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from app.api.deps import get_db, get_current_user, get_landlord_user, get_tenant_user
@@ -15,7 +15,23 @@ from app.services import payment_service
 router = APIRouter()
 
 
-@router.post('/create-payment', response_model=schema_payment.PaymentResponse)
+@router.post(
+    '/create-payment',
+    response_model=schema_payment.PaymentResponse,
+    summary="Record a rent payment",
+    description=(
+        "Records a payment against an active lease. "
+        "The payment cannot exceed the remaining balance owed. "
+        "Payments cannot be made against terminated leases."
+    ),
+    response_description="The recorded payment",
+    responses={
+        400: {"model": ErrorResponseSchema, "description": "Cannot record a payment on a terminated lease / Payment amount exceeds the remaining balance"},
+        401: {"model": ErrorResponseSchema, "description": "Missing, invalid, or expired access token"},
+        403: {"model": ErrorResponseSchema, "description": "Only landlord accounts can perform this action"},
+        404: {"model": ErrorResponseSchema, "description": "Lease does not exist / Landlord does not own the lodge associated with this lease's room"},
+    },
+)
 def create_payment(
         payment_data: schema_payment.PaymentCreate,
         db: Session = Depends(get_db),
@@ -42,7 +58,20 @@ def create_payment(
     )
 
 
-@router.get('/{lease_id}', response_model=List[schema_payment.PaymentResponse])
+@router.get(
+    '/{lease_id}',
+    response_model=List[schema_payment.PaymentResponse],
+    summary="List payments for a lease",
+    description=(
+        "Retrieves all payment records for a specific lease. "
+        "The landlord must own the lodge containing the leased room."
+    ),
+    response_description="List of payment records",
+    responses={
+        401: {"model": ErrorResponseSchema, "description": "Missing, invalid, or expired access token"},
+        404: {"model": ErrorResponseSchema, "description": "Lease does not exist / Landlord does not own the lodge associated with this lease's room"},
+    },
+)
 def list_lease_payments_for_landlord(
         lease_id: int,
         skip: Optional[int] = None,
@@ -74,7 +103,20 @@ def list_lease_payments_for_landlord(
         landlord_id=current_user.id
     )
 
-@router.get('/me/{lease_id}', response_model=List[schema_payment.PaymentResponse])
+@router.get(
+    '/me/{lease_id}',
+    response_model=List[schema_payment.PaymentResponse],
+    summary="List my payments for a lease",
+    description=(
+        "Retrieves all payments the authenticated tenant has made for a specific lease."
+    ),
+    response_description="List of tenant's payment records",
+    responses={
+        401: {"model": ErrorResponseSchema, "description": "Missing, invalid, or expired access token"},
+        403: {"model": ErrorResponseSchema, "description": "Only tenant accounts can perform this action"},
+        404: {"model": ErrorResponseSchema, "description": "Lease does not exist or does not belong to the authenticated tenant"},
+    },
+)
 def list_tenant_payments(
         lease_id: int,
         skip: Optional[int] = None,
@@ -106,7 +148,7 @@ def list_tenant_payments(
 
 
 
-# @router.get('/{pay_id}', response_model=schema_payment.PaymentResponse)
+# @router.get('/{pay_id}', response_model=schema_payment.PaymentResponse, summary="Retrieve resource at /{pay_id}", description="Retrieve resource at /{pay_id} endpoint.")
 # def get_payment_by_id(
 #         pay_id : int,
 #         db: Session = Depends(get_db),

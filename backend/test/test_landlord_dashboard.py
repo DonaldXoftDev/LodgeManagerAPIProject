@@ -1,12 +1,9 @@
 import json
-
 import pytest
 from fastapi import status
-
-from app.core.enums import RoomStatus, LeaseStatus
 from test.conftest import base_url
 
-dashboard_url = f'{base_url}/dashboard-landlord'
+landlord_dashboard_url = f'{base_url}/dashboard-landlord'
 
 def test_landlord_dashboard_stats_paginated_returns_200(authenticated_landlord_client, add_dashboard_stats):
     """
@@ -15,7 +12,7 @@ def test_landlord_dashboard_stats_paginated_returns_200(authenticated_landlord_c
     """
     lodge_id, db_stats = add_dashboard_stats
 
-    response = authenticated_landlord_client.get(url=f'{dashboard_url}/me/landlord/{lodge_id}')
+    response = authenticated_landlord_client.get(url=f'{landlord_dashboard_url}/me/landlord/{lodge_id}')
     data = response.json()
     data_dict = json.dumps(data, indent=4)
 
@@ -52,7 +49,7 @@ def test_landlord_dashboard_pagination_skip_returns_200(authenticated_landlord_c
     """
     lodge_id, db_stats = add_dashboard_stats
 
-    response = authenticated_landlord_client.get(url=f'{dashboard_url}/me/landlord/{lodge_id}?skip=2')
+    response = authenticated_landlord_client.get(url=f'{landlord_dashboard_url}/me/landlord/{lodge_id}?skip=2')
     data = response.json()
     data_dict = json.dumps(data, indent=4)
 
@@ -78,7 +75,7 @@ def test_landlord_dashboard_pagination_limit_returns_200(authenticated_landlord_
     """
     lodge_id, db_stats = add_dashboard_stats
 
-    response = authenticated_landlord_client.get(url=f'{dashboard_url}/me/landlord/{lodge_id}?limit=1')
+    response = authenticated_landlord_client.get(url=f'{landlord_dashboard_url}/me/landlord/{lodge_id}?limit=1')
     data = response.json()
     data_dict = json.dumps(data, indent=4)
     assert response.status_code == status.HTTP_200_OK
@@ -102,7 +99,7 @@ def test_landlord_dashboard_pagination_exceed_limit_returns_200(authenticated_la
     """
     lodge_id, db_stats = add_dashboard_stats
 
-    response = authenticated_landlord_client.get(url=f'{dashboard_url}/me/landlord/{lodge_id}?limit=1000')
+    response = authenticated_landlord_client.get(url=f'{landlord_dashboard_url}/me/landlord/{lodge_id}?limit=1000')
     data = response.json()
     data_dict = json.dumps(data, indent=4)
     assert response.status_code == status.HTTP_200_OK
@@ -141,7 +138,7 @@ def test_landlord_dashboard_filter_room_status_returns_200(authenticated_landlor
     lodge_id, db_stats = add_dashboard_stats
 
     response = authenticated_landlord_client.get(
-        url=f'{dashboard_url}/me/landlord/{lodge_id}',
+        url=f'{landlord_dashboard_url}/me/landlord/{lodge_id}',
         params={'room_statuses': [room_status_filter]}
     )
     data = response.json()
@@ -187,7 +184,7 @@ def test_landlord_dashboard_filter_occupied_leases_returns_200(
     lodge_id, db_stats = add_dashboard_stats
 
     response = authenticated_landlord_client.get(
-        url=f'{dashboard_url}/me/landlord/{lodge_id}',
+        url=f'{landlord_dashboard_url}/me/landlord/{lodge_id}',
         params={'financial_filters': [financial_filter]}
     )
 
@@ -213,7 +210,7 @@ def test_landlord_dashboard_unauthorized_snooper_returns_404(authenticated_landl
     """
     lodge_id = add_diff_landlord_lodge.id
 
-    response = authenticated_landlord_client.get(url=f'{dashboard_url}/me/landlord/{lodge_id}')
+    response = authenticated_landlord_client.get(url=f'{landlord_dashboard_url}/me/landlord/{lodge_id}')
     data = response.json()
     assert response.status_code == status.HTTP_404_NOT_FOUND
     assert data['detail'] == 'Lodge could not be found'
@@ -226,7 +223,7 @@ def test_landlord_dashboard_empty_lodge_returns_200(authenticated_landlord_clien
     """
     lodge_id = add_lodge_to_db.id
 
-    response = authenticated_landlord_client.get(url=f'{dashboard_url}/me/landlord/{lodge_id}')
+    response = authenticated_landlord_client.get(url=f'{landlord_dashboard_url}/me/landlord/{lodge_id}')
     data = response.json()
     data_dict = json.dumps(data, indent=4)
     assert response.status_code == status.HTTP_200_OK
@@ -248,7 +245,7 @@ def test_get_dashboard_lease_info_success_returns_200(authenticated_landlord_cli
     """
     db_safe_payments, lease = tenant_safe_payments_in_db
     
-    response = authenticated_landlord_client.get(url=f'{dashboard_url}/lease-info/{lease.id}')
+    response = authenticated_landlord_client.get(url=f'{landlord_dashboard_url}/lease-info/{lease.id}')
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     
@@ -271,6 +268,6 @@ def test_get_dashboard_lease_info_terminated_returns_404(authenticated_landlord_
     lease = add_terminated_lease_to_db
 
     
-    response = authenticated_landlord_client.get(url=f'{dashboard_url}/lease-info/{lease.id}')
+    response = authenticated_landlord_client.get(url=f'{landlord_dashboard_url}/lease-info/{lease.id}')
     assert response.status_code == status.HTTP_404_NOT_FOUND
     assert response.json()['detail'] == 'Lease could not be found'

@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_db, get_landlord_user
 from app.schemas import lodge as lodge_schema
 from app.schemas import tenantprofile as schema_tenant
+from app.schemas.error import ErrorResponseSchema
 from app.models.user import User
 from app.crud.lodge import crud_lodge
 from app.schemas.room import BulkRoomUpdate
@@ -17,7 +18,18 @@ from app.services import lodge_service, tenant_services
 
 router = APIRouter()
 
-@router.post('/register', response_model=lodge_schema.LodgeResponse)
+@router.post(
+    '/register',
+    response_model=lodge_schema.LodgeResponse,
+    summary="Register a new lodge",
+    description="Creates a new lodge for the authenticated landlord. A lodge name must be unique per landlord.",
+    response_description="The newly registered lodge",
+    responses={
+        400: {"model": ErrorResponseSchema, "description": "A lodge with this name already exists for this landlord"},
+        401: {"model": ErrorResponseSchema, "description": "Missing, invalid, or expired access token"},
+        403: {"model": ErrorResponseSchema, "description": "Only landlord accounts can perform this action"},
+    },
+)
 def register_lodge(
         lodge_in: lodge_schema.LodgeCreate,
         db: Session = Depends(get_db),
@@ -44,7 +56,18 @@ def register_lodge(
 
 
 
-@router.get('/{lodge_id}', response_model=lodge_schema.LodgeResponse)
+@router.get(
+    '/{lodge_id}',
+    response_model=lodge_schema.LodgeResponse,
+    summary="Get lodge by ID",
+    description="Retrieves details of a specific lodge. The lodge must belong to the authenticated landlord.",
+    response_description="Lodge details",
+    responses={
+        401: {"model": ErrorResponseSchema, "description": "Missing, invalid, or expired access token"},
+        403: {"model": ErrorResponseSchema, "description": "Only landlord accounts can perform this action"},
+        404: {"model": ErrorResponseSchema, "description": "Lodge does not exist or does not belong to the authenticated landlord"},
+    },
+)
 def get_lodge_by_id(
         lodge_id: int,
         db: Session = Depends(get_db),
@@ -65,7 +88,17 @@ def get_lodge_by_id(
     return lodge_service.verify_lodge_ownership(db=db, lodge_id=lodge_id, landlord_id=landlord_user.id)
 
 
-@router.get('/', response_model=List[lodge_schema.LodgeResponse])
+@router.get(
+    '/',
+    response_model=List[lodge_schema.LodgeResponse],
+    summary="List all lodges for landlord",
+    description="Retrieves all lodges owned by the authenticated landlord with pagination.",
+    response_description="List of lodges",
+    responses={
+        401: {"model": ErrorResponseSchema, "description": "Missing, invalid, or expired access token"},
+        403: {"model": ErrorResponseSchema, "description": "Only landlord accounts can perform this action"},
+    },
+)
 def get_lodges_by_landlord(
         db: Session = Depends(get_db),
         landlord_user: User = Depends(get_landlord_user),
@@ -88,7 +121,18 @@ def get_lodges_by_landlord(
     return crud_lodge.get_lodges_by_owner(db=db, landlord_id=landlord_user.id, skip=skip, limit=limit)
 
 
-@router.get('/{lodge_id}/tenants', response_model=List[schema_tenant.TenantProfileResponse])
+@router.get(
+    '/{lodge_id}/tenants',
+    response_model=List[schema_tenant.TenantProfileResponse],
+    summary="List tenants in a lodge",
+    description="Retrieves all tenants assigned to a specific lodge.",
+    response_description="List of tenant profiles",
+    responses={
+        401: {"model": ErrorResponseSchema, "description": "Missing, invalid, or expired access token"},
+        403: {"model": ErrorResponseSchema, "description": "Only landlord accounts can perform this action"},
+        404: {"model": ErrorResponseSchema, "description": "Lodge does not exist or does not belong to the authenticated landlord"},
+    },
+)
 def get_lodge_tenants(
         lodge_id: int,
         skip: int = 0,
@@ -119,7 +163,18 @@ def get_lodge_tenants(
     )
 
 
-@router.patch('/{lodge_id}', response_model=lodge_schema.LodgeResponse)
+@router.patch(
+    '/{lodge_id}',
+    response_model=lodge_schema.LodgeResponse,
+    summary="Update lodge details",
+    description="Updates the name or address of a specific lodge. Only the owning landlord can update.",
+    response_description="Updated lodge details",
+    responses={
+        401: {"model": ErrorResponseSchema, "description": "Missing, invalid, or expired access token"},
+        403: {"model": ErrorResponseSchema, "description": "Only landlord accounts can perform this action"},
+        404: {"model": ErrorResponseSchema, "description": "Lodge does not exist or does not belong to the authenticated landlord"},
+    },
+)
 def update_lodge_details(
         lodge_id: int,
         update_data: lodge_schema.LodgeUpdate,

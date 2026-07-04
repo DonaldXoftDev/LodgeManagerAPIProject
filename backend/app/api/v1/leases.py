@@ -5,6 +5,7 @@ Provides endpoints for creating, retrieving, updating, and terminating leases fo
 """
 from app.core.enums import LeaseStatus
 from app.schemas import lease as schema_lease
+from app.schemas.error import ErrorResponseSchema
 from typing import List, Optional
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
@@ -15,7 +16,22 @@ from app.services import lease_services
 router = APIRouter()
 
 
-@router.post('/', response_model=schema_lease.LeaseResponse)
+@router.post(
+    '/',
+    response_model=schema_lease.LeaseResponse,
+    summary="Create a new lease",
+    description=(
+        "Creates a lease agreement between a tenant and a room. "
+        "The room must be vacant and the tenant must belong to the same lodge."
+    ),
+    response_description="The newly created lease",
+    responses={
+        400: {"model": ErrorResponseSchema, "description": "An active lease already exists for this room and tenant combination"},
+        401: {"model": ErrorResponseSchema, "description": "Missing, invalid, or expired access token"},
+        403: {"model": ErrorResponseSchema, "description": "Only landlord accounts can perform this action"},
+        404: {"model": ErrorResponseSchema, "description": "Room does not exist or landlord does not own its lodge / Tenant does not exist or does not belong to this lodge"},
+    },
+)
 def create_new_lease(
 
         lease_data: schema_lease.LeaseCreate,
@@ -42,7 +58,20 @@ def create_new_lease(
 
 
 
-@router.get('/{lodge_id}', response_model=List[schema_lease.LeaseHistoryResponse])
+@router.get(
+    '/{lodge_id}',
+    response_model=List[schema_lease.LeaseHistoryResponse],
+    summary="List leases for a lodge",
+    description=(
+        "Retrieves lease history for a lodge with optional filters by room, tenant, and status."
+    ),
+    response_description="Filtered list of lease records",
+    responses={
+        401: {"model": ErrorResponseSchema, "description": "Missing, invalid, or expired access token"},
+        403: {"model": ErrorResponseSchema, "description": "Only landlord accounts can perform this action"},
+        404: {"model": ErrorResponseSchema, "description": "Lodge does not exist or does not belong to the authenticated landlord"},
+    },
+)
 def get_leases_for_landlord(
         lodge_id: int,
         room_id: Optional[int] = None,
@@ -85,7 +114,20 @@ def get_leases_for_landlord(
 
 
 
-@router.get('/tenant/me', response_model=List[schema_lease.LeaseHistoryResponse])
+@router.get(
+    '/tenant/me',
+    response_model=List[schema_lease.LeaseHistoryResponse],
+    summary="List my leases as tenant",
+    description=(
+        "Retrieves all leases for the currently authenticated tenant with optional status filter."
+    ),
+    response_description="List of tenant's lease records",
+    responses={
+        401: {"model": ErrorResponseSchema, "description": "Missing, invalid, or expired access token"},
+        403: {"model": ErrorResponseSchema, "description": "Only tenant accounts can perform this action"},
+        404: {"model": ErrorResponseSchema, "description": "Tenant profile not found for the authenticated user"},
+    },
+)
 def get_tenant_leases(
         skip: Optional[int] = None,
         max_limit: Optional[int] = None,
@@ -120,7 +162,20 @@ def get_tenant_leases(
 
 
 
-@router.patch('/{lease_id}', response_model=schema_lease.LeaseResponse)
+@router.patch(
+    '/{lease_id}',
+    response_model=schema_lease.LeaseResponse,
+    summary="Update lease details",
+    description=(
+        "Updates an existing lease's properties such as rent amount, dates, or assigned room/tenant."
+    ),
+    response_description="Updated lease details",
+    responses={
+        401: {"model": ErrorResponseSchema, "description": "Missing, invalid, or expired access token"},
+        403: {"model": ErrorResponseSchema, "description": "Only landlord accounts can perform this action"},
+        404: {"model": ErrorResponseSchema, "description": "Lease does not exist or does not belong to a room owned by the landlord"},
+    },
+)
 def update_lease_by_id(
         lease_id: int,
         lease_data: schema_lease.LeaseUpdate,
@@ -143,7 +198,22 @@ def update_lease_by_id(
     return lease_services.update_lease_details(db, lease_id=lease_id, update_data=lease_data, landlord_id=current_user.id)
 
 
-@router.patch('/terminate/{lease_id}', response_model=schema_lease.LeaseHistoryResponse)
+@router.patch(
+    '/terminate/{lease_id}',
+    response_model=schema_lease.LeaseHistoryResponse,
+    summary="Terminate a lease",
+    description=(
+        "Terminates an active lease and sets the room back to vacant. "
+        "The lease must not already be terminated."
+    ),
+    response_description="Terminated lease details",
+    responses={
+        400: {"model": ErrorResponseSchema, "description": "Lease is already terminated"},
+        401: {"model": ErrorResponseSchema, "description": "Missing, invalid, or expired access token"},
+        403: {"model": ErrorResponseSchema, "description": "Only landlord accounts can perform this action"},
+        404: {"model": ErrorResponseSchema, "description": "Lease does not exist / The landlord does not own the lodge associated with this room"},
+    },
+)
 def terminate_lease_by_id(
         lease_id: int,
         db: Session = Depends(get_db),
@@ -167,7 +237,22 @@ def terminate_lease_by_id(
                                                                               )
 
 
-@router.patch('/me/terminate/{lease_id}', response_model=schema_lease.LeaseHistoryResponse)
+@router.patch(
+    '/me/terminate/{lease_id}',
+    response_model=schema_lease.LeaseHistoryResponse,
+    summary="Request lease termination as tenant",
+    description=(
+        "Allows a tenant to request termination of their active lease. "
+        "The lease must be active (not already terminated or pending termination)."
+    ),
+    response_description="Lease with updated pending termination status",
+    responses={
+        400: {"model": ErrorResponseSchema, "description": "Lease is already terminated or already pending termination"},
+        401: {"model": ErrorResponseSchema, "description": "Missing, invalid, or expired access token"},
+        403: {"model": ErrorResponseSchema, "description": "Only tenant accounts can perform this action"},
+        404: {"model": ErrorResponseSchema, "description": "Lease does not exist or does not belong to the authenticated tenant"},
+    },
+)
 def request_lease_termination(
         lease_id: int,
         db: Session = Depends(get_db),

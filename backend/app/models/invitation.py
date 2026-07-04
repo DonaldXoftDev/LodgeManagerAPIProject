@@ -1,4 +1,7 @@
-
+"""
+SQLAlchemy models for the invitation domain.
+This module contains the database model for tracking tenant invitations sent by landlords.
+"""
 from app.core.enums import InviteStatus
 from app.db.session import Base
 from datetime import date, datetime, timezone
@@ -11,8 +14,17 @@ import uuid
 if TYPE_CHECKING:
     from app.models.lodge import Lodge
 
-
 class Invite(Base):
+    """
+    SQLAlchemy model representing a tenant invitation.
+    
+    Attributes:
+        id: Primary key UUID for the invitation.
+        lodge_id: Foreign key referencing the lodge the invite is for.
+        created_at: Timestamp when the invite was generated.
+        expires_at: Timestamp when the invite expires.
+        status: The current status of the invite (SENT, ACCEPTED, EXPIRED).
+    """
     __tablename__ = 'invites'
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid7)

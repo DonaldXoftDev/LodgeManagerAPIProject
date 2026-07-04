@@ -13,6 +13,9 @@ total_paid = PAYMENT_SUBQ.c.total_amt_paid
 has_payed_in_full = total_paid == Lease.agreed_rent_amt
 incomplete_payment = total_paid < Lease.agreed_rent_amt
 
+per_lease_payment_total = func.coalesce(PAYMENT_SUBQ.c.total_amt_paid, 0)
+remaining_balance_expr = (Lease.agreed_rent_amt - per_lease_payment_total)
+
 occupied_expr = Room.status == RoomStatus.OCCUPIED
 vacant_expr = Room.status == RoomStatus.VACANT
 maintenance_expr = Room.status == RoomStatus.MAINTENANCE

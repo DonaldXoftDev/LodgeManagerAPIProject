@@ -4,9 +4,10 @@ API routes for managing rooms.
 Provides endpoints for landlords to create, retrieve, and update rooms within their lodges.
 """
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from app.crud.room import crud_room
 from app.schemas import room as schema_room
+from app.schemas.error import ErrorResponseSchema
 from sqlalchemy.orm import Session
 from app.api.deps import get_db, get_current_user, get_landlord_user
 from app.models.user import User
@@ -16,7 +17,18 @@ from app.services import room_service
 router = APIRouter()
 
 
-@router.get('/{lodge_id}/rooms', response_model=List[schema_room.RoomResponse])
+@router.get(
+    '/{lodge_id}/rooms',
+    response_model=List[schema_room.RoomResponse],
+    summary="List all rooms in a lodge",
+    description="Retrieves all rooms in a specific lodge with pagination.",
+    response_description="List of rooms",
+    responses={
+        401: {"model": ErrorResponseSchema, "description": "Missing, invalid, or expired access token"},
+        403: {"model": ErrorResponseSchema, "description": "Only landlord accounts can perform this action"},
+        404: {"model": ErrorResponseSchema, "description": "Lodge does not exist or does not belong to the authenticated landlord"},
+    },
+)
 def get_landlord_rooms(
         lodge_id: int,
         skip: Optional[int] = None,
@@ -46,7 +58,19 @@ def get_landlord_rooms(
     )
 
 
-@router.post('/', response_model=schema_room.RoomResponse)
+@router.post(
+    '/',
+    response_model=schema_room.RoomResponse,
+    summary="Create a new room",
+    description="Adds a new room to a lodge. Room numbers must be unique within the same lodge.",
+    response_description="The newly created room",
+    responses={
+        400: {"model": ErrorResponseSchema, "description": "A room with this number already exists in the lodge"},
+        401: {"model": ErrorResponseSchema, "description": "Missing, invalid, or expired access token"},
+        403: {"model": ErrorResponseSchema, "description": "Only landlord accounts can perform this action"},
+        404: {"model": ErrorResponseSchema, "description": "Lodge does not exist or does not belong to the authenticated landlord"},
+    },
+)
 def create_room(
         room_in: schema_room.RoomCreate,
         db: Session = Depends(get_db),
@@ -69,7 +93,17 @@ def create_room(
     )
 
 
-@router.get('/{room_id}', response_model=schema_room.RoomResponse)
+@router.get(
+    '/{room_id}',
+    response_model=schema_room.RoomResponse,
+    summary="Get room details",
+    description="Retrieves details of a specific room. Accessible to any authenticated user who owns the lodge.",
+    response_description="Room details",
+    responses={
+        401: {"model": ErrorResponseSchema, "description": "Missing, invalid, or expired access token"},
+        404: {"model": ErrorResponseSchema, "description": "Room does not exist or the landlord does not own its lodge"},
+    },
+)
 def get_room(
         room_id: int,
         db: Session = Depends(get_db),
@@ -90,7 +124,19 @@ def get_room(
     return room
 
 
-@router.patch('/{room_id}', response_model=schema_room.RoomResponse)
+@router.patch(
+    '/{room_id}',
+    response_model=schema_room.RoomResponse,
+    summary="Update room details",
+    description="Updates room properties. Cannot update an occupied room — terminate the lease first. Room status can only be changed to allowed values.",
+    response_description="Updated room details",
+    responses={
+        400: {"model": ErrorResponseSchema, "description": "Cannot update an occupied room. Terminate the lease first / The provided room status is not a valid updatable option"},
+        401: {"model": ErrorResponseSchema, "description": "Missing, invalid, or expired access token"},
+        403: {"model": ErrorResponseSchema, "description": "Only landlord accounts can perform this action"},
+        404: {"model": ErrorResponseSchema, "description": "Room does not exist"},
+    },
+)
 def update_room_by_id(
         room_id: int,
         update_data: schema_room.RoomUpdate,
@@ -116,7 +162,19 @@ def update_room_by_id(
     )
     return updated_room
 
-@router.patch('/{lodge_id}/rooms/bulk', response_model=list[RoomResponse])
+@router.patch(
+    '/{lodge_id}/rooms/bulk',
+    response_model=list[RoomResponse],
+    summary="Bulk update room base rent",
+    description="Updates the base annual rent for multiple rooms at once. Rooms that are currently occupied cannot be updated.",
+    response_description="List of updated rooms",
+    responses={
+        400: {"model": ErrorResponseSchema, "description": "One or more rooms in the batch are currently occupied"},
+        401: {"model": ErrorResponseSchema, "description": "Missing, invalid, or expired access token"},
+        403: {"model": ErrorResponseSchema, "description": "Only landlord accounts can perform this action"},
+        404: {"model": ErrorResponseSchema, "description": "Lodge does not exist or does not belong to the authenticated landlord / No updatable rooms found or room count mismatch"},
+    },
+)
 def bulk_update_room_base_rent(
         lodge_id: int,
         update_data: BulkRoomUpdate,

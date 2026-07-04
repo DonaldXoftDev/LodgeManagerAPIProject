@@ -14,6 +14,7 @@ from app.core.enums import RoomStatus, BadgeTexts
 from app.models.user import User
 from app.schemas import dashboard as schema_dashboard
 from app.schemas.dashboard import DashboardFilters, RoomLeaseInfo
+from app.schemas.error import ErrorResponseSchema
 from app.services import dashboard_service
 
 
@@ -22,7 +23,21 @@ router = APIRouter()
 
 
 
-@router.get('/me/landlord/{lodge_id}', response_model=schema_dashboard.LandlordDashboardStats)
+@router.get(
+    '/me/landlord/{lodge_id}',
+    response_model=schema_dashboard.LandlordDashboardStats,
+    summary="Get landlord dashboard statistics",
+    description=(
+        "Retrieves comprehensive dashboard statistics for a specific lodge "
+        "including financials, entity counts, and room occupancy breakdown."
+    ),
+    response_description="Complete dashboard statistics",
+    responses={
+        401: {"model": ErrorResponseSchema, "description": "Missing, invalid, or expired access token"},
+        403: {"model": ErrorResponseSchema, "description": "Only landlord accounts can perform this action"},
+        404: {"model": ErrorResponseSchema, "description": "Lodge does not exist or does not belong to the authenticated landlord"},
+    },
+)
 def get_landlord_dashboard(
         lodge_id: int,
         skip: Optional[int] = None,
@@ -62,7 +77,21 @@ def get_landlord_dashboard(
     )
 
 
-@router.get('/lease-info/{lease_id}', response_model=RoomLeaseInfo)
+@router.get(
+    '/lease-info/{lease_id}',
+    response_model=RoomLeaseInfo,
+    summary="Get detailed room lease info",
+    description=(
+        "Retrieves detailed information about a specific lease "
+        "including room details, tenant info, and financial breakdown."
+    ),
+    response_description="Detailed room-lease-tenant-financial summary",
+    responses={
+        401: {"model": ErrorResponseSchema, "description": "Missing, invalid, or expired access token"},
+        403: {"model": ErrorResponseSchema, "description": "Only landlord accounts can perform this action"},
+        404: {"model": ErrorResponseSchema, "description": "Lease does not exist or has no associated data"},
+    },
+)
 def get_room_lease_info(
         lease_id: int,
         db: Session = Depends(get_db),

@@ -6,6 +6,7 @@ Provides endpoints for updating tenant profiles and fetching tenant details.
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.schemas import tenantprofile as schema_tenant
+from app.schemas.error import ErrorResponseSchema
 from app.crud.tenantprofile import crud_tenant
 from app.api.deps import get_db, get_current_user, get_landlord_user, get_tenant_user
 from app.models.user import User
@@ -16,7 +17,20 @@ router = APIRouter()
 
 
 
-@router.patch('/profiles/me', response_model=schema_tenant.TenantProfileResponse)
+@router.patch(
+    '/profiles/me',
+    response_model=schema_tenant.TenantProfileResponse,
+    summary="Update my tenant profile",
+    description=(
+        "Updates the authenticated tenant's profile information "
+        "such as emergency contacts and student details."
+    ),
+    response_description="Updated tenant profile",
+    responses={
+        401: {"model": ErrorResponseSchema, "description": "Missing, invalid, or expired access token"},
+        403: {"model": ErrorResponseSchema, "description": "Only tenant accounts can perform this action"},
+    },
+)
 def update_tenant_profile(
         tenant_data: schema_tenant.TenantProfileUpdate,
         db: Session = Depends(get_db),
@@ -42,7 +56,20 @@ def update_tenant_profile(
 
 
 
-@router.get('/profile', response_model=schema_tenant.TenantProfileResponse)
+@router.get(
+    '/profile',
+    response_model=schema_tenant.TenantProfileResponse,
+    summary="Get my tenant profile",
+    description=(
+        "Retrieves the full profile of the currently authenticated tenant."
+    ),
+    response_description="Tenant profile details",
+    responses={
+        401: {"model": ErrorResponseSchema, "description": "Missing, invalid, or expired access token"},
+        403: {"model": ErrorResponseSchema, "description": "Only tenant accounts can perform this action"},
+        404: {"model": ErrorResponseSchema, "description": "Tenant profile not found for the authenticated user"},
+    },
+)
 def get_tenant_by_id(
         current_user=Depends(get_tenant_user)
 ):
@@ -60,7 +87,21 @@ def get_tenant_by_id(
 
 
 
-@router.get('/profile/{tenant_id}', response_model=schema_tenant.TenantProfileResponse)
+@router.get(
+    '/profile/{tenant_id}',
+    response_model=schema_tenant.TenantProfileResponse,
+    summary="Get tenant profile by ID",
+    description=(
+        "Retrieves a specific tenant's profile. "
+        "The tenant must belong to a lodge owned by the authenticated landlord."
+    ),
+    response_description="Tenant profile details",
+    responses={
+        401: {"model": ErrorResponseSchema, "description": "Missing, invalid, or expired access token"},
+        403: {"model": ErrorResponseSchema, "description": "Only landlord accounts can perform this action"},
+        404: {"model": ErrorResponseSchema, "description": "Tenant does not exist or does not belong to a lodge owned by this landlord"},
+    },
+)
 def get_tenant_by_landlord(
         tenant_id: int,
         db: Session = Depends(get_db),
@@ -84,7 +125,18 @@ def get_tenant_by_landlord(
 
 
 #TODO: finish the endpoint later
-@router.delete('/{tenant_id}', status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    '/{tenant_id}',
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete a tenant",
+    description=(
+        "Deletes a tenant profile. This endpoint is under construction."
+    ),
+    response_description="No content on successful deletion",
+    responses={
+        401: {"model": ErrorResponseSchema, "description": "Missing, invalid, or expired access token"},
+    },
+)
 def delete_tenant_by_id(
         tenant_id: int,
         db: Session = Depends(get_db),
@@ -114,7 +166,22 @@ def delete_tenant_by_id(
 
     crud_tenant.delete_tenant(db=db, db_tenant=tenant)
 
-@router.patch('/{tenant_id}', response_model=schema_tenant.TenantProfileResponse)
+@router.patch(
+    '/{tenant_id}',
+    response_model=schema_tenant.TenantProfileResponse,
+    summary="Update tenant status",
+    description=(
+        "Allows a landlord to update a tenant's status (e.g., active, inactive). "
+        "Cannot set status to PENDING."
+    ),
+    response_description="Updated tenant profile",
+    responses={
+        400: {"model": ErrorResponseSchema, "description": "Cannot set tenant status to PENDING"},
+        401: {"model": ErrorResponseSchema, "description": "Missing, invalid, or expired access token"},
+        403: {"model": ErrorResponseSchema, "description": "Only landlord accounts can perform this action"},
+        404: {"model": ErrorResponseSchema, "description": "Tenant does not exist or does not belong to a lodge owned by this landlord"},
+    },
+)
 def landlord_update_tenant_status(
         tenant_id: int,
         update_data: schema_tenant.TenantStatusUpdate,

@@ -1,6 +1,5 @@
 from fastapi import FastAPI
 from app.core.config import settings
-from app.db import base
 from app.api.v1.user import router as user_router
 from app.api.v1.lodges import router as lodge_router
 from app.api.v1.rooms import router as room_router
@@ -10,9 +9,55 @@ from app.api.v1.payments import router as payment_router
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.handlers import lodge_ops_handlers
 from app.api.v1.dashboards.landlord_dashboard import router as landlord_dashboard_router
+from app.api.v1.dashboards.tenant_dashboard import router as tenant_dashboard_router
 from app.api.v1.invites import router as invite_router
 
-app = FastAPI(title=settings.PROJECT_NAME, exception_handlers=lodge_ops_handlers)
+tags_metadata = [
+    {
+        "name": "Authentication",
+        "description": "Operations for user registration, login, and token management.",
+    },
+    {
+        "name": "Lodges",
+        "description": "Manage lodges (properties). Landlords can create and configure their lodges.",
+    },
+    {
+        "name": "Rooms",
+        "description": "Manage rooms within lodges. Landlords can add rooms and update room status and pricing.",
+    },
+    {
+        "name": "Tenants",
+        "description": "Operations for tenant management, profile updates, and tenant retrieval.",
+    },
+    {
+        "name": "Leases",
+        "description": "Manage lease agreements between landlords and tenants.",
+    },
+    {
+        "name": "Payments",
+        "description": "Handle rent payments and payment tracking for leases.",
+    },
+    {
+        "name": "Dashboards",
+        "description": "Retrieve aggregated statistics and metrics for landlord and tenant dashboards.",
+    },
+    {
+        "name": "Invites",
+        "description": "Manage invitations sent by landlords to prospective tenants.",
+    },
+]
+
+app = FastAPI(
+    title=settings.PROJECT_NAME, 
+    description="LodgeOps - Comprehensive Lodge Management System API.",
+    version="1.0.0",
+    contact={
+        "name": "DonaldXoftDev",
+        "url": "https://github.com/DonaldXoftDev",
+    },
+    openapi_tags=tags_metadata,
+    exception_handlers=lodge_ops_handlers
+)
 
 # Explicitly list the allowed origins instead of using '*'
 origins = [
@@ -50,6 +95,7 @@ app.include_router(payment_router, prefix='/api/v1/payments', tags=['Payments'])
 
 
 app.include_router(landlord_dashboard_router, prefix='/api/v1/dashboard-landlord', tags=['Dashboards'])
+app.include_router(tenant_dashboard_router, prefix='/api/v1/dashboard-tenant', tags=['Dashboards'])
 
 app.include_router(invite_router, prefix='/api/v1/invites', tags=['Invites'])
 

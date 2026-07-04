@@ -119,13 +119,13 @@ def login_authenticated_user(
     return authenticated_user
 
 
-def _refresh_record_sequence(db: Session, user_id: int, current_refresh_token: str = None) -> str:
-    if current_refresh_token:
-        crud_user.delete_refresh_token(db, current_refresh_token=current_refresh_token, user_id=user_id)
+def _refresh_record_sequence(db: Session, user_id: int, db_refresh_token: RefreshToken = None) -> str:
+    if db_refresh_token:
+        crud_user.delete_refresh_token(db, db_refresh_token=db_refresh_token, user_id=user_id)
 
-    new_refresh_token = create_refresh_token(subject=str(user_id))
+    new_refresh_token_str = create_refresh_token(subject=str(user_id))
 
-    refresh_token_schema = RefreshTokenInternal(user_id=user_id, token=new_refresh_token)
+    refresh_token_schema = RefreshTokenInternal(user_id=user_id, token=new_refresh_token_str)
     new_refresh_record = crud_user.create_new_refresh_token_record(db, refresh_in=refresh_token_schema)
 
     return new_refresh_record.token
@@ -158,7 +158,7 @@ def refresh_access_token(db: Session, response: Response, refresh_token: str| No
         raise InvalidCredentialsError()
 
     access_token = create_access_token(str(current_user.id))
-    new_refresh_token = _refresh_record_sequence(db, user_id=user_id, current_refresh_token=current_refresh_token)
+    new_refresh_token = _refresh_record_sequence(db, user_id=user_id, db_refresh_token=db_refresh_token)
 
     response.set_cookie(
         key='access_token',
