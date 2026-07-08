@@ -4,22 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LodgeOps — Dashboard</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <div class="layout">
+    <div class="layout fade-in">
         <!-- SIDEBAR -->
-        <aside class="sidebar" id="sidebar">
+        <aside class="sidebar glass-panel" id="sidebar">
             <div class="logo">
                 Lodge<span>Ops</span>
-                <button class="toggle-btn mobile-close" onclick="document.getElementById('sidebar').classList.remove('mobile-open')">✕</button>
+                <button class="toggle-btn mobile-close mobile-menu-btn" onclick="document.getElementById('sidebar').classList.remove('mobile-open')">✕</button>
             </div>
             
             <a href="dashboard.html" class="nav-item active">Dashboard</a>
             <a href="rooms.html" class="nav-item">Rooms</a>
             <a href="leases.html" class="nav-item">Leases</a>
             <a href="payments.html" class="nav-item">Payments</a>
+            <a href="tenants.html" class="nav-item">Tenants</a>
             
             <div class="sidebar-bottom">
                 <a href="lodges.html" class="nav-item">Switch Property</a>
@@ -29,9 +30,9 @@
 
         <!-- MAIN CONTENT -->
         <main class="main">
-            <header class="page-header">
+            <header class="page-header slide-up">
                 <div class="header-left">
-                    <button class="mobile-menu-btn" onclick="document.getElementById('sidebar').classList.add('mobile-open')">☰</button>
+                    <button class="mobile-menu-btn" onclick="document.getElementById('sidebar').classList.add('mobile-open')">☰ Menu</button>
                     <div>
                         <h1 class="page-title">Property Overview</h1>
                         <p class="page-subtitle" id="lodge-name-display">Loading...</p>
@@ -46,13 +47,14 @@
                 </div>
             </header>
 
-            <div id="error-msg" class="error-msg"></div>
+            <!-- TOAST CONTAINER -->
+            <div id="toast-container" class="toast-container"></div>
 
             <!-- STATIC FACTS + OCCUPANCY ROW -->
-            <div class="facts-row">
-                <div class="occupancy-chip">
+            <div class="facts-row slide-up" style="animation-delay: 0.1s;">
+                <div class="occupancy-chip glass-panel">
                     <div class="occupancy-ring">
-                        <svg width="48" height="48" viewBox="0 0 100 100">
+                        <svg viewBox="0 0 100 100">
                             <circle class="ring-bg" cx="50" cy="50" r="45"></circle>
                             <circle class="ring-fill" cx="50" cy="50" r="45" stroke-dasharray="283" stroke-dashoffset="283" id="occ-ring"></circle>
                         </svg>
@@ -64,128 +66,60 @@
                     </div>
                 </div>
                 
-                <div class="fact-chip">
-                    <div class="fact-num" id="fact-rooms">0</div>
+                <div class="fact-chip glass-panel">
                     <div class="fact-label">Total Rooms</div>
+                    <div class="fact-num" id="fact-rooms">0</div>
                 </div>
-                <div class="fact-chip">
-                    <div class="fact-num" id="fact-tenants">0</div>
+                <div class="fact-chip glass-panel">
                     <div class="fact-label">Total Tenants</div>
+                    <div class="fact-num" id="fact-tenants">0</div>
                 </div>
-                <div class="fact-chip" style="background:var(--pending-bg); border-color:var(--pending-border)">
+                <div class="fact-chip glass-panel" style="background:var(--pending-bg); border: 1px solid var(--pending-border);">
+                    <div class="fact-label" style="color:var(--pending)">Pending Move-outs</div>
                     <div class="fact-num" id="fact-turnover" style="color:var(--pending)">0</div>
-                    <div class="fact-label">Pending Move-outs</div>
                 </div>
             </div>
 
             <!-- FINANCIAL STRIP (5 Metrics) -->
-            <div class="fin-strip">
-                <div class="fin-item">
-                    <div class="fin-label">Potential Revenue</div>
-                    <div class="fin-amount potential" id="fin-potential">₦0.00</div>
+            <div class="fin-strip slide-up" style="animation-delay: 0.2s;">
+                <div class="fin-item glass-panel">
+                    <div class="fin-label">Potential Rev</div>
+                    <div class="fin-amount" id="fin-potential">₦0.00</div>
                 </div>
-                <div class="fin-item">
-                    <div class="fin-label">Forecasted Revenue</div>
-                    <div class="fin-amount potential" id="fin-forecasted">₦0.00</div>
+                <div class="fin-item glass-panel">
+                    <div class="fin-label">Forecasted</div>
+                    <div class="fin-amount" id="fin-forecasted">₦0.00</div>
                 </div>
-                <div class="fin-item">
-                    <div class="fin-label">Expected (Due Now)</div>
+                <div class="fin-item glass-panel">
+                    <div class="fin-label">Expected Now</div>
                     <div class="fin-amount expected" id="fin-expected">₦0.00</div>
                 </div>
-                <div class="fin-item">
+                <div class="fin-item glass-panel">
                     <div class="fin-label">Collected</div>
                     <div class="fin-amount collected" id="fin-collected">₦0.00</div>
                 </div>
-                <div class="fin-item">
+                <div class="fin-item glass-panel">
                     <div class="fin-label">Unpaid Rent</div>
                     <div class="fin-amount unpaid" id="fin-unpaid">₦0.00</div>
                 </div>
             </div>
 
-            <!-- FILTERS -->
-            <div class="filter-section">
-                <div class="filter-row" id="filter-tabs">
-                    <div class="filter-tab active" data-filter="All">All Rooms</div>
-                    <div class="filter-tab" data-filter="Owing">Chase Rent</div>
-                    <div class="filter-tab" data-filter="Overdue">Overdue</div>
-                    <div class="filter-tab" data-filter="Expiring">Expiring Soon</div>
-                    <div class="filter-tab" data-filter="Vacant">Vacant</div>
-                    <div class="filter-tab" data-filter="Maintenance">Maintenance</div>
-                </div>
-            </div>
-
-            <div class="top-bar">
+            <div class="top-bar slide-up" style="animation-delay: 0.3s; margin-bottom: 24px;">
                 <div class="results-label" id="results-count">Showing <span>0</span> rooms</div>
-                <input type="text" class="search-input" id="search-input" placeholder="Search by room no or tenant...">
+                <input type="text" class="search-input glass-panel" id="search-input" placeholder="Search by room no or tenant..." style="padding: 12px 16px;">
             </div>
 
             <!-- ROOM GRID -->
-            <div class="room-grid" id="dashboard-grid">
+            <div class="room-grid slide-up" id="dashboard-grid" style="animation-delay: 0.4s;">
+                <!-- Skeleton Loaders -->
+                <div class="room-card glass-panel skeleton" style="height: 140px;"></div>
+                <div class="room-card glass-panel skeleton" style="height: 140px;"></div>
+                <div class="room-card glass-panel skeleton" style="height: 140px;"></div>
+                <div class="room-card glass-panel skeleton" style="height: 140px;"></div>
                 <!-- Room cards injected by JS -->
             </div>
 
         </main>
-    </div>
-
-    <!-- SIDE PANEL OVERLAY -->
-    <div class="side-panel-overlay" id="sp-overlay" onclick="closeSidePanel()"></div>
-    
-    <!-- SIDE PANEL -->
-    <div class="side-panel" id="side-panel">
-        <div class="side-panel-header">
-            <div>
-                <div style="font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:24px; color:var(--text);" id="sp-room-no">Room --</div>
-                <div id="sp-badge" style="display:inline-block; margin-top:4px; padding:4px 10px; border-radius:20px; font-size:12px; font-weight:600;">--</div>
-            </div>
-            <button class="side-panel-close" onclick="closeSidePanel()">x</button>
-        </div>
-
-        <div class="sp-section" id="sp-room-details">
-            <div class="sp-title">Room Details</div>
-            <div class="sp-row"><span class="sp-label">Type</span><span class="sp-val" id="sp-room-type">--</span></div>
-            <div class="sp-row"><span class="sp-label">Status</span><span class="sp-val" id="sp-room-status">--</span></div>
-            <div class="sp-row"><span class="sp-label">Base Rent</span><span class="sp-val" id="sp-room-rent">--</span></div>
-        </div>
-
-        <div id="sp-lease-container" style="display:none;">
-            <div class="sp-section">
-                <div class="sp-title">Lease Agreement</div>
-                <div class="sp-row"><span class="sp-label">Moved In</span><span class="sp-val" id="sp-lease-start">--</span></div>
-                <div class="sp-row"><span class="sp-label">Agreement Ends</span><span class="sp-val" id="sp-lease-end">--</span></div>
-            </div>
-
-            <div class="sp-section">
-                <div class="sp-title">Financials</div>
-                <div class="sp-row"><span class="sp-label">Agreed Rent</span><span class="sp-val" id="sp-fin-agreed">--</span></div>
-                <div class="sp-row"><span class="sp-label">Total Paid</span><span class="sp-val" style="color:var(--safe)" id="sp-fin-paid">--</span></div>
-                <div class="sp-row"><span class="sp-label">Balance Remaining</span><span class="sp-val" style="color:var(--owing)" id="sp-fin-balance">--</span></div>
-                <a class="payment-link" id="sp-payment-history-link" href="payments.html">View Payment History ~R</a>
-            </div>
-
-            <div class="sp-section">
-                <div class="sp-title">Associated Tenant</div>
-                <div class="sp-tenant-card" id="sp-tenant-link" onclick="window.location.href='tenants.html'">
-                    <div class="sp-tenant-avatar" id="sp-tenant-avatar">T</div>
-                    <div>
-                        <div style="font-weight:600; color:var(--text); font-size:15px;" id="sp-tenant-name">--</div>
-                        <div style="color:var(--muted); font-size:13px;" id="sp-tenant-contact">--</div>
-                    </div>
-                </div>
-            </div>
-            
-            <button class="btn-sp-primary" id="sp-log-payment-btn" onclick="window.location.href='payments.html'">Log Payment</button>
-        </div>
-
-        <div id="sp-vacant-container" style="display:none;">
-            <div class="sp-section">
-                <p style="color:var(--muted); font-size:14px; margin-bottom:16px; text-align:center;">This room is currently unoccupied.</p>
-                <button class="btn-sp-primary" id="sp-assign-tenant-btn" onclick="window.location.href='leases.html'">Assign Tenant</button>
-            </div>
-        </div>
-        
-        <div id="sp-loading" style="text-align:center; padding:40px; color:var(--muted); display:none;">
-            Fetching details...
-        </div>
     </div>
 
     <script src="js/api.js"></script>
@@ -198,7 +132,21 @@
             window.location.href = 'auth.html';
         }
         function generateReport() {
-            showToast("AI Insights feature coming soon!");
+            showToast("AI Insights feature coming soon!", "success");
+        }
+        
+        // Custom Toast Function for the new UI
+        function showToast(message, type = 'error') {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+            const toast = document.createElement('div');
+            toast.className = `toast ${type} show`;
+            toast.innerText = message;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
         }
     </script>
 </body>

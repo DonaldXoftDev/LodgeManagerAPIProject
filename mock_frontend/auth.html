@@ -4,68 +4,101 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LodgeOps — Authentication</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
     <style>
-        .auth-tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+        .auth-tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 32px; }
         .auth-tab { flex: 1; text-align: center; padding: 12px; cursor: pointer; font-size: 14px; font-weight: 600; color: var(--muted); border-bottom: 2px solid transparent; transition: all 0.2s; }
         .auth-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
         .auth-form { display: none; }
-        .auth-form.active { display: block; }
+        .auth-form.active { display: block; animation: fadeIn 0.4s ease-out; }
+        
+        .brand-text { font-family: 'Outfit', sans-serif; font-size: 48px; font-weight: 700; margin-bottom: 16px; line-height: 1.1; }
+        .brand-sub { font-size: 18px; font-weight: 400; opacity: 0.9; max-width: 400px; line-height: 1.5;}
     </style>
 </head>
 <body>
-    <div class="auth-container">
-        <div class="auth-card">
-            <div class="logo">Lodge<span>Ops</span></div>
-            
-            <div id="error-msg" class="error-msg"></div>
-
-            <div class="auth-tabs">
-                <div class="auth-tab active" onclick="switchTab('login')">Login</div>
-                <div class="auth-tab" onclick="switchTab('register')">Register</div>
+    <div class="auth-split">
+        <!-- LEFT SIDE (Brand) -->
+        <div class="auth-left">
+            <div style="position:relative; z-index:1;">
+                <div class="logo" style="padding:0; margin-bottom: 120px; color:white; font-size:28px;">
+                    Lodge<span style="color:#a5b4fc">Ops</span>
+                </div>
+                <h1 class="brand-text">Property management, elevated.</h1>
+                <p class="brand-sub">Manage leases, track rent, and onboard tenants effortlessly with our state-of-the-art platform.</p>
             </div>
+        </div>
 
-            <!-- LOGIN FORM -->
-            <form id="login-form" class="auth-form active">
-                <div class="form-group">
-                    <label class="form-label">Email</label>
-                    <input type="email" id="login-email" class="form-input" required placeholder="name@example.com">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Password</label>
-                    <input type="password" id="login-password" class="form-input" required placeholder="••••••••">
-                </div>
-                <button type="submit" class="btn btn-primary btn-block">Sign In</button>
-                <div class="auth-links">
-                    <p>Are you a tenant? <a href="tenant-register.html">Accept Invite</a></p>
-                </div>
-            </form>
+        <!-- RIGHT SIDE (Form) -->
+        <div class="auth-right">
+            <div class="auth-card glass-panel fade-in">
+                
+                <div id="toast-container" class="toast-container" style="top: 30px; bottom: auto; right: 50%; transform: translateX(50%);"></div>
 
-            <!-- REGISTER FORM -->
-            <form id="register-form" class="auth-form">
-                <div class="form-group">
-                    <label class="form-label">Full Name</label>
-                    <input type="text" id="reg-name" class="form-input" required placeholder="John Doe">
+                <div class="auth-tabs">
+                    <div class="auth-tab active" onclick="switchTab('login')">Login</div>
+                    <div class="auth-tab" onclick="switchTab('register')">Register</div>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Email</label>
-                    <input type="email" id="reg-email" class="form-input" required placeholder="name@example.com">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Phone Number</label>
-                    <input type="tel" id="reg-phone" class="form-input" required placeholder="+234...">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Password</label>
-                    <input type="password" id="reg-password" class="form-input" required placeholder="••••••••">
-                </div>
-                <button type="submit" class="btn btn-primary btn-block">Create Account</button>
-            </form>
+
+                <!-- LOGIN FORM -->
+                <form id="login-form" class="auth-form active">
+                    <div class="form-group floating">
+                        <input type="email" id="login-email" class="form-input" required placeholder=" ">
+                        <label class="form-label">Email Address</label>
+                    </div>
+                    <div class="form-group floating">
+                        <input type="password" id="login-password" class="form-input" required placeholder=" ">
+                        <label class="form-label">Password</label>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width:100%; padding: 14px; font-size: 15px; margin-top: 10px;">Sign In</button>
+                    <div style="margin-top: 24px; text-align: center; font-size: 14px; color: var(--muted);">
+                        <p>Are you a tenant? <a href="tenant-register.html" style="color:var(--accent); text-decoration:none; font-weight:600;">Accept Invite</a></p>
+                    </div>
+                </form>
+
+                <!-- REGISTER FORM -->
+                <form id="register-form" class="auth-form">
+                    <div class="form-group floating">
+                        <input type="text" id="reg-name" class="form-input" required placeholder=" ">
+                        <label class="form-label">Full Name</label>
+                    </div>
+                    <div class="form-group floating">
+                        <input type="email" id="reg-email" class="form-input" required placeholder=" ">
+                        <label class="form-label">Email Address</label>
+                    </div>
+                    <div class="form-group floating">
+                        <input type="tel" id="reg-phone" class="form-input" required placeholder=" ">
+                        <label class="form-label">Phone Number</label>
+                    </div>
+                    <div class="form-group floating">
+                        <input type="password" id="reg-password" class="form-input" required placeholder=" ">
+                        <label class="form-label">Password</label>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width:100%; padding: 14px; font-size: 15px; margin-top: 10px;">Create Account</button>
+                </form>
+            </div>
         </div>
     </div>
 
     <script src="js/api.js"></script>
     <script src="js/auth.js"></script>
+    <script>
+        function showToast(message, type = 'error') {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+            const toast = document.createElement('div');
+            toast.className = `toast ${type} show`;
+            toast.innerText = message;
+            // Override transform for top-centered toast in auth page
+            toast.style.transform = 'translateY(0)';
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-20px)';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+    </script>
 </body>
 </html>

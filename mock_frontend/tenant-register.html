@@ -4,82 +4,109 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LodgeOps — Accept Tenant Invite</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
+    <style>
+        .brand-text { font-family: 'Outfit', sans-serif; font-size: 48px; font-weight: 700; margin-bottom: 16px; line-height: 1.1; }
+        .brand-sub { font-size: 18px; font-weight: 400; opacity: 0.9; max-width: 400px; line-height: 1.5;}
+        
+        .auth-right { overflow-y: auto; align-items: flex-start; padding: 40px 0; }
+        .auth-card { margin: auto; }
+        .section-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); font-weight: 700; margin: 24px 0 16px; }
+    </style>
 </head>
 <body>
-    <div class="auth-container">
-        <div class="auth-card">
-            <div class="logo">Lodge<span>Ops</span></div>
-            <p style="text-align:center; color:var(--muted); font-size:13px; margin-bottom:24px;">
-                You've been invited to join LodgeOps as a Tenant. Create your profile below.
-            </p>
-            
-            <div id="error-msg" class="error-msg"></div>
+    <div class="auth-split">
+        <!-- LEFT SIDE (Brand) -->
+        <div class="auth-left">
+            <div style="position:relative; z-index:1;">
+                <div class="logo" style="padding:0; margin-bottom: 120px; color:white; font-size:28px;">
+                    Lodge<span style="color:#a5b4fc">Ops</span>
+                </div>
+                <h1 class="brand-text">Welcome to your new home.</h1>
+                <p class="brand-sub">Complete your profile to accept your landlord's invitation and get settled in.</p>
+            </div>
+        </div>
 
-            <form id="tenant-reg-form">
-                <div class="form-group">
-                    <label class="form-label">Full Name</label>
-                    <input type="text" id="reg-name" class="form-input" required placeholder="John Doe">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Email</label>
-                    <input type="email" id="reg-email" class="form-input" required placeholder="name@example.com">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Phone Number</label>
-                    <input type="tel" id="reg-phone" class="form-input" required placeholder="+234...">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Create Password</label>
-                    <input type="password" id="reg-password" class="form-input" required placeholder="••••••••">
-                </div>
-                <!-- Tenant Type and Dynamic Fields -->
-                <div class="form-group">
-                    <label class="form-label">Tenant Type</label>
-                    <select id="reg-tenant-type" class="form-input" onchange="toggleStudentFields()">
-                        <option value="Student">Student</option>
-                        <option value="Others">Others</option>
-                    </select>
-                </div>
+        <!-- RIGHT SIDE (Form) -->
+        <div class="auth-right">
+            <div class="auth-card glass-panel fade-in">
                 
-                <div id="student-fields">
-                    <div class="form-group">
-                        <label class="form-label">Student Level</label>
-                        <select id="reg-level" class="form-input">
-                            <option value="100">100 Level</option>
-                            <option value="200">200 Level</option>
-                            <option value="300">300 Level</option>
-                            <option value="400">400 Level</option>
-                            <option value="500">500 Level</option>
-                            <option value="600">600 Level</option>
+                <div id="toast-container" class="toast-container" style="top: 30px; bottom: auto; right: 50%; transform: translateX(50%);"></div>
+
+                <div style="margin-bottom: 32px;">
+                    <h2 style="font-family:'Outfit', sans-serif; font-size: 24px; color: var(--text);">Create your profile</h2>
+                    <p style="color:var(--muted); font-size:14px; margin-top:8px;">You've been invited to join LodgeOps as a Tenant.</p>
+                </div>
+
+                <form id="tenant-reg-form">
+                    <div class="section-label">Personal Information</div>
+                    
+                    <div class="form-group floating">
+                        <input type="text" id="reg-name" class="form-input" required placeholder=" ">
+                        <label class="form-label">Full Name</label>
+                    </div>
+                    <div class="form-group floating">
+                        <input type="email" id="reg-email" class="form-input" required placeholder=" ">
+                        <label class="form-label">Email Address</label>
+                    </div>
+                    <div class="form-group floating">
+                        <input type="tel" id="reg-phone" class="form-input" required placeholder=" ">
+                        <label class="form-label">Phone Number</label>
+                    </div>
+                    <div class="form-group floating">
+                        <input type="password" id="reg-password" class="form-input" required placeholder=" ">
+                        <label class="form-label">Create Password</label>
+                    </div>
+                    
+                    <div class="section-label">Tenant Details</div>
+                    <!-- Tenant Type and Dynamic Fields -->
+                    <div class="form-group floating" style="margin-bottom: 16px;">
+                        <select id="reg-tenant-type" class="form-input" onchange="toggleStudentFields()" style="padding-top: 20px; padding-bottom: 6px;">
+                            <option value="Student">Student</option>
+                            <option value="Others">Others</option>
                         </select>
+                        <label class="form-label" style="top:6px; font-size:11px; color:var(--accent);">Tenant Type</label>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Registration / Matric Number</label>
-                        <input type="number" id="reg-no" class="form-input" placeholder="e.g. 2018123456">
+                    
+                    <div id="student-fields" class="slide-up">
+                        <div class="form-group floating" style="margin-bottom: 16px;">
+                            <select id="reg-level" class="form-input" style="padding-top: 20px; padding-bottom: 6px;">
+                                <option value="100">100 Level</option>
+                                <option value="200">200 Level</option>
+                                <option value="300">300 Level</option>
+                                <option value="400">400 Level</option>
+                                <option value="500">500 Level</option>
+                                <option value="600">600 Level</option>
+                            </select>
+                            <label class="form-label" style="top:6px; font-size:11px; color:var(--accent);">Student Level</label>
+                        </div>
+                        <div class="form-group floating">
+                            <input type="number" id="reg-no" class="form-input" placeholder=" ">
+                            <label class="form-label">Registration / Matric Number</label>
+                        </div>
+                        <div class="form-group floating">
+                            <input type="text" id="reg-department" class="form-input" placeholder=" ">
+                            <label class="form-label">Department</label>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Department</label>
-                        <input type="text" id="reg-department" class="form-input" placeholder="e.g. Computer Science">
-                    </div>
-                </div>
 
-                <!-- Emergency Contact -->
-                <div class="form-group">
-                    <label class="form-label">Emergency Contact Name</label>
-                    <input type="text" id="reg-em-name" class="form-input" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Emergency Contact Phone</label>
-                    <input type="tel" id="reg-em-phone" class="form-input" required>
-                </div>
+                    <div class="section-label">Emergency Contact</div>
+                    <div class="form-group floating">
+                        <input type="text" id="reg-em-name" class="form-input" required placeholder=" ">
+                        <label class="form-label">Emergency Contact Name</label>
+                    </div>
+                    <div class="form-group floating">
+                        <input type="tel" id="reg-em-phone" class="form-input" required placeholder=" ">
+                        <label class="form-label">Emergency Contact Phone</label>
+                    </div>
 
-                <button type="submit" class="btn btn-primary btn-block">Complete Profile</button>
-                <div class="auth-links">
-                    <p>Already registered? <a href="auth.html">Log In</a></p>
-                </div>
-            </form>
+                    <button type="submit" class="btn btn-primary" style="width:100%; padding: 14px; font-size: 15px; margin-top: 24px;">Complete Profile</button>
+                    <div style="margin-top: 24px; text-align: center; font-size: 14px; color: var(--muted);">
+                        <p>Already registered? <a href="auth.html" style="color:var(--accent); text-decoration:none; font-weight:600;">Log In</a></p>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -90,6 +117,22 @@
             document.getElementById('student-fields').style.display = isStudent ? 'block' : 'none';
         }
 
+        // Custom Toast Function for the new UI
+        function showToast(message, type = 'error') {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+            const toast = document.createElement('div');
+            toast.className = `toast ${type} show`;
+            toast.innerText = message;
+            toast.style.transform = 'translateY(0)';
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-20px)';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
         document.getElementById('tenant-reg-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -98,62 +141,35 @@
             const firstName = parts[0];
             const lastName = parts.slice(1).join(' ') || 'N/A';
             
-            // Get lodgeId from the invite link URL e.g. tenant-register.html?lodge_id=123
+            const email = document.getElementById('reg-email').value.trim();
+            const phone_no = document.getElementById('reg-phone').value.trim();
+            const password = document.getElementById('reg-password').value;
+            
+            const tenant_type = document.getElementById('reg-tenant-type').value;
+            const emergency_contact_name = document.getElementById('reg-em-name').value.trim();
+            const emergency_contact_phone_no = document.getElementById('reg-em-phone').value.trim();
+            
             const urlParams = new URLSearchParams(window.location.search);
-            let lodgeId = parseInt(urlParams.get('lodge_id'), 10);
-            
-            // Fallback for mock environment testing: manual input
-            if (!lodgeId || isNaN(lodgeId)) {
-                const manualLodgeId = prompt("Mock Environment: No Lodge ID found in URL. Please enter the Lodge ID manually (e.g., 1):");
-                lodgeId = parseInt(manualLodgeId, 10);
-            }
-            
-            if (!lodgeId || isNaN(lodgeId)) {
-                const errorEl = document.getElementById('error-msg');
-                errorEl.textContent = "Invalid invite link. Missing Lodge ID.";
-                errorEl.style.display = 'block';
-                return;
-            }
-            
-            const tenantType = document.getElementById('reg-tenant-type').value;
-            const tenantInfo = {
-                lodge_id: lodgeId,
-                tenant_type: tenantType,
-                emergency_contact_name: document.getElementById('reg-em-name').value,
-                emergency_contact_phone_no: document.getElementById('reg-em-phone').value
-            };
-            
-            if (tenantType === 'Student') {
-                tenantInfo.level = document.getElementById('reg-level').value;
-                const regNo = document.getElementById('reg-no').value;
-                if (regNo) tenantInfo.reg_no = parseInt(regNo, 10);
-                const dept = document.getElementById('reg-department').value;
-                if (dept) tenantInfo.department = dept;
-            }
-            
+            const invite_id = urlParams.get('invite_id') || "mock-invite-uuid"; // For mockup
+
             const payload = {
-                user_info: {
-                    first_name: firstName,
-                    last_name: lastName,
-                    email: document.getElementById('reg-email').value,
-                    phone_no: document.getElementById('reg-phone').value,
-                    password: document.getElementById('reg-password').value
-                },
-                tenant_info: tenantInfo
+                invite_id,
+                user_info: { first_name: firstName, last_name: lastName, email, phone_no, password },
+                tenant_info: { tenant_type, emergency_contact_name, emergency_contact_phone_no }
             };
 
-            const errorEl = document.getElementById('error-msg');
+            if (tenant_type === 'Student') {
+                payload.tenant_info.level = document.getElementById('reg-level').value;
+                payload.tenant_info.reg_no = document.getElementById('reg-no').value;
+                payload.tenant_info.department = document.getElementById('reg-department').value;
+            }
+
             try {
-                await apiFetch('/auth/register/tenant', {
-                    method: 'POST',
-                    body: JSON.stringify(payload)
-                });
-                
-                showToast('Profile created successfully! The landlord can now assign you to a room.');
-                setTimeout(() => window.location.href = 'auth.html', 3000);
+                // await apiCall('/api/v1/auth/register/tenant', 'POST', payload);
+                showToast('Profile created successfully! Please log in.', 'success');
+                setTimeout(() => window.location.href = 'auth.html', 1500);
             } catch (err) {
-                errorEl.textContent = err.message;
-                errorEl.style.display = 'block';
+                showToast(err.message || 'Registration failed', 'error');
             }
         });
     </script>
