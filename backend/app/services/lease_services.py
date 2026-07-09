@@ -241,10 +241,10 @@ def update_lease_details(
     lease = crud_lease.get(db, lease_id, options)
 
     if not lease:
-        return LeaseNotFoundError()
+        raise LeaseNotFoundError()
 
     if not lodge_service.landlord_owns_room_lodge(room=lease.room, landlord_id=landlord_id):
-        return LeaseNotFoundError()
+        raise LeaseNotFoundError()
 
     return crud_lease.update(db, db_obj=lease, update_data=update_data)
 
