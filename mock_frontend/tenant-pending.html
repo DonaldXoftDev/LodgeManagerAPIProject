@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LodgeOps - Registration Pending</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .lobby-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 80vh;
+            text-align: center;
+            padding: 24px;
+        }
+        .lobby-image {
+            width: 100%;
+            max-width: 320px;
+            margin-bottom: 32px;
+            border-radius: 24px;
+            animation: float 6s ease-in-out infinite;
+        }
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-12px); }
+            100% { transform: translateY(0px); }
+        }
+    </style>
+</head>
+<body>
+    <div class="layout fade-in">
+        <!-- SIDEBAR (Restricted) -->
+        <aside class="sidebar" id="sidebar">
+            <div class="logo"><div style="display:flex; align-items:center;">Lodge<span>Ops</span></div></div>
+            <div class="sidebar-bottom">
+                <div class="nav-item" style="color:var(--owing); cursor:pointer;" onclick="logout()"><span>Log Out</span></div>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main">
+            <header class="page-header slide-up" style="border:none;">
+                <div>
+                    <button class="mobile-toggle" onclick="document.getElementById('sidebar').classList.toggle('mobile-open')">☰</button>
+                </div>
+            </header>
+
+            <div class="lobby-container slide-up" style="animation-delay: 0.1s;">
+                <img src="img/pending.png" alt="Pending Review" class="lobby-image">
+                <h1 style="font-size:32px; font-weight:700; font-family:'Outfit',sans-serif; margin-bottom:16px;">Registration Under Review</h1>
+                <p style="font-size:16px; color:var(--text-secondary); max-width:400px; line-height:1.6; margin-bottom:32px;">
+                    Your account has been successfully created and is currently pending approval by the Landlord. You will be granted full access to the portal once your registration is reviewed.
+                </p>
+                <button class="btn btn-primary" onclick="window.location.reload()" style="padding: 12px 32px; border-radius:12px;">Check Status</button>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                // If the status has changed, redirect them appropriately
+                const profile = await apiFetch(`/tenants/profile`);
+                if (String(profile.status).toUpperCase() === 'APPROVED') {
+                    window.location.href = 'tenant-onboarding.html';
+                }
+            } catch (err) {
+                if (err.message.includes('401') || err.message.includes('expired')) {
+                    window.location.href = 'login.html';
+                }
+            }
+        });
+    </script>
+</body>
+</html>

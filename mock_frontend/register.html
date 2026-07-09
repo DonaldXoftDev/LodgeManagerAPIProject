@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LodgeOps - Create Landlord Account</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .auth-container { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; position: relative; }
+        .auth-container::before {
+            content: ''; position: absolute; width: 600px; height: 600px;
+            background: radial-gradient(circle, rgba(37,99,235,0.1) 0%, rgba(255,255,255,0) 70%);
+            bottom: -200px; right: -200px; z-index: -1;
+        }
+        .auth-box { width: 100%; max-width: 480px; }
+    </style>
+</head>
+<body>
+    <div id="toast-container" class="toast-container"></div>
+    <div class="auth-container fade-in">
+        <div class="auth-box glass-panel">
+            <div class="auth-header">
+                <div class="logo" style="margin-bottom: 24px; text-align: center;">Lodge<span>Ops</span></div>
+                <h1 style="font-size: 28px;">Create an Account</h1>
+                <p style="margin-top: 8px;">Sign up as a Property Manager or Landlord to manage your lodges.</p>
+            </div>
+
+            <form id="register-form">
+                <div style="display:flex; gap:16px;">
+                    <div class="form-group floating" style="flex:1;">
+                        <input type="text" id="first_name" class="form-input" required placeholder=" ">
+                        <label class="form-label">First Name</label>
+                    </div>
+                    <div class="form-group floating" style="flex:1;">
+                        <input type="text" id="last_name" class="form-input" required placeholder=" ">
+                        <label class="form-label">Last Name</label>
+                    </div>
+                </div>
+                
+                <div class="form-group floating">
+                    <input type="email" id="email" class="form-input" required placeholder=" ">
+                    <label class="form-label">Email Address</label>
+                </div>
+                <div class="form-group floating">
+                    <input type="tel" id="phone_no" class="form-input" required placeholder=" ">
+                    <label class="form-label">Phone Number</label>
+                </div>
+                <div class="form-group floating">
+                    <input type="password" id="password" class="form-input" required placeholder=" ">
+                    <label class="form-label">Password</label>
+                </div>
+                <button type="submit" id="btn-submit" class="btn btn-primary" style="width:100%; padding: 16px; font-size: 16px; margin-top: 16px;">Register</button>
+                
+                <div style="margin-top: 32px; text-align: center; font-size: 14px; color: var(--text-secondary);">
+                    <p>Already have an account? <a href="login.html" style="color:var(--accent-base); text-decoration:none; font-weight:600;">Sign in here</a></p>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btn-submit');
+            btn.textContent = 'Registering...';
+            btn.disabled = true;
+
+            const payload = {
+                first_name: document.getElementById('first_name').value,
+                last_name: document.getElementById('last_name').value,
+                email: document.getElementById('email').value,
+                phone_no: document.getElementById('phone_no').value,
+                password: document.getElementById('password').value
+            };
+
+            try {
+                // POST /auth/register/landlord
+                await apiFetch('/auth/register/landlord', {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+                
+                showToast('Registration successful! Redirecting to login...', 'success');
+                setTimeout(() => window.location.href = 'login.html', 1500);
+            } catch (err) {
+                showToast(err.message);
+                btn.textContent = 'Register';
+                btn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

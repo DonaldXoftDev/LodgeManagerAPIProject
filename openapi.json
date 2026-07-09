@@ -1,0 +1,5760 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "LodgeOps Api",
+    "description": "LodgeOps - Comprehensive Lodge Management System API.",
+    "contact": {
+      "name": "DonaldXoftDev",
+      "url": "https://github.com/DonaldXoftDev"
+    },
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/v1/auth/register/landlord": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Register a new landlord",
+        "description": "Creates a new landlord account. The email must be unique across the system.",
+        "operationId": "register_landlord_api_v1_auth_register_landlord_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "The newly created landlord user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A user with this email already exists in the system",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/register/tenant": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Register a new tenant via invite",
+        "description": "Creates a new tenant profile using a valid invitation link. The invite must not be expired or already accepted.",
+        "operationId": "register_tenant_api_v1_auth_register_tenant_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TenantProfileCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "The newly created tenant profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TenantProfileResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A user with this email already exists in the system, or the invitation has already been accepted or has expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The invitation ID does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Authenticate user",
+        "description": "Authenticates a user with email and password. Returns access and refresh tokens set as HTTP-only cookies.",
+        "operationId": "login_user_api_v1_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_login_user_api_v1_auth_login_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Authenticated user details with tokens",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid email or password",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Refresh access token",
+        "description": "Uses the refresh token from the HTTP-only cookie to generate a new access token.",
+        "operationId": "refresh_token_api_v1_auth_refresh_post",
+        "parameters": [
+          {
+            "name": "refresh_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "title": "Refresh Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User details with new tokens",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Refresh token is invalid, expired, or does not match any active session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The user associated with the token no longer exists or is deactivated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Get current user profile",
+        "description": "Returns the profile of the currently authenticated user.",
+        "operationId": "get_me_api_v1_auth_me_get",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current user profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Logout user",
+        "description": "Invalidates the current refresh token and clears authentication cookies.",
+        "operationId": "logout_user_api_v1_auth_logout_post",
+        "parameters": [
+          {
+            "name": "refresh_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "title": "Refresh Token"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Logout confirmation",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/lodges/register": {
+      "post": {
+        "tags": [
+          "Lodges"
+        ],
+        "summary": "Register a new lodge",
+        "description": "Creates a new lodge for the authenticated landlord. A lodge name must be unique per landlord.",
+        "operationId": "register_lodge_api_v1_lodges_register_post",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "title": "Access Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LodgeCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The newly registered lodge",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LodgeResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A lodge with this name already exists for this landlord",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Only landlord accounts can perform this action",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/lodges/{lodge_id}": {
+      "get": {
+        "tags": [
+          "Lodges"
+        ],
+        "summary": "Get lodge by ID",
+        "description": "Retrieves details of a specific lodge. The lodge must belong to the authenticated landlord.",
+        "operationId": "get_lodge_by_id_api_v1_lodges__lodge_id__get",
+        "parameters": [
+          {
+            "name": "lodge_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Lodge Id"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lodge details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LodgeResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Only landlord accounts can perform this action",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Lodge does not exist or does not belong to the authenticated landlord",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Lodges"
+        ],
+        "summary": "Update lodge details",
+        "description": "Updates the name or address of a specific lodge. Only the owning landlord can update.",
+        "operationId": "update_lodge_details_api_v1_lodges__lodge_id__patch",
+        "parameters": [
+          {
+            "name": "lodge_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Lodge Id"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "title": "Access Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LodgeUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated lodge details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LodgeResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Only landlord accounts can perform this action",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Lodge does not exist or does not belong to the authenticated landlord",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/lodges/": {
+      "get": {
+        "tags": [
+          "Lodges"
+        ],
+        "summary": "List all lodges for landlord",
+        "description": "Retrieves all lodges owned by the authenticated landlord with pagination.",
+        "operationId": "get_lodges_by_landlord_api_v1_lodges__get",
+        "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of lodges",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LodgeResponse"
+                  },
+                  "title": "Response Get Lodges By Landlord Api V1 Lodges  Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Only landlord accounts can perform this action",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/lodges/{lodge_id}/tenants": {
+      "get": {
+        "tags": [
+          "Lodges"
+        ],
+        "summary": "List tenants in a lodge",
+        "description": "Retrieves all tenants assigned to a specific lodge.",
+        "operationId": "get_lodge_tenants_api_v1_lodges__lodge_id__tenants_get",
+        "parameters": [
+          {
+            "name": "lodge_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Lodge Id"
+            }
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of tenant profiles",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TenantProfileResponse"
+                  },
+                  "title": "Response Get Lodge Tenants Api V1 Lodges  Lodge Id  Tenants Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Only landlord accounts can perform this action",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Lodge does not exist or does not belong to the authenticated landlord",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rooms/{lodge_id}/rooms": {
+      "get": {
+        "tags": [
+          "Rooms"
+        ],
+        "summary": "List all rooms in a lodge",
+        "description": "Retrieves all rooms in a specific lodge with pagination.",
+        "operationId": "get_landlord_rooms_api_v1_rooms__lodge_id__rooms_get",
+        "parameters": [
+          {
+            "name": "lodge_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Lodge Id"
+            }
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of rooms",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RoomResponse"
+                  },
+                  "title": "Response Get Landlord Rooms Api V1 Rooms  Lodge Id  Rooms Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Only landlord accounts can perform this action",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Lodge does not exist or does not belong to the authenticated landlord",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rooms/": {
+      "post": {
+        "tags": [
+          "Rooms"
+        ],
+        "summary": "Create a new room",
+        "description": "Adds a new room to a lodge. Room numbers must be unique within the same lodge.",
+        "operationId": "create_room_api_v1_rooms__post",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "title": "Access Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RoomCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The newly created room",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoomResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A room with this number already exists in the lodge",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Only landlord accounts can perform this action",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Lodge does not exist or does not belong to the authenticated landlord",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rooms/{room_id}": {
+      "get": {
+        "tags": [
+          "Rooms"
+        ],
+        "summary": "Get room details",
+        "description": "Retrieves details of a specific room. Accessible to any authenticated user who owns the lodge.",
+        "operationId": "get_room_api_v1_rooms__room_id__get",
+        "parameters": [
+          {
+            "name": "room_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Room Id"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Room details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoomResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Room does not exist or the landlord does not own its lodge",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Rooms"
+        ],
+        "summary": "Update room details",
+        "description": "Updates room properties. Cannot update an occupied room \u2014 terminate the lease first. Room status can only be changed to allowed values.",
+        "operationId": "update_room_by_id_api_v1_rooms__room_id__patch",
+        "parameters": [
+          {
+            "name": "room_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Room Id"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "title": "Access Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RoomUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated room details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoomResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Cannot update an occupied room. Terminate the lease first / The provided room status is not a valid updatable option",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Only landlord accounts can perform this action",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Room does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rooms/{lodge_id}/rooms/bulk": {
+      "patch": {
+        "tags": [
+          "Rooms"
+        ],
+        "summary": "Bulk update room base rent",
+        "description": "Updates the base annual rent for multiple rooms at once. Rooms that are currently occupied cannot be updated.",
+        "operationId": "bulk_update_room_base_rent_api_v1_rooms__lodge_id__rooms_bulk_patch",
+        "parameters": [
+          {
+            "name": "lodge_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Lodge Id"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "title": "Access Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkRoomUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "List of updated rooms",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RoomResponse"
+                  },
+                  "title": "Response Bulk Update Room Base Rent Api V1 Rooms  Lodge Id  Rooms Bulk Patch"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "One or more rooms in the batch are currently occupied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Only landlord accounts can perform this action",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Lodge does not exist or does not belong to the authenticated landlord / No updatable rooms found or room count mismatch",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tenants/profiles/me": {
+      "patch": {
+        "tags": [
+          "Tenants"
+        ],
+        "summary": "Update my tenant profile",
+        "description": "Updates the authenticated tenant's profile information such as emergency contacts and student details.",
+        "operationId": "update_tenant_profile_api_v1_tenants_profiles_me_patch",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "title": "Access Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TenantProfileUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated tenant profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TenantProfileResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Only tenant accounts can perform this action",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tenants/profile": {
+      "get": {
+        "tags": [
+          "Tenants"
+        ],
+        "summary": "Get my tenant profile",
+        "description": "Retrieves the full profile of the currently authenticated tenant.",
+        "operationId": "get_tenant_by_id_api_v1_tenants_profile_get",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tenant profile details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TenantProfileResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Only tenant accounts can perform this action",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tenant profile not found for the authenticated user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tenants/profile/{tenant_id}": {
+      "get": {
+        "tags": [
+          "Tenants"
+        ],
+        "summary": "Get tenant profile by ID",
+        "description": "Retrieves a specific tenant's profile. The tenant must belong to a lodge owned by the authenticated landlord.",
+        "operationId": "get_tenant_by_landlord_api_v1_tenants_profile__tenant_id__get",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Tenant Id"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tenant profile details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TenantProfileResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Only landlord accounts can perform this action",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tenant does not exist or does not belong to a lodge owned by this landlord",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tenants/{tenant_id}": {
+      "delete": {
+        "tags": [
+          "Tenants"
+        ],
+        "summary": "Delete a tenant",
+        "description": "Deletes a tenant profile. This endpoint is under construction.",
+        "operationId": "delete_tenant_by_id_api_v1_tenants__tenant_id__delete",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Tenant Id"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No content on successful deletion"
+          },
+          "401": {
+            "description": "Missing, invalid, or expired access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Tenants"
+        ],
+        "summary": "Update tenant status",
+        "description": "Allows a landlord to update a tenant's status (e.g., active, inactive). Cannot set status to PENDING.",
+        "operationId": "landlord_update_tenant_status_api_v1_tenants__tenant_id__patch",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Tenant Id"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "title": "Access Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TenantStatusUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated tenant profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TenantProfileResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Cannot set tenant status to PENDING",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Only landlord accounts can perform this action",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tenant does not exist or does not belong to a lodge owned by this landlord",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/leases/": {
+      "post": {
+        "tags": [
+          "Leases"
+        ],
+        "summary": "Create a new lease",
+        "description": "Creates a lease agreement between a tenant and a room. The room must be vacant and the tenant must belong to the same lodge.",
+        "operationId": "create_new_lease_api_v1_leases__post",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "title": "Access Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LeaseCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The newly created lease",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeaseResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "An active lease already exists for this room and tenant combination",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Only landlord accounts can perform this action",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Room does not exist or landlord does not own its lodge / Tenant does not exist or does not belong to this lodge",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/leases/{lodge_id}": {
+      "get": {
+        "tags": [
+          "Leases"
+        ],
+        "summary": "List leases for a lodge",
+        "description": "Retrieves lease history for a lodge with optional filters by room, tenant, and status.",
+        "operationId": "get_leases_for_landlord_api_v1_leases__lodge_id__get",
+        "parameters": [
+          {
+            "name": "lodge_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Lodge Id"
+            }
+          },
+          {
+            "name": "room_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Room Id"
+            }
+          },
+          {
+            "name": "tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tenant Id"
+            }
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/LeaseStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Filtered list of lease records",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LeaseHistoryResponse"
+                  },
+                  "title": "Response Get Leases For Landlord Api V1 Leases  Lodge Id  Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Only landlord accounts can perform this action",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Lodge does not exist or does not belong to the authenticated landlord",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/leases/tenant/me": {
+      "get": {
+        "tags": [
+          "Leases"
+        ],
+        "summary": "List my leases as tenant",
+        "description": "Retrieves all leases for the currently authenticated tenant with optional status filter.",
+        "operationId": "get_tenant_leases_api_v1_leases_tenant_me_get",
+        "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "max_limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Max Limit"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/LeaseStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of tenant's lease records",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LeaseHistoryResponse"
+                  },
+                  "title": "Response Get Tenant Leases Api V1 Leases Tenant Me Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Only tenant accounts can perform this action",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tenant profile not found for the authenticated user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/leases/{lease_id}": {
+      "patch": {
+        "tags": [
+          "Leases"
+        ],
+        "summary": "Update lease details",
+        "description": "Updates an existing lease's properties such as rent amount, dates, or assigned room/tenant.",
+        "operationId": "update_lease_by_id_api_v1_leases__lease_id__patch",
+        "parameters": [
+          {
+            "name": "lease_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Lease Id"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "title": "Access Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LeaseUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated lease details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeaseResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Only landlord accounts can perform this action",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Lease does not exist or does not belong to a room owned by the landlord",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/leases/terminate/{lease_id}": {
+      "patch": {
+        "tags": [
+          "Leases"
+        ],
+        "summary": "Terminate a lease",
+        "description": "Terminates an active lease and sets the room back to vacant. The lease must not already be terminated.",
+        "operationId": "terminate_lease_by_id_api_v1_leases_terminate__lease_id__patch",
+        "parameters": [
+          {
+            "name": "lease_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Lease Id"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Terminated lease details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeaseHistoryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Lease is already terminated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Only landlord accounts can perform this action",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Lease does not exist / The landlord does not own the lodge associated with this room",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/leases/me/terminate/{lease_id}": {
+      "patch": {
+        "tags": [
+          "Leases"
+        ],
+        "summary": "Request lease termination as tenant",
+        "description": "Allows a tenant to request termination of their active lease. The lease must be active (not already terminated or pending termination).",
+        "operationId": "request_lease_termination_api_v1_leases_me_terminate__lease_id__patch",
+        "parameters": [
+          {
+            "name": "lease_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Lease Id"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lease with updated pending termination status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeaseHistoryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Lease is already terminated or already pending termination",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Only tenant accounts can perform this action",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Lease does not exist or does not belong to the authenticated tenant",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/payments/create-payment": {
+      "post": {
+        "tags": [
+          "Payments"
+        ],
+        "summary": "Record a rent payment",
+        "description": "Records a payment against an active lease. The payment cannot exceed the remaining balance owed. Payments cannot be made against terminated leases.",
+        "operationId": "create_payment_api_v1_payments_create_payment_post",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "title": "Access Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The recorded payment",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Cannot record a payment on a terminated lease / Payment amount exceeds the remaining balance",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Only landlord accounts can perform this action",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Lease does not exist / Landlord does not own the lodge associated with this lease's room",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/payments/{lease_id}": {
+      "get": {
+        "tags": [
+          "Payments"
+        ],
+        "summary": "List payments for a lease",
+        "description": "Retrieves all payment records for a specific lease. The landlord must own the lodge containing the leased room.",
+        "operationId": "list_lease_payments_for_landlord_api_v1_payments__lease_id__get",
+        "parameters": [
+          {
+            "name": "lease_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Lease Id"
+            }
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of payment records",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PaymentResponse"
+                  },
+                  "title": "Response List Lease Payments For Landlord Api V1 Payments  Lease Id  Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Lease does not exist / Landlord does not own the lodge associated with this lease's room",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/payments/me/{lease_id}": {
+      "get": {
+        "tags": [
+          "Payments"
+        ],
+        "summary": "List my payments for a lease",
+        "description": "Retrieves all payments the authenticated tenant has made for a specific lease.",
+        "operationId": "list_tenant_payments_api_v1_payments_me__lease_id__get",
+        "parameters": [
+          {
+            "name": "lease_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Lease Id"
+            }
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of tenant's payment records",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PaymentResponse"
+                  },
+                  "title": "Response List Tenant Payments Api V1 Payments Me  Lease Id  Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Only tenant accounts can perform this action",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Lease does not exist or does not belong to the authenticated tenant",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dashboard-landlord/me/landlord/{lodge_id}": {
+      "get": {
+        "tags": [
+          "Dashboards"
+        ],
+        "summary": "Get landlord dashboard statistics",
+        "description": "Retrieves comprehensive dashboard statistics for a specific lodge including financials, entity counts, and room occupancy breakdown.",
+        "operationId": "get_landlord_dashboard_api_v1_dashboard_landlord_me_landlord__lodge_id__get",
+        "parameters": [
+          {
+            "name": "lodge_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Lodge Id"
+            }
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "room_statuses",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/RoomStatus"
+              },
+              "default": [],
+              "title": "Room Statuses"
+            }
+          },
+          {
+            "name": "financial_filters",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/BadgeTexts"
+              },
+              "default": [],
+              "title": "Financial Filters"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Complete dashboard statistics",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LandlordDashboardStats"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Only landlord accounts can perform this action",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Lodge does not exist or does not belong to the authenticated landlord",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dashboard-landlord/lease-info/{lease_id}": {
+      "get": {
+        "tags": [
+          "Dashboards"
+        ],
+        "summary": "Get detailed room lease info",
+        "description": "Retrieves detailed information about a specific lease including room details, tenant info, and financial breakdown.",
+        "operationId": "get_room_lease_info_api_v1_dashboard_landlord_lease_info__lease_id__get",
+        "parameters": [
+          {
+            "name": "lease_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Lease Id"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detailed room-lease-tenant-financial summary",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoomLeaseInfo"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Only landlord accounts can perform this action",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Lease does not exist or has no associated data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dashboard-tenant/me/tenants": {
+      "get": {
+        "tags": [
+          "Dashboards"
+        ],
+        "summary": "Get tenant dashboard statistics",
+        "description": "Retrieves dashboard statistics for the authenticated tenant including active lease summaries, room details, and financial breakdown.",
+        "operationId": "get_tenant_dashboard_stat_api_v1_dashboard_tenant_me_tenants_get",
+        "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "title": "Access Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of active lease statistics for the tenant",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TenantDashboardStats"
+                  },
+                  "title": "Response Get Tenant Dashboard Stat Api V1 Dashboard Tenant Me Tenants Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Only tenant accounts can perform this action",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/invites/": {
+      "post": {
+        "tags": [
+          "Invites"
+        ],
+        "summary": "Create a tenant invitation",
+        "description": "Generates a new invitation link for a prospective tenant. The lodge must belong to the authenticated landlord.",
+        "operationId": "invite_tenant_api_v1_invites__post",
+        "parameters": [
+          {
+            "name": "access_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "title": "Access Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InviteCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The created invitation with its UUID link",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InviteResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Only landlord accounts can perform this action",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Lodge does not exist or does not belong to the authenticated landlord",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/invites/{invite_id}": {
+      "get": {
+        "tags": [
+          "Invites"
+        ],
+        "summary": "Get invitation details",
+        "description": "Retrieves the details of a specific invitation. This is a public endpoint used by prospective tenants to view their invitation.",
+        "operationId": "get_invite_by_id_api_v1_invites__invite_id__get",
+        "parameters": [
+          {
+            "name": "invite_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Invite Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Invitation details including lodge name and expiry status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InviteDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The invitation ID does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseSchema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/healthy": {
+      "get": {
+        "summary": "Health Status",
+        "operationId": "health_status_healthy_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "BadgeTexts": {
+        "type": "string",
+        "enum": [
+          "Safe",
+          "Expiring",
+          "Overdue",
+          "Owing",
+          "Pending",
+          "Unknown_badge_text"
+        ],
+        "title": "BadgeTexts"
+      },
+      "BadgeVariants": {
+        "type": "string",
+        "enum": [
+          "Success",
+          "Warning",
+          "Danger",
+          "Orange",
+          "Inactive",
+          "Info",
+          "Purple",
+          "Unknown_variant"
+        ],
+        "title": "BadgeVariants"
+      },
+      "Body_login_user_api_v1_auth_login_post": {
+        "properties": {
+          "grant_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^password$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grant Type"
+          },
+          "username": {
+            "type": "string",
+            "title": "Username"
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "title": "Password"
+          },
+          "scope": {
+            "type": "string",
+            "title": "Scope",
+            "default": ""
+          },
+          "client_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Client Id"
+          },
+          "client_secret": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "format": "password",
+            "title": "Client Secret"
+          }
+        },
+        "type": "object",
+        "required": [
+          "username",
+          "password"
+        ],
+        "title": "Body_login_user_api_v1_auth_login_post"
+      },
+      "BulkRoomUpdate": {
+        "properties": {
+          "room_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Room Ids",
+            "description": "List of room IDs to update.",
+            "examples": [
+              [
+                1,
+                2,
+                3
+              ]
+            ]
+          },
+          "base_rent": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Base Rent",
+            "description": "The new base rent amount in KOBO.",
+            "examples": [
+              25000000
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "room_ids",
+          "base_rent"
+        ],
+        "title": "BulkRoomUpdate"
+      },
+      "EntityCountResponse": {
+        "properties": {
+          "total_rooms": {
+            "type": "integer",
+            "title": "Total Rooms",
+            "description": "The total number of rooms.",
+            "examples": [
+              40
+            ]
+          },
+          "total_tenants": {
+            "type": "integer",
+            "title": "Total Tenants",
+            "description": "The total number of tenants.",
+            "examples": [
+              35
+            ]
+          },
+          "room_status_counts": {
+            "$ref": "#/components/schemas/RoomStatusCounts",
+            "description": "The counts of rooms by status.",
+            "examples": [
+              {
+                "maintenance": 4,
+                "occupied": 30,
+                "vacant": 6
+              }
+            ]
+          },
+          "occupied_counts": {
+            "$ref": "#/components/schemas/OccupiedCounts",
+            "description": "The counts of occupied rooms by state.",
+            "examples": [
+              {
+                "expiring": 10,
+                "overdue": 2,
+                "owing": 8,
+                "pending": 0,
+                "safe": 10
+              }
+            ]
+          },
+          "occupancy_rate": {
+            "type": "integer",
+            "title": "Occupancy Rate",
+            "description": "The occupancy rate percentage.",
+            "examples": [
+              85
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_rooms",
+          "total_tenants",
+          "room_status_counts",
+          "occupied_counts",
+          "occupancy_rate"
+        ],
+        "title": "EntityCountResponse",
+        "description": "Schema representing the count of various entities in the system.\n\nAttributes:\n    total_rooms (int): The total number of rooms.\n    total_tenants (int): The total number of tenants.\n    room_status_counts (RoomStatusCounts): The counts of rooms by status.\n    occupied_counts (OccupiedCounts): The counts of occupied rooms by state."
+      },
+      "ErrorResponseSchema": {
+        "properties": {
+          "error": {
+            "type": "string",
+            "title": "Error",
+            "description": "The exact exception class name",
+            "examples": [
+              "ErrorClassName"
+            ]
+          },
+          "detail": {
+            "type": "string",
+            "title": "Detail",
+            "description": "Human-readable error message",
+            "examples": [
+              "Human readable explanation of why it failed."
+            ]
+          },
+          "meta": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Meta",
+            "description": "Additional context about the error",
+            "examples": [
+              {
+                "key": "value"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "error",
+          "detail"
+        ],
+        "title": "ErrorResponseSchema"
+      },
+      "FinancialResponse": {
+        "properties": {
+          "potential_revenue": {
+            "type": "integer",
+            "title": "Potential Revenue",
+            "description": "The maximum possible revenue in KOBO.",
+            "examples": [
+              500000000
+            ]
+          },
+          "forecasted_revenue": {
+            "type": "integer",
+            "title": "Forecasted Revenue",
+            "description": "The forecasted revenue in KOBO.",
+            "examples": [
+              450000000
+            ]
+          },
+          "expected_revenue": {
+            "type": "integer",
+            "title": "Expected Revenue",
+            "description": "The revenue expected based on current leases in KOBO.",
+            "examples": [
+              400000000
+            ]
+          },
+          "collected_revenue": {
+            "type": "integer",
+            "title": "Collected Revenue",
+            "description": "The actual revenue collected in KOBO.",
+            "examples": [
+              350000000
+            ]
+          },
+          "unpaid_rent": {
+            "type": "integer",
+            "title": "Unpaid Rent",
+            "description": "The amount of rent that is unpaid in KOBO.",
+            "examples": [
+              50000000
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "potential_revenue",
+          "forecasted_revenue",
+          "expected_revenue",
+          "collected_revenue",
+          "unpaid_rent"
+        ],
+        "title": "FinancialResponse",
+        "description": "Schema representing the financial summary for a landlord.\n\nAttributes:\n    potential_revenue (int): The maximum possible revenue.\n    expected_revenue (int): The revenue expected based on current leases.\n    collected_revenue (int): The actual revenue collected.\n    unpaid_rent (int): The amount of rent that is unpaid."
+      },
+      "FinancialSummary": {
+        "properties": {
+          "agreed_rent": {
+            "type": "integer",
+            "title": "Agreed Rent",
+            "description": "The agreed rent in KOBO.",
+            "examples": [
+              20000000
+            ]
+          },
+          "total_paid": {
+            "type": "integer",
+            "title": "Total Paid",
+            "description": "The total amount paid in KOBO.",
+            "examples": [
+              15000000
+            ]
+          },
+          "remaining_balance": {
+            "type": "integer",
+            "title": "Remaining Balance",
+            "description": "The remaining balance in KOBO.",
+            "examples": [
+              5000000
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "agreed_rent",
+          "total_paid",
+          "remaining_balance"
+        ],
+        "title": "FinancialSummary"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "InviteCreate": {
+        "properties": {
+          "lodge_id": {
+            "type": "integer",
+            "title": "Lodge Id",
+            "description": "The ID of the lodge.",
+            "examples": [
+              1
+            ]
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At",
+            "description": "The expiration date and time of the invite.",
+            "examples": [
+              "2026-07-04T06:05:02Z"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "lodge_id",
+          "expires_at"
+        ],
+        "title": "InviteCreate"
+      },
+      "InviteDetail": {
+        "properties": {
+          "lodge_id": {
+            "type": "integer",
+            "title": "Lodge Id",
+            "description": "The ID of the lodge.",
+            "examples": [
+              1
+            ]
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At",
+            "description": "The expiration date and time of the invite.",
+            "examples": [
+              "2026-07-04T06:05:02Z"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id",
+            "description": "The unique identifier for the invite.",
+            "examples": [
+              "123e4567-e89b-12d3-a456-426614174000"
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/InviteStatus",
+            "description": "The current status of the invite.",
+            "examples": [
+              "pending"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At",
+            "description": "Timestamp when the invite was created.",
+            "examples": [
+              "2026-07-04T06:05:02Z"
+            ]
+          },
+          "is_expired": {
+            "type": "boolean",
+            "title": "Is Expired",
+            "description": "Whether the invite has expired.",
+            "examples": [
+              false
+            ]
+          },
+          "lodge_name": {
+            "type": "string",
+            "title": "Lodge Name",
+            "description": "The name of the lodge.",
+            "examples": [
+              "Sunrise Lodge"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "lodge_id",
+          "expires_at",
+          "id",
+          "status",
+          "created_at",
+          "is_expired",
+          "lodge_name"
+        ],
+        "title": "InviteDetail"
+      },
+      "InviteResponse": {
+        "properties": {
+          "lodge_id": {
+            "type": "integer",
+            "title": "Lodge Id",
+            "description": "The ID of the lodge.",
+            "examples": [
+              1
+            ]
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At",
+            "description": "The expiration date and time of the invite.",
+            "examples": [
+              "2026-07-04T06:05:02Z"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id",
+            "description": "The unique identifier for the invite.",
+            "examples": [
+              "123e4567-e89b-12d3-a456-426614174000"
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/InviteStatus",
+            "description": "The current status of the invite.",
+            "examples": [
+              "pending"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At",
+            "description": "Timestamp when the invite was created.",
+            "examples": [
+              "2026-07-04T06:05:02Z"
+            ]
+          },
+          "is_expired": {
+            "type": "boolean",
+            "title": "Is Expired",
+            "description": "Whether the invite has expired.",
+            "examples": [
+              false
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "lodge_id",
+          "expires_at",
+          "id",
+          "status",
+          "created_at",
+          "is_expired"
+        ],
+        "title": "InviteResponse"
+      },
+      "InviteStatus": {
+        "type": "string",
+        "enum": [
+          "Sent",
+          "Accepted",
+          "Expired"
+        ],
+        "title": "InviteStatus"
+      },
+      "LandlordDashboardStats": {
+        "properties": {
+          "financials": {
+            "$ref": "#/components/schemas/FinancialResponse",
+            "description": "The financial summary.",
+            "examples": [
+              {
+                "collected_revenue": 3500000,
+                "expected_revenue": 4000000,
+                "forecasted_revenue": 4500000,
+                "potential_revenue": 5000000,
+                "unpaid_rent": 500000
+              }
+            ]
+          },
+          "entity_counts": {
+            "$ref": "#/components/schemas/EntityCountResponse",
+            "description": "The counts of different entities.",
+            "examples": [
+              {
+                "occupancy_rate": 80,
+                "occupied_counts": {
+                  "expiring": 0,
+                  "overdue": 0,
+                  "owing": 0,
+                  "pending": 0,
+                  "safe": 8
+                },
+                "room_status_counts": {
+                  "maintenance": 0,
+                  "occupied": 8,
+                  "vacant": 2
+                },
+                "total_rooms": 10,
+                "total_tenants": 8
+              }
+            ]
+          },
+          "occupied_rooms_lease": {
+            "$ref": "#/components/schemas/OccupiedRoomLeasesResponse",
+            "description": "The lease details of occupied rooms.",
+            "examples": [
+              {
+                "expiring": [],
+                "overdue": [],
+                "owing": [],
+                "pending": [],
+                "safe": []
+              }
+            ]
+          },
+          "vacant_rooms": {
+            "items": {
+              "$ref": "#/components/schemas/RoomGridSummary"
+            },
+            "type": "array",
+            "title": "Vacant Rooms",
+            "description": "The list of vacant rooms.",
+            "examples": [
+              []
+            ]
+          },
+          "maintenance_rooms": {
+            "items": {
+              "$ref": "#/components/schemas/RoomGridSummary"
+            },
+            "type": "array",
+            "title": "Maintenance Rooms",
+            "description": "The list of rooms under maintenance.",
+            "examples": [
+              []
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "financials",
+          "entity_counts",
+          "occupied_rooms_lease",
+          "vacant_rooms",
+          "maintenance_rooms"
+        ],
+        "title": "LandlordDashboardStats",
+        "description": "Schema representing the complete dashboard statistics for a landlord.\n\nAttributes:\n    financials (FinancialResponse): The financial summary.\n    entity_counts (EntityCountResponse): The counts of different entities.\n    occupied_rooms_lease (OccupiedRoomLeasesResponse): The lease details of occupied rooms.\n    vacant_rooms (list[RoomGridSummary]): The list of vacant rooms.\n    maintenance_rooms (list[RoomGridSummary]): The list of rooms under maintenance."
+      },
+      "LeaseCreate": {
+        "properties": {
+          "tenant_id": {
+            "type": "integer",
+            "title": "Tenant Id",
+            "description": "The ID of the tenant.",
+            "examples": [
+              1
+            ]
+          },
+          "room_id": {
+            "type": "integer",
+            "title": "Room Id",
+            "description": "The ID of the leased room.",
+            "examples": [
+              1
+            ]
+          },
+          "agreed_rent_amt": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Agreed Rent Amt",
+            "description": "The agreed ANNUAL rental amount in KOBO.",
+            "examples": [
+              20000000
+            ]
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Start Date",
+            "description": "The start date of the lease.",
+            "examples": [
+              "2026-01-01"
+            ]
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date",
+            "title": "End Date",
+            "description": "The end date of the lease.",
+            "examples": [
+              "2026-12-31"
+            ]
+          },
+          "total_amt_paid": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Total Amt Paid",
+            "description": "The total amount paid so far in KOBO.",
+            "examples": [
+              20000000
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "tenant_id",
+          "room_id",
+          "agreed_rent_amt",
+          "start_date",
+          "end_date",
+          "total_amt_paid"
+        ],
+        "title": "LeaseCreate"
+      },
+      "LeaseHistoryResponse": {
+        "properties": {
+          "tenant_id": {
+            "type": "integer",
+            "title": "Tenant Id",
+            "description": "The ID of the tenant.",
+            "examples": [
+              1
+            ]
+          },
+          "room_id": {
+            "type": "integer",
+            "title": "Room Id",
+            "description": "The ID of the leased room.",
+            "examples": [
+              1
+            ]
+          },
+          "agreed_rent_amt": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Agreed Rent Amt",
+            "description": "The agreed ANNUAL rental amount in KOBO.",
+            "examples": [
+              20000000
+            ]
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Start Date",
+            "description": "The start date of the lease.",
+            "examples": [
+              "2026-01-01"
+            ]
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date",
+            "title": "End Date",
+            "description": "The end date of the lease.",
+            "examples": [
+              "2026-12-31"
+            ]
+          },
+          "id": {
+            "type": "integer",
+            "title": "Id",
+            "description": "The unique identifier for the lease.",
+            "examples": [
+              1
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At",
+            "description": "Timestamp when the lease was created.",
+            "examples": [
+              "2026-07-04T06:05:02Z"
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/LeaseStatus",
+            "description": "The current status of the lease.",
+            "examples": [
+              "active"
+            ]
+          },
+          "tenant_name": {
+            "type": "string",
+            "title": "Tenant Name",
+            "description": "The name of the tenant.",
+            "examples": [
+              "John Doe"
+            ]
+          },
+          "room_no": {
+            "type": "string",
+            "title": "Room No",
+            "description": "The room number.",
+            "examples": [
+              "A1"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "tenant_id",
+          "room_id",
+          "agreed_rent_amt",
+          "start_date",
+          "end_date",
+          "id",
+          "created_at",
+          "status",
+          "tenant_name",
+          "room_no"
+        ],
+        "title": "LeaseHistoryResponse"
+      },
+      "LeaseResponse": {
+        "properties": {
+          "tenant_id": {
+            "type": "integer",
+            "title": "Tenant Id",
+            "description": "The ID of the tenant.",
+            "examples": [
+              1
+            ]
+          },
+          "room_id": {
+            "type": "integer",
+            "title": "Room Id",
+            "description": "The ID of the leased room.",
+            "examples": [
+              1
+            ]
+          },
+          "agreed_rent_amt": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Agreed Rent Amt",
+            "description": "The agreed ANNUAL rental amount in KOBO.",
+            "examples": [
+              20000000
+            ]
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Start Date",
+            "description": "The start date of the lease.",
+            "examples": [
+              "2026-01-01"
+            ]
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date",
+            "title": "End Date",
+            "description": "The end date of the lease.",
+            "examples": [
+              "2026-12-31"
+            ]
+          },
+          "id": {
+            "type": "integer",
+            "title": "Id",
+            "description": "The unique identifier for the lease.",
+            "examples": [
+              1
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At",
+            "description": "Timestamp when the lease was created.",
+            "examples": [
+              "2026-07-04T06:05:02Z"
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/LeaseStatus",
+            "description": "The current status of the lease.",
+            "examples": [
+              "active"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "tenant_id",
+          "room_id",
+          "agreed_rent_amt",
+          "start_date",
+          "end_date",
+          "id",
+          "created_at",
+          "status"
+        ],
+        "title": "LeaseResponse"
+      },
+      "LeaseStatus": {
+        "type": "string",
+        "enum": [
+          "Active",
+          "Overdue",
+          "Terminated",
+          "Pending_Termination"
+        ],
+        "title": "LeaseStatus"
+      },
+      "LeaseSummary": {
+        "properties": {
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Start Date",
+            "description": "The start date of the lease.",
+            "examples": [
+              "2026-01-01"
+            ]
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date",
+            "title": "End Date",
+            "description": "The end date of the lease.",
+            "examples": [
+              "2026-12-31"
+            ]
+          },
+          "days_left": {
+            "type": "integer",
+            "title": "Days Left",
+            "description": "The number of days left on the lease.",
+            "examples": [
+              30
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "start_date",
+          "end_date",
+          "days_left"
+        ],
+        "title": "LeaseSummary"
+      },
+      "LeaseUpdate": {
+        "properties": {
+          "tenant_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tenant Id",
+            "description": "The ID of the tenant.",
+            "examples": [
+              1
+            ]
+          },
+          "room_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Room Id",
+            "description": "The ID of the leased room.",
+            "examples": [
+              1
+            ]
+          },
+          "agreed_rent_amt": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agreed Rent Amt",
+            "description": "The agreed ANNUAL rental amount in KOBO.",
+            "examples": [
+              20000000
+            ]
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date",
+            "description": "The start date of the lease.",
+            "examples": [
+              "2026-01-01"
+            ]
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date",
+            "description": "The end date of the lease.",
+            "examples": [
+              "2026-12-31"
+            ]
+          }
+        },
+        "type": "object",
+        "title": "LeaseUpdate"
+      },
+      "LodgeCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "The name of the lodge.",
+            "examples": [
+              "Sunrise Lodge"
+            ]
+          },
+          "address": {
+            "type": "string",
+            "title": "Address",
+            "description": "The address of the lodge.",
+            "examples": [
+              "123 Sunrise Ave"
+            ]
+          },
+          "room_generator": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RoomGenerator"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional configuration to generate rooms automatically.",
+            "examples": [
+              null
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "address"
+        ],
+        "title": "LodgeCreate"
+      },
+      "LodgeResponse": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "The name of the lodge.",
+            "examples": [
+              "Sunrise Lodge"
+            ]
+          },
+          "address": {
+            "type": "string",
+            "title": "Address",
+            "description": "The address of the lodge.",
+            "examples": [
+              "123 Sunrise Ave"
+            ]
+          },
+          "id": {
+            "type": "integer",
+            "title": "Id",
+            "description": "The unique identifier for the lodge.",
+            "examples": [
+              1
+            ]
+          },
+          "landlord_id": {
+            "type": "integer",
+            "title": "Landlord Id",
+            "description": "The ID of the landlord owning this lodge.",
+            "examples": [
+              1
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At",
+            "description": "Timestamp when the lodge was created.",
+            "examples": [
+              "2026-07-04T06:05:02Z"
+            ]
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active",
+            "description": "Whether the lodge is active.",
+            "examples": [
+              true
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "address",
+          "id",
+          "landlord_id",
+          "created_at",
+          "is_active"
+        ],
+        "title": "LodgeResponse"
+      },
+      "LodgeUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name",
+            "description": "The name of the lodge.",
+            "examples": [
+              "Sunrise Lodge"
+            ]
+          },
+          "address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address",
+            "description": "The address of the lodge.",
+            "examples": [
+              "123 Sunrise Ave"
+            ]
+          }
+        },
+        "type": "object",
+        "title": "LodgeUpdate"
+      },
+      "OccupiedCounts": {
+        "properties": {
+          "safe": {
+            "type": "integer",
+            "title": "Safe",
+            "description": "Number of rooms with safe leases.",
+            "examples": [
+              10
+            ]
+          },
+          "expiring": {
+            "type": "integer",
+            "title": "Expiring",
+            "description": "Number of rooms with expiring leases.",
+            "examples": [
+              5
+            ]
+          },
+          "overdue": {
+            "type": "integer",
+            "title": "Overdue",
+            "description": "Number of rooms with overdue payments.",
+            "examples": [
+              2
+            ]
+          },
+          "pending": {
+            "type": "integer",
+            "title": "Pending",
+            "description": "Number of rooms with pending leases.",
+            "examples": [
+              1
+            ]
+          },
+          "owing": {
+            "type": "integer",
+            "title": "Owing",
+            "description": "Number of rooms with owing balances.",
+            "examples": [
+              3
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "safe",
+          "expiring",
+          "overdue",
+          "pending",
+          "owing"
+        ],
+        "title": "OccupiedCounts",
+        "description": "Schema representing the counts of occupied rooms categorized by their lease state.\n\nAttributes:\n    safe (int): Number of rooms with safe leases.\n    expiring (int): Number of rooms with expiring leases.\n    overdue (int): Number of rooms with overdue payments.\n    owing (int): Number of rooms with owing balances."
+      },
+      "OccupiedRoomLeasesResponse": {
+        "properties": {
+          "safe": {
+            "items": {
+              "$ref": "#/components/schemas/RoomGridSummary"
+            },
+            "type": "array",
+            "title": "Safe",
+            "description": "List of rooms with safe leases.",
+            "examples": [
+              []
+            ]
+          },
+          "expiring": {
+            "items": {
+              "$ref": "#/components/schemas/RoomGridSummary"
+            },
+            "type": "array",
+            "title": "Expiring",
+            "description": "List of rooms with expiring leases.",
+            "examples": [
+              []
+            ]
+          },
+          "overdue": {
+            "items": {
+              "$ref": "#/components/schemas/RoomGridSummary"
+            },
+            "type": "array",
+            "title": "Overdue",
+            "description": "List of rooms with overdue payments.",
+            "examples": [
+              []
+            ]
+          },
+          "pending": {
+            "items": {
+              "$ref": "#/components/schemas/RoomGridSummary"
+            },
+            "type": "array",
+            "title": "Pending",
+            "description": "List of rooms with pending leases.",
+            "examples": [
+              []
+            ]
+          },
+          "owing": {
+            "items": {
+              "$ref": "#/components/schemas/RoomGridSummary"
+            },
+            "type": "array",
+            "title": "Owing",
+            "description": "List of rooms with owing balances.",
+            "examples": [
+              []
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "safe",
+          "expiring",
+          "overdue",
+          "pending",
+          "owing"
+        ],
+        "title": "OccupiedRoomLeasesResponse"
+      },
+      "PaymentCreate": {
+        "properties": {
+          "amount_paid": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Amount Paid",
+            "description": "The amount paid in KOBO.",
+            "examples": [
+              5000000
+            ]
+          },
+          "lease_id": {
+            "type": "integer",
+            "title": "Lease Id",
+            "description": "The ID of the lease this payment is for.",
+            "examples": [
+              1
+            ]
+          },
+          "payment_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payment Date",
+            "description": "The date the payment was made.",
+            "examples": [
+              "2026-07-04T06:05:02Z"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "amount_paid",
+          "lease_id"
+        ],
+        "title": "PaymentCreate"
+      },
+      "PaymentResponse": {
+        "properties": {
+          "amount_paid": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Amount Paid",
+            "description": "The amount paid in KOBO.",
+            "examples": [
+              5000000
+            ]
+          },
+          "lease_id": {
+            "type": "integer",
+            "title": "Lease Id",
+            "description": "The ID of the lease this payment is for.",
+            "examples": [
+              1
+            ]
+          },
+          "id": {
+            "type": "integer",
+            "title": "Id",
+            "description": "The unique identifier for the payment.",
+            "examples": [
+              1
+            ]
+          },
+          "payment_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Payment Date",
+            "description": "The date the payment was made.",
+            "examples": [
+              "2026-07-04T06:05:02Z"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "amount_paid",
+          "lease_id",
+          "id",
+          "payment_date"
+        ],
+        "title": "PaymentResponse"
+      },
+      "RoomCreate": {
+        "properties": {
+          "room_no": {
+            "type": "string",
+            "title": "Room No",
+            "description": "The room number or identifier.",
+            "examples": [
+              "A1",
+              "101"
+            ]
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description",
+            "description": "The description of the room.",
+            "examples": [
+              "Spacious self-contain"
+            ]
+          },
+          "base_rent_price": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Base Rent Price",
+            "description": "The base rental price in KOBO.",
+            "default": 200000,
+            "examples": [
+              20000000
+            ]
+          },
+          "lodge_id": {
+            "type": "integer",
+            "title": "Lodge Id",
+            "description": "The ID of the lodge this room belongs to.",
+            "examples": [
+              1
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "room_no",
+          "lodge_id"
+        ],
+        "title": "RoomCreate"
+      },
+      "RoomGenerator": {
+        "properties": {
+          "prefix": {
+            "type": "string",
+            "title": "Prefix",
+            "description": "Prefix for the room numbers.",
+            "default": "",
+            "examples": [
+              "A",
+              "Bldg1-"
+            ]
+          },
+          "start_number": {
+            "type": "integer",
+            "title": "Start Number",
+            "description": "Starting number for the generated rooms.",
+            "examples": [
+              1
+            ]
+          },
+          "end_number": {
+            "type": "integer",
+            "title": "End Number",
+            "description": "Ending number for the generated rooms.",
+            "examples": [
+              20
+            ]
+          },
+          "default_rent": {
+            "type": "integer",
+            "title": "Default Rent",
+            "description": "Default rent amount in KOBO.",
+            "examples": [
+              20000000
+            ]
+          },
+          "default_description": {
+            "type": "string",
+            "title": "Default Description",
+            "description": "Default description for the generated rooms.",
+            "examples": [
+              "Standard single room"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "start_number",
+          "end_number",
+          "default_rent",
+          "default_description"
+        ],
+        "title": "RoomGenerator"
+      },
+      "RoomGridSummary": {
+        "properties": {
+          "lease_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lease Id",
+            "description": "The ID of the active lease, if any.",
+            "examples": [
+              1
+            ]
+          },
+          "room_id": {
+            "type": "integer",
+            "title": "Room Id",
+            "description": "The ID of the room.",
+            "examples": [
+              1
+            ]
+          },
+          "room_no": {
+            "type": "string",
+            "title": "Room No",
+            "description": "The room number.",
+            "examples": [
+              "101"
+            ]
+          },
+          "badge_text": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BadgeTexts"
+              },
+              {
+                "$ref": "#/components/schemas/RoomStatus"
+              }
+            ],
+            "title": "Badge Text",
+            "description": "The text to display on the badge.",
+            "examples": [
+              "Safe"
+            ]
+          },
+          "badge_variant": {
+            "$ref": "#/components/schemas/BadgeVariants",
+            "description": "The visual variant of the badge.",
+            "examples": [
+              "success"
+            ]
+          },
+          "main_display_text": {
+            "type": "string",
+            "title": "Main Display Text",
+            "description": "Main text displayed on the grid card.",
+            "examples": [
+              "Donald"
+            ]
+          },
+          "sub_display_text": {
+            "type": "string",
+            "title": "Sub Display Text",
+            "description": "Sub text displayed on the grid card.",
+            "examples": [
+              "91 days left"
+            ]
+          },
+          "is_owing": {
+            "type": "boolean",
+            "title": "Is Owing",
+            "description": "Whether the room currently has an owing balance.",
+            "default": false,
+            "examples": [
+              false
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "room_id",
+          "room_no",
+          "badge_text",
+          "badge_variant",
+          "main_display_text",
+          "sub_display_text"
+        ],
+        "title": "RoomGridSummary"
+      },
+      "RoomLeaseInfo": {
+        "properties": {
+          "room": {
+            "$ref": "#/components/schemas/RoomSummary",
+            "description": "The room summary.",
+            "examples": [
+              {
+                "base_rent": 20000000,
+                "description": "Single room",
+                "room_no": "101",
+                "status": "vacant"
+              }
+            ]
+          },
+          "lease": {
+            "$ref": "#/components/schemas/LeaseSummary",
+            "description": "The lease summary.",
+            "examples": [
+              {
+                "days_left": 30,
+                "end_date": "2026-12-31",
+                "start_date": "2026-01-01"
+              }
+            ]
+          },
+          "finance": {
+            "$ref": "#/components/schemas/FinancialSummary",
+            "description": "The financial summary.",
+            "examples": [
+              {
+                "agreed_rent": 20000000,
+                "remaining_balance": 5000000,
+                "total_paid": 15000000
+              }
+            ]
+          },
+          "badge_text": {
+            "$ref": "#/components/schemas/BadgeTexts",
+            "description": "The text to display on the badge.",
+            "examples": [
+              "Safe"
+            ]
+          },
+          "badge_variant": {
+            "$ref": "#/components/schemas/BadgeVariants",
+            "description": "The visual variant of the badge.",
+            "examples": [
+              "success"
+            ]
+          },
+          "tenant": {
+            "$ref": "#/components/schemas/TenantSummary",
+            "description": "The tenant summary.",
+            "examples": [
+              {
+                "name": "John Doe",
+                "phone": "+2348012345678"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "room",
+          "lease",
+          "finance",
+          "badge_text",
+          "badge_variant",
+          "tenant"
+        ],
+        "title": "RoomLeaseInfo"
+      },
+      "RoomResponse": {
+        "properties": {
+          "room_no": {
+            "type": "string",
+            "title": "Room No",
+            "description": "The room number or identifier.",
+            "examples": [
+              "A1",
+              "101"
+            ]
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description",
+            "description": "The description of the room.",
+            "examples": [
+              "Spacious self-contain"
+            ]
+          },
+          "base_rent_price": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Base Rent Price",
+            "description": "The base rental price in KOBO.",
+            "default": 200000,
+            "examples": [
+              20000000
+            ]
+          },
+          "lodge_id": {
+            "type": "integer",
+            "title": "Lodge Id",
+            "description": "The ID of the lodge this room belongs to.",
+            "examples": [
+              1
+            ]
+          },
+          "id": {
+            "type": "integer",
+            "title": "Id",
+            "description": "The unique identifier for the room.",
+            "examples": [
+              1
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/RoomStatus",
+            "description": "The current status of the room.",
+            "examples": [
+              "vacant"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At",
+            "description": "Timestamp when the room was created.",
+            "examples": [
+              "2026-07-04T06:05:02Z"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "room_no",
+          "lodge_id",
+          "id",
+          "status",
+          "created_at"
+        ],
+        "title": "RoomResponse"
+      },
+      "RoomStatus": {
+        "type": "string",
+        "enum": [
+          "Vacant",
+          "Occupied",
+          "Maintenance"
+        ],
+        "title": "RoomStatus"
+      },
+      "RoomStatusCounts": {
+        "properties": {
+          "occupied": {
+            "type": "integer",
+            "title": "Occupied",
+            "description": "Number of occupied rooms.",
+            "examples": [
+              10
+            ]
+          },
+          "vacant": {
+            "type": "integer",
+            "title": "Vacant",
+            "description": "Number of vacant rooms.",
+            "examples": [
+              5
+            ]
+          },
+          "maintenance": {
+            "type": "integer",
+            "title": "Maintenance",
+            "description": "Number of rooms under maintenance.",
+            "examples": [
+              2
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "occupied",
+          "vacant",
+          "maintenance"
+        ],
+        "title": "RoomStatusCounts"
+      },
+      "RoomSummary": {
+        "properties": {
+          "room_no": {
+            "type": "string",
+            "title": "Room No",
+            "description": "The room number.",
+            "examples": [
+              "101"
+            ]
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "description": "The description of the room.",
+            "examples": [
+              "Single room"
+            ]
+          },
+          "base_rent": {
+            "type": "integer",
+            "title": "Base Rent",
+            "description": "The base rent in KOBO.",
+            "examples": [
+              20000000
+            ]
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "The status of the room.",
+            "examples": [
+              "vacant"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "room_no",
+          "description",
+          "base_rent",
+          "status"
+        ],
+        "title": "RoomSummary"
+      },
+      "RoomUpdate": {
+        "properties": {
+          "room_no": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Room No",
+            "description": "The room number or identifier.",
+            "examples": [
+              "A1",
+              "101"
+            ]
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description",
+            "description": "The description of the room.",
+            "examples": [
+              "Spacious self-contain"
+            ]
+          },
+          "base_rent_price": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Rent Price",
+            "description": "The base rental price in KOBO.",
+            "examples": [
+              20000000
+            ]
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RoomStatus"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The current status of the room.",
+            "examples": [
+              "maintenance"
+            ]
+          }
+        },
+        "type": "object",
+        "title": "RoomUpdate"
+      },
+      "StudentLevel": {
+        "type": "string",
+        "enum": [
+          "100",
+          "200",
+          "300",
+          "400",
+          "500",
+          "600"
+        ],
+        "title": "StudentLevel"
+      },
+      "TenantBase": {
+        "properties": {
+          "tenant_type": {
+            "$ref": "#/components/schemas/TenantType",
+            "description": "The type of tenant.",
+            "examples": [
+              "student"
+            ]
+          },
+          "emergency_contact_name": {
+            "type": "string",
+            "title": "Emergency Contact Name",
+            "description": "The name of the emergency contact.",
+            "examples": [
+              "Jane Doe"
+            ]
+          },
+          "emergency_contact_phone_no": {
+            "type": "string",
+            "title": "Emergency Contact Phone No",
+            "description": "The phone number of the emergency contact.",
+            "examples": [
+              "+2348012345678"
+            ]
+          },
+          "level": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StudentLevel"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The academic level if the tenant is a student.",
+            "examples": [
+              "100L"
+            ]
+          },
+          "reg_no": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reg No",
+            "description": "The registration number.",
+            "examples": [
+              123456
+            ]
+          },
+          "department": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department",
+            "description": "The academic department.",
+            "examples": [
+              "Computer Science"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "tenant_type",
+          "emergency_contact_name",
+          "emergency_contact_phone_no"
+        ],
+        "title": "TenantBase",
+        "description": "Base schema for a tenant profile.\n\nAttributes:\n    tenant_type (TenantType): The type of tenant.\n    emergency_contact_name (str): The name of the emergency contact.\n    emergency_contact_phone_no (str): The phone number of the emergency contact.\n    level (Optional[StudentLevel]): The academic level if the tenant is a student.\n    reg_no (Optional[int]): The registration number.\n    department (Optional[str]): The academic department."
+      },
+      "TenantDashboardStats": {
+        "properties": {
+          "room": {
+            "$ref": "#/components/schemas/RoomSummary",
+            "description": "The room summary.",
+            "examples": [
+              {
+                "base_rent": 20000000,
+                "description": "Single room",
+                "room_no": "101",
+                "status": "vacant"
+              }
+            ]
+          },
+          "lease": {
+            "$ref": "#/components/schemas/LeaseSummary",
+            "description": "The lease summary.",
+            "examples": [
+              {
+                "days_left": 30,
+                "end_date": "2026-12-31",
+                "start_date": "2026-01-01"
+              }
+            ]
+          },
+          "finance": {
+            "$ref": "#/components/schemas/FinancialSummary",
+            "description": "The financial summary.",
+            "examples": [
+              {
+                "agreed_rent": 20000000,
+                "remaining_balance": 5000000,
+                "total_paid": 15000000
+              }
+            ]
+          },
+          "badge_text": {
+            "$ref": "#/components/schemas/BadgeTexts",
+            "description": "The text to display on the badge.",
+            "examples": [
+              "Safe"
+            ]
+          },
+          "badge_variant": {
+            "$ref": "#/components/schemas/BadgeVariants",
+            "description": "The visual variant of the badge.",
+            "examples": [
+              "success"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "room",
+          "lease",
+          "finance",
+          "badge_text",
+          "badge_variant"
+        ],
+        "title": "TenantDashboardStats"
+      },
+      "TenantInfoUpdate": {
+        "properties": {
+          "tenant_type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TenantType"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The type of tenant.",
+            "examples": [
+              "student"
+            ]
+          },
+          "emergency_contact_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emergency Contact Name",
+            "description": "The name of the emergency contact.",
+            "examples": [
+              "Jane Doe"
+            ]
+          },
+          "emergency_contact_phone_no": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emergency Contact Phone No",
+            "description": "The phone number of the emergency contact.",
+            "examples": [
+              "+2348012345678"
+            ]
+          },
+          "level": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StudentLevel"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The academic level if the tenant is a student.",
+            "examples": [
+              "100L"
+            ]
+          },
+          "reg_no": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reg No",
+            "description": "The registration number.",
+            "examples": [
+              123456
+            ]
+          },
+          "department": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department",
+            "description": "The academic department.",
+            "examples": [
+              "Computer Science"
+            ]
+          }
+        },
+        "type": "object",
+        "title": "TenantInfoUpdate"
+      },
+      "TenantProfileCreate": {
+        "properties": {
+          "invite_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Invite Id",
+            "description": "The UUID of the invitation used to create this profile.",
+            "examples": [
+              "123e4567-e89b-12d3-a456-426614174000"
+            ]
+          },
+          "user_info": {
+            "$ref": "#/components/schemas/UserCreate",
+            "description": "The user information for the new tenant.",
+            "examples": [
+              {
+                "email": "john@example.com",
+                "first_name": "John",
+                "last_name": "Doe",
+                "password": "securepassword",
+                "phone_no": "+2348012345678"
+              }
+            ]
+          },
+          "tenant_info": {
+            "$ref": "#/components/schemas/TenantBase",
+            "description": "The tenant profile information.",
+            "examples": [
+              {
+                "emergency_contact_name": "Jane Doe",
+                "emergency_contact_phone_no": "+2348012345678",
+                "tenant_type": "student"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "invite_id",
+          "user_info",
+          "tenant_info"
+        ],
+        "title": "TenantProfileCreate"
+      },
+      "TenantProfileResponse": {
+        "properties": {
+          "tenant_type": {
+            "$ref": "#/components/schemas/TenantType",
+            "description": "The type of tenant.",
+            "examples": [
+              "student"
+            ]
+          },
+          "emergency_contact_name": {
+            "type": "string",
+            "title": "Emergency Contact Name",
+            "description": "The name of the emergency contact.",
+            "examples": [
+              "Jane Doe"
+            ]
+          },
+          "emergency_contact_phone_no": {
+            "type": "string",
+            "title": "Emergency Contact Phone No",
+            "description": "The phone number of the emergency contact.",
+            "examples": [
+              "+2348012345678"
+            ]
+          },
+          "level": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StudentLevel"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The academic level if the tenant is a student.",
+            "examples": [
+              "100L"
+            ]
+          },
+          "reg_no": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reg No",
+            "description": "The registration number.",
+            "examples": [
+              123456
+            ]
+          },
+          "department": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department",
+            "description": "The academic department.",
+            "examples": [
+              "Computer Science"
+            ]
+          },
+          "id": {
+            "type": "integer",
+            "title": "Id",
+            "description": "The unique identifier for the tenant profile.",
+            "examples": [
+              1
+            ]
+          },
+          "user_id": {
+            "type": "integer",
+            "title": "User Id",
+            "description": "The ID of the user associated with this profile.",
+            "examples": [
+              1
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At",
+            "description": "Timestamp when the profile was created.",
+            "examples": [
+              "2026-07-04T06:05:02Z"
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/TenantStatus",
+            "description": "The status of the tenant.",
+            "examples": [
+              "active"
+            ]
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active",
+            "description": "Whether the tenant is active.",
+            "examples": [
+              true
+            ]
+          },
+          "is_onboarding": {
+            "type": "boolean",
+            "title": "Is Onboarding",
+            "description": "Whether the tenant is currently in the onboarding process.",
+            "examples": [
+              false
+            ]
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserResponse",
+            "description": "The user information associated with this profile.",
+            "examples": [
+              {
+                "created_at": "2026-07-04T06:05:02Z",
+                "email": "john@example.com",
+                "first_name": "John",
+                "id": 1,
+                "is_active": true,
+                "last_name": "Doe",
+                "phone_no": "+2348012345678",
+                "role": "TENANT"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "tenant_type",
+          "emergency_contact_name",
+          "emergency_contact_phone_no",
+          "id",
+          "user_id",
+          "created_at",
+          "status",
+          "is_active",
+          "is_onboarding",
+          "user"
+        ],
+        "title": "TenantProfileResponse"
+      },
+      "TenantProfileUpdate": {
+        "properties": {
+          "user_info": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserUpdate"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The updated user information.",
+            "examples": [
+              {
+                "first_name": "Johnny"
+              }
+            ]
+          },
+          "tenant_info": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TenantInfoUpdate"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The updated tenant information.",
+            "examples": [
+              {
+                "department": "Mathematics"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "TenantProfileUpdate"
+      },
+      "TenantStatus": {
+        "type": "string",
+        "enum": [
+          "Pending",
+          "Approved",
+          "Rejected"
+        ],
+        "title": "TenantStatus"
+      },
+      "TenantStatusUpdate": {
+        "properties": {
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TenantStatus"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The status of the tenant.",
+            "examples": [
+              "active"
+            ]
+          }
+        },
+        "type": "object",
+        "title": "TenantStatusUpdate"
+      },
+      "TenantSummary": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "The tenant's name.",
+            "examples": [
+              "John Doe"
+            ]
+          },
+          "phone": {
+            "type": "string",
+            "title": "Phone",
+            "description": "The tenant's phone number.",
+            "examples": [
+              "+2348012345678"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "phone"
+        ],
+        "title": "TenantSummary"
+      },
+      "TenantType": {
+        "type": "string",
+        "enum": [
+          "Student",
+          "Others"
+        ],
+        "title": "TenantType"
+      },
+      "UserCreate": {
+        "properties": {
+          "first_name": {
+            "type": "string",
+            "title": "First Name",
+            "description": "The user's first name.",
+            "examples": [
+              "John"
+            ]
+          },
+          "last_name": {
+            "type": "string",
+            "title": "Last Name",
+            "description": "The user's last name.",
+            "examples": [
+              "Doe"
+            ]
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email",
+            "description": "The user's email address.",
+            "examples": [
+              "johndoe@example.com"
+            ]
+          },
+          "phone_no": {
+            "type": "string",
+            "maxLength": 15,
+            "title": "Phone No",
+            "description": "The user's phone number.",
+            "examples": [
+              "+2348012345678"
+            ]
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 8,
+            "title": "Password",
+            "description": "The user's password.",
+            "examples": [
+              "strongpassword123"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "first_name",
+          "last_name",
+          "email",
+          "phone_no",
+          "password"
+        ],
+        "title": "UserCreate"
+      },
+      "UserResponse": {
+        "properties": {
+          "first_name": {
+            "type": "string",
+            "title": "First Name",
+            "description": "The user's first name.",
+            "examples": [
+              "John"
+            ]
+          },
+          "last_name": {
+            "type": "string",
+            "title": "Last Name",
+            "description": "The user's last name.",
+            "examples": [
+              "Doe"
+            ]
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email",
+            "description": "The user's email address.",
+            "examples": [
+              "johndoe@example.com"
+            ]
+          },
+          "phone_no": {
+            "type": "string",
+            "maxLength": 15,
+            "title": "Phone No",
+            "description": "The user's phone number.",
+            "examples": [
+              "+2348012345678"
+            ]
+          },
+          "id": {
+            "type": "integer",
+            "title": "Id",
+            "description": "The unique identifier for the user.",
+            "examples": [
+              1
+            ]
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active",
+            "description": "Whether the user account is active.",
+            "examples": [
+              true
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At",
+            "description": "Timestamp when the user was created.",
+            "examples": [
+              "2026-07-04T06:05:02Z"
+            ]
+          },
+          "role": {
+            "$ref": "#/components/schemas/UserRole",
+            "description": "The user's role.",
+            "examples": [
+              "LANDLORD"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "first_name",
+          "last_name",
+          "email",
+          "phone_no",
+          "id",
+          "is_active",
+          "created_at",
+          "role"
+        ],
+        "title": "UserResponse"
+      },
+      "UserRole": {
+        "type": "string",
+        "enum": [
+          "Landlord",
+          "Tenant",
+          "Admin"
+        ],
+        "title": "UserRole"
+      },
+      "UserUpdate": {
+        "properties": {
+          "first_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name",
+            "description": "The user's first name.",
+            "examples": [
+              "John"
+            ]
+          },
+          "last_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Name",
+            "description": "The user's last name.",
+            "examples": [
+              "Doe"
+            ]
+          },
+          "phone_no": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 15
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone No",
+            "description": "The user's phone number.",
+            "examples": [
+              "+2348012345678"
+            ]
+          }
+        },
+        "type": "object",
+        "title": "UserUpdate"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Authentication",
+      "description": "Operations for user registration, login, and token management."
+    },
+    {
+      "name": "Lodges",
+      "description": "Manage lodges (properties). Landlords can create and configure their lodges."
+    },
+    {
+      "name": "Rooms",
+      "description": "Manage rooms within lodges. Landlords can add rooms and update room status and pricing."
+    },
+    {
+      "name": "Tenants",
+      "description": "Operations for tenant management, profile updates, and tenant retrieval."
+    },
+    {
+      "name": "Leases",
+      "description": "Manage lease agreements between landlords and tenants."
+    },
+    {
+      "name": "Payments",
+      "description": "Handle rent payments and payment tracking for leases."
+    },
+    {
+      "name": "Dashboards",
+      "description": "Retrieve aggregated statistics and metrics for landlord and tenant dashboards."
+    },
+    {
+      "name": "Invites",
+      "description": "Manage invitations sent by landlords to prospective tenants."
+    }
+  ]
+}

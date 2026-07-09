@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LodgeOps - Pending Approvals</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="layout fade-in">
+        <!-- SIDEBAR -->
+        <aside class="sidebar" id="sidebar">
+            <div class="logo"><div style="display:flex; align-items:center;">Lodge<span>Ops</span></div></div>
+            <a href="dashboard.html" class="nav-item"><span>Dashboard</span></a>
+            <a href="rooms.html" class="nav-item"><span>Rooms</span></a>
+            <a href="leases.html" class="nav-item"><span>Leases</span></a>
+            <a href="payments.html" class="nav-item"><span>Payments</span></a>
+            <a href="tenants.html" class="nav-item"><span>Active Tenants</span></a>
+            <a href="tenant-approvals.html" class="nav-item active"><span>Pending Approvals</span></a>
+            <div class="sidebar-bottom">
+                <a href="lodges.html" class="nav-item" style="color:var(--text-secondary);"><span>Switch Lodge</span></a>
+                <div class="nav-item" style="color:var(--owing); cursor:pointer;" onclick="logout()"><span>Log Out</span></div>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main">
+            <header class="page-header slide-up">
+                <div>
+                    <button class="mobile-toggle" onclick="document.getElementById('sidebar').classList.toggle('mobile-open')">☰</button>
+                    <h1 class="page-title">Pending Approvals</h1>
+                    <p class="page-subtitle">Review tenant registrations before granting system access.</p>
+                </div>
+                <button class="btn btn-primary" onclick="generateInviteLink()">+ Generate Invite Link</button>
+            </header>
+
+            <div id="toast-container" class="toast-container"></div>
+
+            <div class="table-wrapper slide-up" style="animation-delay: 0.1s;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Applicant Name</th>
+                            <th>Contact Info</th>
+                            <th>Tenant Type</th>
+                            <th>Registration Date</th>
+                            <th style="text-align:right;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="approvals-tbody">
+                        <tr><td colspan="5" style="text-align:center; padding: 40px; color:var(--text-tertiary);">Loading pending requests...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <!-- INVITE MODAL -->
+    <div id="invite-modal" class="modal">
+        <div class="modal-content glass-panel" style="max-width: 450px;">
+            <div class="modal-header">
+                <h2>Invite Link Generated</h2>
+                <span class="close" onclick="document.getElementById('invite-modal').style.display='none'">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom:12px; color:var(--text-secondary); font-size:14px;">Share this unique link with the prospective tenant so they can securely register.</p>
+                <div style="display:flex; gap:8px;">
+                    <input type="text" id="invite-link" class="form-input" style="flex:1; font-family:monospace; font-size:13px;" readonly>
+                    <button class="btn btn-outline" onclick="copyInviteLink()">Copy</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const lodgeId = localStorage.getItem('active_lodge_id');
+            if (!lodgeId) {
+                window.location.href = 'lodges.html';
+                return;
+            }
+            fetchPendingTenants(lodgeId);
+        });
+
+        async function fetchPendingTenants(lodgeId) {
+            try {
+                const tenants = await apiFetch(`/lodges/${lodgeId}/tenants`);
+                const pending = tenants.filter(t => String(t.status).toUpperCase() === 'PENDING');
+                renderApprovals(pending);
+            } catch (err) {
+                showToast(err.message);
+                document.getElementById('approvals-tbody').innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 40px; color:var(--owing);">Failed to load requests.</td></tr>`;
+            }
+        }
+
+        function renderApprovals(tenants) {
+            const tbody = document.getElementById('approvals-tbody');
+            tbody.innerHTML = '';
+
+            if (tenants.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 60px; color:var(--text-tertiary); font-size:16px;">No pending tenant approvals.</td></tr>`;
+                return;
+            }
+
+            tenants.forEach(t => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>
+                        <div style="font-weight:700; color:var(--text-primary); font-size:16px; font-family:'Outfit',sans-serif; margin-bottom:4px;">${t.user?.first_name || 'Unknown'} ${t.user?.last_name || ''}</div>
+                        <div style="font-size:12px; color:var(--accent-base); font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">Requires Review</div>
+                    </td>
+                    <td>
+                        <div style="color:var(--text-secondary); font-size:14px; margin-bottom:4px;">${t.user?.email || 'N/A'}</div>
+                        <div style="color:var(--text-tertiary); font-size:13px;">${t.user?.phone_no || 'N/A'}</div>
+                    </td>
+                    <td style="color:var(--text-secondary); font-size:14px;">${t.tenant_type || 'N/A'}</td>
+                    <td style="color:var(--text-secondary); font-size:14px;">${new Date(t.created_at).toLocaleDateString()}</td>
+                    <td>
+                        <div style="display:flex; justify-content:flex-end; gap:12px;">
+                            <button class="btn btn-outline" style="padding: 8px 16px; font-size:13px; color:var(--owing); border-color:var(--owing-border);" onclick="rejectTenant(${t.id})">Reject</button>
+                            <button class="btn btn-primary" style="padding: 8px 16px; font-size:13px;" onclick="approveTenant(${t.id})">Approve</button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function approveTenant(tenantId) {
+            try {
+                await apiFetch(`/tenants/${tenantId}`, { 
+                    method: 'PATCH',
+                    body: JSON.stringify({ status: 'Approved' }) 
+                });
+                showToast(`Tenant approved successfully!`, 'success');
+                fetchPendingTenants(localStorage.getItem('active_lodge_id'));
+            } catch(err) {
+                showToast(err.message);
+            }
+        }
+
+        async function rejectTenant(tenantId) {
+            if(!confirm("Are you sure you want to reject this registration?")) return;
+            try {
+                await apiFetch(`/tenants/${tenantId}`, { 
+                    method: 'PATCH',
+                    body: JSON.stringify({ status: 'Rejected' }) 
+                });
+                showToast(`Tenant registration rejected.`, 'success');
+                fetchPendingTenants(localStorage.getItem('active_lodge_id'));
+            } catch(err) {
+                showToast(err.message);
+            }
+        }
+
+        async function generateInviteLink() {
+            const lodgeId = localStorage.getItem('active_lodge_id');
+            try {
+                const payload = {
+                    lodge_id: parseInt(lodgeId),
+                    expires_at: new Date(Date.now() + 7*24*60*60*1000).toISOString()
+                };
+                const inviteData = await apiFetch(`/invites/`, { method: 'POST', body: JSON.stringify(payload) });
+                const baseUrl = window.location.origin;
+                const pathname = window.location.pathname;
+                const pathParts = pathname.split('/');
+                pathParts.pop();
+                const dirPath = pathParts.join('/');
+                const link = `${baseUrl}${dirPath}/tenant-register.html?invite_id=${inviteData.id || inviteData.invite_id}`;
+                
+                document.getElementById('invite-link').value = link;
+                document.getElementById('invite-modal').style.display = 'flex';
+            } catch (err) {
+                showToast('Failed to generate invite: ' + err.message);
+            }
+        }
+
+        function copyInviteLink() {
+            const linkInput = document.getElementById('invite-link');
+            linkInput.select();
+            document.execCommand('copy');
+            showToast('Link copied to clipboard', 'success');
+            document.getElementById('invite-modal').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

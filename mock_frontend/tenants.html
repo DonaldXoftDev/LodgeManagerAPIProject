@@ -3,43 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LodgeOps — Tenants</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>LodgeOps - Active Tenants</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <div class="layout fade-in">
         <!-- SIDEBAR -->
-        <aside class="sidebar glass-panel" id="sidebar">
-            <div class="logo">
-                Lodge<span>Ops</span>
-                <button class="toggle-btn mobile-close mobile-menu-btn" onclick="document.getElementById('sidebar').classList.remove('mobile-open')">✕</button>
-            </div>
-            
-            <a href="dashboard.html" class="nav-item">Dashboard</a>
-            <a href="rooms.html" class="nav-item">Rooms</a>
-            <a href="leases.html" class="nav-item">Leases</a>
-            <a href="payments.html" class="nav-item">Payments</a>
-            <a href="tenants.html" class="nav-item active">Tenants</a>
-            
+        <aside class="sidebar" id="sidebar">
+            <div class="logo"><div style="display:flex; align-items:center;">Lodge<span>Ops</span></div></div>
+            <a href="dashboard.html" class="nav-item"><span>Dashboard</span></a>
+            <a href="rooms.html" class="nav-item"><span>Rooms</span></a>
+            <a href="leases.html" class="nav-item"><span>Leases</span></a>
+            <a href="payments.html" class="nav-item"><span>Payments</span></a>
+            <a href="tenants.html" class="nav-item active"><span>Active Tenants</span></a>
+            <a href="tenant-approvals.html" class="nav-item"><span>Pending Approvals</span></a>
             <div class="sidebar-bottom">
-                <a href="lodges.html" class="nav-item">Switch Property</a>
-                <div class="nav-item" style="color:var(--owing)" onclick="logout()">Log Out</div>
+                <a href="lodges.html" class="nav-item" style="color:var(--text-secondary);"><span>Switch Lodge</span></a>
+                <div class="nav-item" style="color:var(--owing); cursor:pointer;" onclick="logout()"><span>Log Out</span></div>
             </div>
         </aside>
 
         <!-- MAIN CONTENT -->
         <main class="main">
             <header class="page-header slide-up">
-                <div class="header-left">
-                    <button class="mobile-menu-btn" onclick="document.getElementById('sidebar').classList.add('mobile-open')">☰ Menu</button>
-                    <div>
-                        <h1 class="page-title">Tenant Directory</h1>
-                        <p class="page-subtitle" id="lodge-name-display">Loading...</p>
-                    </div>
-                </div>
-                <div class="header-right">
-                    <button class="btn btn-primary" onclick="generateInvite()">+ Invite Tenant</button>
+                <div>
+                    <button class="mobile-toggle" onclick="document.getElementById('sidebar').classList.toggle('mobile-open')">☰</button>
+                    <h1 class="page-title">Active Tenants</h1>
+                    <p class="page-subtitle">Manage currently approved residents.</p>
                 </div>
             </header>
 
@@ -50,18 +40,14 @@
                     <thead>
                         <tr>
                             <th>Tenant Name</th>
-                            <th>Contact</th>
-                            <th>Type</th>
-                            <th>Status</th>
+                            <th>Contact Info</th>
+                            <th>Tenant Type</th>
+                            <th>Onboarded</th>
+                            <th style="text-align:right;">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="tenants-tbody">
-                        <tr class="skeleton-row">
-                            <td><div class="skeleton" style="height:20px; width:120px;"></div></td>
-                            <td><div class="skeleton" style="height:20px; width:100px;"></div></td>
-                            <td><div class="skeleton" style="height:20px; width:80px;"></div></td>
-                            <td><div class="skeleton" style="height:20px; width:60px;"></div></td>
-                        </tr>
+                        <tr><td colspan="5" style="text-align:center; padding: 40px; color:var(--text-tertiary);">Loading active tenants...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -69,37 +55,67 @@
     </div>
 
     <script src="js/api.js"></script>
-    <script src="js/tenants.js"></script>
     <script>
-        function logout() {
-            localStorage.removeItem('access_token');
-            localStorage.removeItem('active_lodge_id');
-            localStorage.removeItem('active_lodge_name');
-            window.location.href = 'auth.html';
-        }
-        function showToast(message, type = 'error') {
-            const container = document.getElementById('toast-container');
-            if (!container) return;
-            const toast = document.createElement('div');
-            toast.className = `toast ${type} show`;
-            toast.innerText = message;
-            container.appendChild(toast);
-            setTimeout(() => {
-                toast.classList.remove('show');
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
-        }
-        
-        async function generateInvite() {
+        document.addEventListener('DOMContentLoaded', () => {
             const lodgeId = localStorage.getItem('active_lodge_id');
-            if (!lodgeId) return showToast('No active lodge selected.');
+            if (!lodgeId) {
+                window.location.href = 'lodges.html';
+                return;
+            }
+            fetchTenants(lodgeId);
+        });
+
+        async function fetchTenants(lodgeId) {
             try {
-                // Mock invite generation
-                const inviteLink = window.location.origin + '/mock_frontend/tenant-register.html?invite_id=mock-uuid-123';
-                await navigator.clipboard.writeText(inviteLink);
-                showToast('Invite link copied to clipboard!', 'success');
-            } catch(e) {
-                showToast('Failed to copy link.', 'error');
+                const tenants = await apiFetch(`/lodges/${lodgeId}/tenants`);
+                const activeTenants = tenants.filter(t => String(t.status).toUpperCase() === 'APPROVED');
+                renderTenants(activeTenants);
+            } catch (err) {
+                showToast(err.message);
+                document.getElementById('tenants-tbody').innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 40px; color:var(--owing);">Failed to load tenants.</td></tr>`;
+            }
+        }
+
+        function renderTenants(tenants) {
+            const tbody = document.getElementById('tenants-tbody');
+            tbody.innerHTML = '';
+
+            if (tenants.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 60px; color:var(--text-tertiary); font-size:16px;">No active tenants found.</td></tr>`;
+                return;
+            }
+
+            tenants.forEach(t => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>
+                        <div style="font-weight:700; color:var(--text-primary); font-size:16px; font-family:'Outfit',sans-serif; margin-bottom:4px;">${t.user?.first_name || 'Unknown'} ${t.user?.last_name || ''}</div>
+                        <div style="font-size:12px; color:var(--text-tertiary); font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">Active Resident</div>
+                    </td>
+                    <td>
+                        <div style="color:var(--text-secondary); font-size:14px; margin-bottom:4px;">${t.user?.email || 'N/A'}</div>
+                        <div style="color:var(--text-tertiary); font-size:13px;">${t.user?.phone_no || 'N/A'}</div>
+                    </td>
+                    <td style="color:var(--text-secondary); font-size:14px;">${t.tenant_type || 'N/A'}</td>
+                    <td style="color:var(--text-secondary); font-size:14px;">${new Date(t.created_at).toLocaleDateString()}</td>
+                    <td>
+                        <div style="display:flex; justify-content:flex-end; gap:12px;">
+                            <button class="btn btn-outline" style="padding: 8px 16px; font-size:13px;" onclick="evictTenant(${t.id})">Evict/Remove</button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function evictTenant(tenantId) {
+            if(!confirm("Are you sure you want to permanently remove this tenant? This action will break any active leases they hold and cannot be undone.")) return;
+            try {
+                await apiFetch(`/tenants/${tenantId}`, { method: 'DELETE' });
+                showToast(`Tenant permanently evicted.`, 'success');
+                fetchTenants(localStorage.getItem('active_lodge_id'));
+            } catch(err) {
+                showToast(err.message);
             }
         }
     </script>

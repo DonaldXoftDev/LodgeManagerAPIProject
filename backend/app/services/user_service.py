@@ -103,7 +103,7 @@ def login_authenticated_user(
     response.set_cookie(
         key='access_token',
         value=access_token,
-        secure=True,
+        secure=False,
         httponly=True,
         samesite='lax',
         path='/'
@@ -111,7 +111,7 @@ def login_authenticated_user(
     response.set_cookie(
         key='refresh_token',
         value=new_refresh_token,
-        secure=True,
+        secure=False,
         httponly=True,
         path="/api/v1/auth",
         samesite='lax'
@@ -180,7 +180,7 @@ def refresh_access_token(db: Session, response: Response, refresh_token: str| No
 
 
 def logout_authenticated_user(db: Session, response: Response, refresh_token: str | None, user_id: int):
-    crud_user.delete_refresh_token(db, current_refresh_token=refresh_token, user_id=user_id)
+    crud_user.delete_refresh_token(db, db_refresh_token=refresh_token, user_id=user_id)
 
     response.delete_cookie("access_token", httponly=True, secure=True, samesite="lax", path='/')
     response.delete_cookie("refresh_token", httponly=True, secure=True, samesite="lax", path="/api/v1/auth")

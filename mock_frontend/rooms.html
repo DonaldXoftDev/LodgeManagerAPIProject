@@ -3,124 +3,230 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LodgeOps — Rooms</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>LodgeOps - Rooms Management</title>
     <link rel="stylesheet" href="css/style.css">
-    <style>
-        .modal { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); justify-content: center; align-items: center; z-index: 1000; opacity: 0; transition: opacity 0.3s; }
-        .modal.active { display: flex; opacity: 1; }
-        .modal-content { background: var(--surface); padding: 40px; border-radius: 20px; width: 100%; max-width: 480px; box-shadow: var(--shadow-glass); border: 1px solid var(--border); transform: translateY(20px); transition: transform 0.3s; }
-        .modal.active .modal-content { transform: translateY(0); }
-        .modal-title { font-family: 'Outfit', sans-serif; font-size: 24px; font-weight: 700; margin-bottom: 24px; color: var(--text); }
-    </style>
 </head>
 <body>
     <div class="layout fade-in">
         <!-- SIDEBAR -->
-        <aside class="sidebar glass-panel" id="sidebar">
-            <div class="logo">
-                Lodge<span>Ops</span>
-                <button class="toggle-btn mobile-close mobile-menu-btn" onclick="document.getElementById('sidebar').classList.remove('mobile-open')">✕</button>
-            </div>
-            
-            <a href="dashboard.html" class="nav-item">Dashboard</a>
-            <a href="rooms.html" class="nav-item active">Rooms</a>
-            <a href="leases.html" class="nav-item">Leases</a>
-            <a href="payments.html" class="nav-item">Payments</a>
-            <a href="tenants.html" class="nav-item">Tenants</a>
-            
+        <aside class="sidebar" id="sidebar">
+            <div class="logo"><div style="display:flex; align-items:center;">Lodge<span>Ops</span></div></div>
+            <a href="dashboard.html" class="nav-item"><span>Dashboard</span></a>
+            <a href="rooms.html" class="nav-item active"><span>Rooms</span></a>
+            <a href="leases.html" class="nav-item"><span>Leases</span></a>
+            <a href="payments.html" class="nav-item"><span>Payments</span></a>
+            <a href="tenants.html" class="nav-item"><span>Active Tenants</span></a>
+            <a href="tenant-approvals.html" class="nav-item"><span>Pending Approvals</span></a>
             <div class="sidebar-bottom">
-                <a href="lodges.html" class="nav-item">Switch Property</a>
-                <div class="nav-item" style="color:var(--owing)" onclick="logout()">Log Out</div>
+                <a href="lodges.html" class="nav-item" style="color:var(--text-secondary);"><span>Switch Lodge</span></a>
+                <div class="nav-item" style="color:var(--owing); cursor:pointer;" onclick="logout()"><span>Log Out</span></div>
             </div>
         </aside>
 
         <!-- MAIN CONTENT -->
         <main class="main">
             <header class="page-header slide-up">
-                <div class="header-left">
-                    <button class="mobile-menu-btn" onclick="document.getElementById('sidebar').classList.add('mobile-open')">☰ Menu</button>
-                    <div>
-                        <h1 class="page-title">Manage Rooms</h1>
-                        <p class="page-subtitle" id="lodge-name-display">Loading...</p>
-                    </div>
+                <div>
+                    <button class="mobile-toggle" onclick="document.getElementById('sidebar').classList.toggle('mobile-open')">☰</button>
+                    <h1 class="page-title">Rooms Management</h1>
+                    <p class="page-subtitle">Manage inventory and adjust base rents in bulk.</p>
                 </div>
-                <div class="header-right">
-                    <button class="btn btn-primary" onclick="openRoomModal()">+ Add New Room</button>
-                </div>
+                <button class="btn btn-primary" onclick="openCreateRoomModal()">+ Add Room</button>
             </header>
 
             <div id="toast-container" class="toast-container"></div>
+
+            <!-- Bulk Action Bar -->
+            <div id="bulk-action-bar" class="glass-panel slide-up" style="display:none; margin-bottom:24px; padding:24px; background:var(--accent-light); border-color:var(--accent-base);">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <h3 style="color:var(--accent-base); font-size:20px; font-weight:700;"><span id="bulk-count">0</span> Rooms Selected</h3>
+                        <p style="color:var(--text-secondary); font-size:14px; margin-top:4px;">Apply bulk updates to the selected inventory.</p>
+                    </div>
+                    <div style="display:flex; gap:16px; align-items:center;">
+                        <div class="form-group floating" style="margin:0;">
+                            <!-- Taking standard string/float for Naira, JS converts to Kobo integer -->
+                            <input type="number" id="bulk-rent-input" class="form-input" style="background:#fff;" placeholder=" ">
+                            <label class="form-label">New Base Rent (₦)</label>
+                        </div>
+                        <button class="btn btn-primary" onclick="submitBulkUpdate()">Update Rents</button>
+                    </div>
+                </div>
+            </div>
 
             <div class="table-wrapper slide-up" style="animation-delay: 0.1s;">
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th>Room No</th>
-                            <th>Base Rent</th>
+                            <th style="width:40px;"><input type="checkbox" id="selectAll" onchange="toggleAll(this)"></th>
+                            <th>Room No.</th>
                             <th>Description</th>
+                            <th>Base Rent</th>
                             <th>Status</th>
                         </tr>
                     </thead>
                     <tbody id="rooms-tbody">
-                        <tr class="skeleton-row">
-                            <td><div class="skeleton" style="height:20px; width:60px;"></div></td>
-                            <td><div class="skeleton" style="height:20px; width:80px;"></div></td>
-                            <td><div class="skeleton" style="height:20px; width:150px;"></div></td>
-                            <td><div class="skeleton" style="height:20px; width:60px;"></div></td>
-                        </tr>
+                        <tr><td colspan="5" style="text-align:center; padding: 40px; color:var(--text-tertiary);">Loading inventory...</td></tr>
                     </tbody>
                 </table>
             </div>
         </main>
     </div>
 
-    <!-- Add Room Modal -->
+    <!-- ROOM MODAL -->
     <div id="room-modal" class="modal">
-        <div class="modal-content">
-            <h2 class="modal-title">Add Room</h2>
-            <form id="create-room-form">
-                <div class="form-group floating">
-                    <input type="text" id="room-no" class="form-input" required placeholder=" ">
-                    <label class="form-label">Room Number</label>
-                </div>
-                <div class="form-group floating">
-                    <input type="number" id="room-rent" class="form-input" required placeholder=" ">
-                    <label class="form-label">Base Rent</label>
-                </div>
-                <div class="form-group floating" style="margin-bottom: 32px;">
-                    <input type="text" id="room-desc" class="form-input" placeholder=" ">
-                    <label class="form-label">Description (Optional)</label>
-                </div>
-                <div style="display:flex; justify-content:flex-end; gap:12px;">
-                    <button type="button" class="btn btn-outline" onclick="closeRoomModal()">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save Room</button>
-                </div>
-            </form>
+        <div class="modal-content glass-panel" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>Add New Room</h2>
+                <span class="close" onclick="closeRoomModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="room-form">
+                    <div class="form-group floating">
+                        <input type="text" id="room_no" class="form-input" required placeholder=" ">
+                        <label class="form-label">Room Number</label>
+                    </div>
+                    <div class="form-group floating">
+                        <input type="number" id="base_rent" class="form-input" required placeholder=" ">
+                        <label class="form-label">Base Rent Price (₦)</label>
+                    </div>
+                    <div class="form-group floating">
+                        <input type="text" id="description" class="form-input" placeholder=" ">
+                        <label class="form-label">Description (Optional)</label>
+                    </div>
+                    
+                    <button type="submit" id="btn-room-submit" class="btn btn-primary" style="width:100%; margin-top:24px;">Create Room</button>
+                </form>
+            </div>
         </div>
     </div>
 
     <script src="js/api.js"></script>
-    <script src="js/rooms.js"></script>
     <script>
-        function logout() {
-            localStorage.removeItem('access_token');
-            localStorage.removeItem('active_lodge_id');
-            localStorage.removeItem('active_lodge_name');
-            window.location.href = 'auth.html';
+        let currentRooms = [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const lodgeId = localStorage.getItem('active_lodge_id');
+            if (!lodgeId) {
+                window.location.href = 'lodges.html';
+                return;
+            }
+            fetchRooms(lodgeId);
+        });
+
+        async function fetchRooms(lodgeId) {
+            try {
+                const rooms = await apiFetch(`/rooms/${lodgeId}/rooms`);
+                currentRooms = rooms;
+                renderRooms();
+            } catch (err) {
+                showToast(err.message);
+                document.getElementById('rooms-tbody').innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 40px; color:var(--owing);">Failed to load rooms</td></tr>`;
+            }
         }
-        function showToast(message, type = 'error') {
-            const container = document.getElementById('toast-container');
-            if (!container) return;
-            const toast = document.createElement('div');
-            toast.className = `toast ${type} show`;
-            toast.innerText = message;
-            container.appendChild(toast);
-            setTimeout(() => {
-                toast.classList.remove('show');
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
+
+        function renderRooms() {
+            const tbody = document.getElementById('rooms-tbody');
+            tbody.innerHTML = '';
+            
+            // Sort nicely
+            const sorted = [...currentRooms].sort((a,b) => String(a.room_number).localeCompare(String(b.room_number), undefined, {numeric:true}));
+
+            if (sorted.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 60px; color:var(--text-tertiary);">No rooms found in this lodge.</td></tr>`;
+                return;
+            }
+
+            sorted.forEach(r => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><input type="checkbox" class="room-checkbox" value="${r.id}" onchange="updateBulkBar()"></td>
+                    <td style="font-weight:700; font-size:16px; font-family:'Outfit',sans-serif;">Room ${r.room_no}</td>
+                    <td style="color:var(--text-secondary);">${r.description || 'N/A'}</td>
+                    <td style="font-weight:600; color:var(--text-primary);">₦${(r.base_rent_price || 0).toLocaleString('en-NG')}.00</td>
+                    <td><span style="background:var(--maintenance-bg); color:var(--maintenance); padding:4px 12px; border-radius:12px; font-size:12px; font-weight:700;">${r.status}</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+            updateBulkBar();
         }
+
+        function toggleAll(source) {
+            const checkboxes = document.querySelectorAll('.room-checkbox');
+            checkboxes.forEach(cb => cb.checked = source.checked);
+            updateBulkBar();
+        }
+
+        function updateBulkBar() {
+            const checkboxes = document.querySelectorAll('.room-checkbox:checked');
+            const count = checkboxes.length;
+            const bar = document.getElementById('bulk-action-bar');
+            
+            if (count > 0) {
+                document.getElementById('bulk-count').textContent = count;
+                bar.style.display = 'block';
+            } else {
+                bar.style.display = 'none';
+            }
+        }
+
+        async function submitBulkUpdate() {
+            const checkboxes = document.querySelectorAll('.room-checkbox:checked');
+            const ids = Array.from(checkboxes).map(cb => parseInt(cb.value));
+            const rentInput = parseFloat(document.getElementById('bulk-rent-input').value);
+            
+            if (isNaN(rentInput) || rentInput < 0) {
+                showToast('Please enter a valid positive rent amount.');
+                return;
+            }
+
+            try {
+                const lodgeId = localStorage.getItem('active_lodge_id');
+                await apiFetch(`/rooms/${lodgeId}/rooms/bulk`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({
+                        room_ids: ids,
+                        base_rent: rentInput
+                    })
+                });
+                
+                showToast(`Successfully updated rent for ${ids.length} rooms!`, 'success');
+                // Reset UI
+                document.getElementById('bulk-rent-input').value = '';
+                document.getElementById('selectAll').checked = false;
+                fetchRooms(lodgeId); // Refresh data
+            } catch (err) {
+                showToast('Bulk update failed: ' + err.message);
+            }
+        }
+
+        function openCreateRoomModal() { document.getElementById('room-modal').style.display = 'flex'; }
+        function closeRoomModal() { document.getElementById('room-modal').style.display = 'none'; document.getElementById('room-form').reset(); }
+        
+        document.getElementById('room-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btn-room-submit');
+            btn.textContent = 'Creating...'; btn.disabled = true;
+            
+            const lodgeId = parseInt(localStorage.getItem('active_lodge_id'));
+            const payload = {
+                lodge_id: lodgeId,
+                room_no: document.getElementById('room_no').value,
+                base_rent_price: parseInt(document.getElementById('base_rent').value),
+                description: document.getElementById('description').value || null
+            };
+            
+            try {
+                await apiFetch('/rooms/', { method: 'POST', body: JSON.stringify(payload) });
+                showToast('Room created successfully', 'success');
+                closeRoomModal();
+                fetchRooms(lodgeId);
+            } catch (err) {
+                showToast(err.message);
+            } finally {
+                btn.textContent = 'Create Room'; btn.disabled = false;
+            }
+        });
     </script>
 </body>
 </html>

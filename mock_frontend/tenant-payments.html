@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LodgeOps - My Payment History</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="layout fade-in">
+        <!-- SIDEBAR -->
+        <aside class="sidebar" id="sidebar">
+            <div class="logo"><div style="display:flex; align-items:center;">Lodge<span>Ops</span></div></div>
+            <a href="tenant-dashboard.html" class="nav-item"><span>My Lease</span></a>
+            <a href="tenant-payments.html" class="nav-item active"><span>Payment History</span></a>
+            <a href="tenant-profile.html" class="nav-item"><span>My Profile</span></a>
+            <div class="sidebar-bottom">
+                <div class="nav-item" style="color:var(--owing); cursor:pointer;" onclick="logout()"><span>Log Out</span></div>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main">
+            <header class="page-header slide-up">
+                <div>
+                    <button class="mobile-toggle" onclick="document.getElementById('sidebar').classList.toggle('mobile-open')">☰</button>
+                    <h1 class="page-title">My Payment History</h1>
+                    <p class="page-subtitle">View your recorded transactions for your active lease.</p>
+                </div>
+            </header>
+
+            <div id="toast-container" class="toast-container"></div>
+
+            <div class="table-wrapper slide-up" style="animation-delay: 0.1s;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Transaction ID</th>
+                            <th>Amount Paid</th>
+                            <th>Date Recorded</th>
+                        </tr>
+                    </thead>
+                    <tbody id="payments-tbody">
+                        <tr><td colspan="4" style="text-align:center; padding: 40px; color:var(--text-tertiary);">Loading your payment history...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', loadMyPayments);
+
+        async function loadMyPayments() {
+            // Wait, we need lease ID. Tenant usually has one active lease, which we fetch on tenant-dashboard.
+            // I'll hit /dashboards/me/tenants to find the active lease ID, then hit /payments/me/{lease_id}.
+            const tbody = document.getElementById('payments-tbody');
+            try {
+                const profile = await apiFetch(`/tenants/profile`);
+                if (String(profile.status).toUpperCase() === 'PENDING') {
+                    window.location.href = 'tenant-pending.html';
+                    return;
+                }
+                
+                const dashData = await apiFetch('/dashboard-tenant/me/tenants');
+                if (!dashData || dashData.length === 0) {
+                    window.location.href = 'tenant-onboarding.html';
+                    return;
+                }
+                
+                const leaseId = dashData[0].lease.id;
+                const payments = await apiFetch(`/payments/me/${leaseId}`);
+                renderPayments(payments);
+            } catch (err) {
+                showToast(err.message);
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 40px; color:var(--owing);">Failed to load payment history.</td></tr>`;
+            }
+        }
+
+        function renderPayments(payments) {
+            const tbody = document.getElementById('payments-tbody');
+            tbody.innerHTML = '';
+
+            if (payments.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 60px; color:var(--text-tertiary); font-size:16px;">You have no payment records for this lease.</td></tr>`;
+                return;
+            }
+
+            payments.forEach(p => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="font-family:monospace; color:var(--text-secondary); font-size:14px;">TXN-${p.id}</td>
+                    <td style="font-weight:700; color:var(--safe); font-size:16px;">₦${(p.amount_paid || 0).toLocaleString('en-NG')}.00</td>
+                    <td style="color:var(--text-secondary); font-size:14px;">${new Date(p.payment_date).toLocaleDateString()}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+    </script>
+</body>
+</html>

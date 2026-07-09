@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LodgeOps - My Profile</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="layout fade-in">
+        <!-- SIDEBAR -->
+        <aside class="sidebar" id="sidebar">
+            <div class="logo"><div style="display:flex; align-items:center;">Lodge<span>Ops</span></div></div>
+            <a href="tenant-dashboard.html" class="nav-item"><span>My Lease</span></a>
+            <a href="tenant-payments.html" class="nav-item"><span>Payment History</span></a>
+            <a href="tenant-profile.html" class="nav-item active"><span>My Profile</span></a>
+            <div class="sidebar-bottom">
+                <div class="nav-item" style="color:var(--owing); cursor:pointer;" onclick="logout()"><span>Log Out</span></div>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main">
+            <header class="page-header slide-up">
+                <div>
+                    <button class="mobile-toggle" onclick="document.getElementById('sidebar').classList.toggle('mobile-open')">☰</button>
+                    <h1 class="page-title">Profile Settings</h1>
+                    <p class="page-subtitle">Update your personal information.</p>
+                </div>
+            </header>
+
+            <div id="toast-container" class="toast-container"></div>
+
+            <div class="glass-panel slide-up" style="max-width:600px; animation-delay: 0.1s;">
+                <form id="profile-form">
+                    <div style="display:flex; gap:16px;">
+                        <div class="form-group floating" style="flex:1;">
+                            <input type="text" id="first_name" class="form-input" required placeholder=" ">
+                            <label class="form-label">First Name</label>
+                        </div>
+                        <div class="form-group floating" style="flex:1;">
+                            <input type="text" id="last_name" class="form-input" required placeholder=" ">
+                            <label class="form-label">Last Name</label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group floating">
+                        <input type="tel" id="phone_no" class="form-input" required placeholder=" ">
+                        <label class="form-label">Phone Number</label>
+                    </div>
+
+                    <div class="form-group floating">
+                        <select id="tenant_type" class="form-input" required>
+                            <option value="Student">Student</option>
+                            <option value="Others">Working Class / Others</option>
+                        </select>
+                        <label class="form-label">Tenant Type</label>
+                    </div>
+                    <div style="display:flex; gap:16px;">
+                        <div class="form-group floating" style="flex:1;">
+                            <input type="text" id="emergency_contact_name" class="form-input" required placeholder=" ">
+                            <label class="form-label">Emergency Contact Name</label>
+                        </div>
+                        <div class="form-group floating" style="flex:1;">
+                            <input type="tel" id="emergency_contact_phone_no" class="form-input" required placeholder=" ">
+                            <label class="form-label">Emergency Contact Phone</label>
+                        </div>
+                    </div>
+
+                    <div id="student-fields" style="display:none; flex-direction:column; gap:16px; margin-bottom:16px;">
+                        <div style="display:flex; gap:16px;">
+                            <div class="form-group floating" style="flex:1;">
+                                <input type="text" id="department" class="form-input" placeholder=" ">
+                                <label class="form-label">Department</label>
+                            </div>
+                            <div class="form-group floating" style="flex:1;">
+                                <select id="level" class="form-input">
+                                    <option value="100">100L</option>
+                                    <option value="200">200L</option>
+                                    <option value="300">300L</option>
+                                    <option value="400">400L</option>
+                                    <option value="500">500L</option>
+                                    <option value="600">600L</option>
+                                </select>
+                                <label class="form-label">Level</label>
+                            </div>
+                        </div>
+                        <div class="form-group floating">
+                            <input type="number" id="reg_no" class="form-input" placeholder=" ">
+                            <label class="form-label">Registration Number</label>
+                        </div>
+                    </div>
+                    
+                    <div style="display:flex; justify-content:flex-end; margin-top:32px;">
+                        <button type="submit" id="btn-submit" class="btn btn-primary">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', loadProfile);
+
+        document.getElementById('tenant_type').addEventListener('change', (e) => {
+            const studentFields = document.getElementById('student-fields');
+            if (e.target.value === 'Student') {
+                studentFields.style.display = 'flex';
+            } else {
+                studentFields.style.display = 'none';
+            }
+        });
+
+        async function loadProfile() {
+            try {
+                const profile = await apiFetch('/tenants/profile');
+                if (String(profile.status).toUpperCase() === 'PENDING') {
+                    window.location.href = 'tenant-pending.html';
+                    return;
+                }
+                
+                document.getElementById('first_name').value = profile.user?.first_name || '';
+                document.getElementById('last_name').value = profile.user?.last_name || '';
+                document.getElementById('phone_no').value = profile.user?.phone_no || '';
+                
+                const tType = profile.tenant_type || 'Student';
+                document.getElementById('tenant_type').value = tType;
+                if (tType === 'Student') {
+                    document.getElementById('student-fields').style.display = 'flex';
+                    document.getElementById('department').value = profile.department || '';
+                    document.getElementById('level').value = profile.level || '100L';
+                    document.getElementById('reg_no').value = profile.reg_no || '';
+                }
+
+                document.getElementById('emergency_contact_name').value = profile.emergency_contact_name || '';
+                document.getElementById('emergency_contact_phone_no').value = profile.emergency_contact_phone_no || '';
+
+            } catch (err) {
+                showToast('Failed to load profile: ' + err.message);
+            }
+        }
+
+        document.getElementById('profile-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btn-submit');
+            btn.textContent = 'Saving...';
+            btn.disabled = true;
+
+            const tType = document.getElementById('tenant_type').value;
+
+            const payload = {
+                user_info: {
+                    first_name: document.getElementById('first_name').value,
+                    last_name: document.getElementById('last_name').value,
+                    phone_no: document.getElementById('phone_no').value
+                },
+                tenant_info: {
+                    tenant_type: tType,
+                    emergency_contact_name: document.getElementById('emergency_contact_name').value,
+                    emergency_contact_phone_no: document.getElementById('emergency_contact_phone_no').value
+                }
+            };
+
+            if (tType === 'Student') {
+                payload.tenant_info.department = document.getElementById('department').value || null;
+                payload.tenant_info.level = document.getElementById('level').value || null;
+                payload.tenant_info.reg_no = parseInt(document.getElementById('reg_no').value) || null;
+            }
+
+            try {
+                await apiFetch('/tenants/profiles/me', {
+                    method: 'PATCH',
+                    body: JSON.stringify(payload)
+                });
+                showToast('Profile updated successfully!', 'success');
+            } catch (err) {
+                showToast(err.message);
+            } finally {
+                btn.textContent = 'Save Changes';
+                btn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

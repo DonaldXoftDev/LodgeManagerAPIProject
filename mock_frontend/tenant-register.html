@@ -3,173 +3,191 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LodgeOps — Accept Tenant Invite</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>LodgeOps - Tenant Registration</title>
     <link rel="stylesheet" href="css/style.css">
     <style>
-        .brand-text { font-family: 'Outfit', sans-serif; font-size: 48px; font-weight: 700; margin-bottom: 16px; line-height: 1.1; }
-        .brand-sub { font-size: 18px; font-weight: 400; opacity: 0.9; max-width: 400px; line-height: 1.5;}
-        
-        .auth-right { overflow-y: auto; align-items: flex-start; padding: 40px 0; }
-        .auth-card { margin: auto; }
-        .section-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); font-weight: 700; margin: 24px 0 16px; }
+        .auth-container { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; position: relative; }
+        .auth-container::before {
+            content: ''; position: absolute; width: 600px; height: 600px;
+            background: radial-gradient(circle, rgba(124,58,237,0.1) 0%, rgba(255,255,255,0) 70%);
+            bottom: -200px; left: -200px; z-index: -1;
+        }
+        .auth-box { width: 100%; max-width: 480px; }
     </style>
 </head>
 <body>
-    <div class="auth-split">
-        <!-- LEFT SIDE (Brand) -->
-        <div class="auth-left">
-            <div style="position:relative; z-index:1;">
-                <div class="logo" style="padding:0; margin-bottom: 120px; color:white; font-size:28px;">
-                    Lodge<span style="color:#a5b4fc">Ops</span>
-                </div>
-                <h1 class="brand-text">Welcome to your new home.</h1>
-                <p class="brand-sub">Complete your profile to accept your landlord's invitation and get settled in.</p>
+    <div id="toast-container" class="toast-container"></div>
+    <div class="auth-container fade-in">
+        <div class="auth-box glass-panel" id="main-panel">
+            <div class="auth-header">
+                <div class="logo" style="margin-bottom: 24px; text-align: center;">Lodge<span>Ops</span></div>
+                <h1 style="font-size: 28px;">Accept Invite</h1>
+                <p style="margin-top: 8px;" id="invite-status">Validating your invite link...</p>
             </div>
-        </div>
 
-        <!-- RIGHT SIDE (Form) -->
-        <div class="auth-right">
-            <div class="auth-card glass-panel fade-in">
+            <form id="register-form" style="display:none;">
+                <input type="hidden" id="invite_id">
                 
-                <div id="toast-container" class="toast-container" style="top: 30px; bottom: auto; right: 50%; transform: translateX(50%);"></div>
-
-                <div style="margin-bottom: 32px;">
-                    <h2 style="font-family:'Outfit', sans-serif; font-size: 24px; color: var(--text);">Create your profile</h2>
-                    <p style="color:var(--muted); font-size:14px; margin-top:8px;">You've been invited to join LodgeOps as a Tenant.</p>
+                <div style="display:flex; gap:16px;">
+                    <div class="form-group floating" style="flex:1;">
+                        <input type="text" id="first_name" class="form-input" required placeholder=" ">
+                        <label class="form-label">First Name</label>
+                    </div>
+                    <div class="form-group floating" style="flex:1;">
+                        <input type="text" id="last_name" class="form-input" required placeholder=" ">
+                        <label class="form-label">Last Name</label>
+                    </div>
+                </div>
+                
+                <div class="form-group floating">
+                    <input type="email" id="email" class="form-input" required placeholder=" ">
+                    <label class="form-label">Email Address</label>
+                </div>
+                <div class="form-group floating">
+                    <input type="tel" id="phone_no" class="form-input" required placeholder=" ">
+                    <label class="form-label">Phone Number</label>
+                </div>
+                
+                <div class="form-group floating">
+                    <select id="tenant_type" class="form-input" required>
+                        <option value="Student">Student</option>
+                        <option value="Others">Working Class / Others</option>
+                    </select>
+                    <label class="form-label">Tenant Type</label>
                 </div>
 
-                <form id="tenant-reg-form">
-                    <div class="section-label">Personal Information</div>
-                    
-                    <div class="form-group floating">
-                        <input type="text" id="reg-name" class="form-input" required placeholder=" ">
-                        <label class="form-label">Full Name</label>
-                    </div>
-                    <div class="form-group floating">
-                        <input type="email" id="reg-email" class="form-input" required placeholder=" ">
-                        <label class="form-label">Email Address</label>
-                    </div>
-                    <div class="form-group floating">
-                        <input type="tel" id="reg-phone" class="form-input" required placeholder=" ">
-                        <label class="form-label">Phone Number</label>
-                    </div>
-                    <div class="form-group floating">
-                        <input type="password" id="reg-password" class="form-input" required placeholder=" ">
-                        <label class="form-label">Create Password</label>
-                    </div>
-                    
-                    <div class="section-label">Tenant Details</div>
-                    <!-- Tenant Type and Dynamic Fields -->
-                    <div class="form-group floating" style="margin-bottom: 16px;">
-                        <select id="reg-tenant-type" class="form-input" onchange="toggleStudentFields()" style="padding-top: 20px; padding-bottom: 6px;">
-                            <option value="Student">Student</option>
-                            <option value="Others">Others</option>
-                        </select>
-                        <label class="form-label" style="top:6px; font-size:11px; color:var(--accent);">Tenant Type</label>
-                    </div>
-                    
-                    <div id="student-fields" class="slide-up">
-                        <div class="form-group floating" style="margin-bottom: 16px;">
-                            <select id="reg-level" class="form-input" style="padding-top: 20px; padding-bottom: 6px;">
-                                <option value="100">100 Level</option>
-                                <option value="200">200 Level</option>
-                                <option value="300">300 Level</option>
-                                <option value="400">400 Level</option>
-                                <option value="500">500 Level</option>
-                                <option value="600">600 Level</option>
-                            </select>
-                            <label class="form-label" style="top:6px; font-size:11px; color:var(--accent);">Student Level</label>
-                        </div>
-                        <div class="form-group floating">
-                            <input type="number" id="reg-no" class="form-input" placeholder=" ">
-                            <label class="form-label">Registration / Matric Number</label>
-                        </div>
-                        <div class="form-group floating">
-                            <input type="text" id="reg-department" class="form-input" placeholder=" ">
-                            <label class="form-label">Department</label>
-                        </div>
-                    </div>
-
-                    <div class="section-label">Emergency Contact</div>
-                    <div class="form-group floating">
-                        <input type="text" id="reg-em-name" class="form-input" required placeholder=" ">
+                <div style="display:flex; gap:16px;">
+                    <div class="form-group floating" style="flex:1;">
+                        <input type="text" id="emergency_contact_name" class="form-input" required placeholder=" ">
                         <label class="form-label">Emergency Contact Name</label>
                     </div>
-                    <div class="form-group floating">
-                        <input type="tel" id="reg-em-phone" class="form-input" required placeholder=" ">
+                    <div class="form-group floating" style="flex:1;">
+                        <input type="tel" id="emergency_contact_phone_no" class="form-input" required placeholder=" ">
                         <label class="form-label">Emergency Contact Phone</label>
                     </div>
+                </div>
 
-                    <button type="submit" class="btn btn-primary" style="width:100%; padding: 14px; font-size: 15px; margin-top: 24px;">Complete Profile</button>
-                    <div style="margin-top: 24px; text-align: center; font-size: 14px; color: var(--muted);">
-                        <p>Already registered? <a href="auth.html" style="color:var(--accent); text-decoration:none; font-weight:600;">Log In</a></p>
+                <div id="student-fields" style="display:flex; flex-direction:column; gap:16px; margin-bottom:16px;">
+                    <div style="display:flex; gap:16px;">
+                        <div class="form-group floating" style="flex:1;">
+                            <input type="text" id="department" class="form-input" placeholder=" ">
+                            <label class="form-label">Department</label>
+                        </div>
+                        <div class="form-group floating" style="flex:1;">
+                            <select id="level" class="form-input">
+                                <option value="100">100L</option>
+                                <option value="200">200L</option>
+                                <option value="300">300L</option>
+                                <option value="400">400L</option>
+                                <option value="500">500L</option>
+                                <option value="600">600L</option>
+                            </select>
+                            <label class="form-label">Level</label>
+                        </div>
                     </div>
-                </form>
-            </div>
+                    <div class="form-group floating">
+                        <input type="number" id="reg_no" class="form-input" placeholder=" ">
+                        <label class="form-label">Registration Number</label>
+                    </div>
+                </div>
+
+                <div class="form-group floating">
+                    <input type="password" id="password" class="form-input" required placeholder=" ">
+                    <label class="form-label">Create Password</label>
+                </div>
+                <button type="submit" id="btn-submit" class="btn btn-primary" style="width:100%; padding: 16px; font-size: 16px; margin-top: 16px;">Register & Join</button>
+            </form>
         </div>
     </div>
 
     <script src="js/api.js"></script>
     <script>
-        function toggleStudentFields() {
-            const isStudent = document.getElementById('reg-tenant-type').value === 'Student';
-            document.getElementById('student-fields').style.display = isStudent ? 'block' : 'none';
-        }
-
-        // Custom Toast Function for the new UI
-        function showToast(message, type = 'error') {
-            const container = document.getElementById('toast-container');
-            if (!container) return;
-            const toast = document.createElement('div');
-            toast.className = `toast ${type} show`;
-            toast.innerText = message;
-            toast.style.transform = 'translateY(0)';
-            container.appendChild(toast);
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                toast.style.transform = 'translateY(-20px)';
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
-        }
-
-        document.getElementById('tenant-reg-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
+        document.addEventListener('DOMContentLoaded', async () => {
+            const params = new URLSearchParams(window.location.search);
+            const inviteId = params.get('invite_id');
+            const statusEl = document.getElementById('invite-status');
             
-            const fullName = document.getElementById('reg-name').value.trim();
-            const parts = fullName.split(' ');
-            const firstName = parts[0];
-            const lastName = parts.slice(1).join(' ') || 'N/A';
-            
-            const email = document.getElementById('reg-email').value.trim();
-            const phone_no = document.getElementById('reg-phone').value.trim();
-            const password = document.getElementById('reg-password').value;
-            
-            const tenant_type = document.getElementById('reg-tenant-type').value;
-            const emergency_contact_name = document.getElementById('reg-em-name').value.trim();
-            const emergency_contact_phone_no = document.getElementById('reg-em-phone').value.trim();
-            
-            const urlParams = new URLSearchParams(window.location.search);
-            const invite_id = urlParams.get('invite_id') || "mock-invite-uuid"; // For mockup
-
-            const payload = {
-                invite_id,
-                user_info: { first_name: firstName, last_name: lastName, email, phone_no, password },
-                tenant_info: { tenant_type, emergency_contact_name, emergency_contact_phone_no }
-            };
-
-            if (tenant_type === 'Student') {
-                payload.tenant_info.level = document.getElementById('reg-level').value;
-                payload.tenant_info.reg_no = document.getElementById('reg-no').value;
-                payload.tenant_info.department = document.getElementById('reg-department').value;
+            if (!inviteId) {
+                statusEl.textContent = 'Invalid link. No invite ID provided.';
+                statusEl.style.color = 'var(--owing)';
+                return;
             }
 
             try {
-                // await apiCall('/api/v1/auth/register/tenant', 'POST', payload);
-                showToast('Profile created successfully! Please log in.', 'success');
-                setTimeout(() => window.location.href = 'auth.html', 1500);
+                // Validate invite: GET /invites/{invite_id}
+                const invite = await apiFetch(`/invites/${inviteId}`);
+                
+                if (invite.status === 'Accepted') {
+                    statusEl.textContent = 'This invite link has already been used.';
+                    statusEl.style.color = 'var(--owing)';
+                    return;
+                }
+                
+                // Show form
+                statusEl.textContent = 'Please complete your profile to join the lodge.';
+                document.getElementById('invite_id').value = inviteId;
+                document.getElementById('register-form').style.display = 'block';
+                
             } catch (err) {
-                showToast(err.message || 'Registration failed', 'error');
+                statusEl.textContent = 'Failed to validate invite: ' + err.message;
+                statusEl.style.color = 'var(--owing)';
+            }
+        });
+
+        document.getElementById('tenant_type').addEventListener('change', (e) => {
+            const studentFields = document.getElementById('student-fields');
+            if (e.target.value === 'Student') {
+                studentFields.style.display = 'flex';
+            } else {
+                studentFields.style.display = 'none';
+            }
+        });
+
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btn-submit');
+            btn.textContent = 'Joining...';
+            btn.disabled = true;
+
+            const tType = document.getElementById('tenant_type').value;
+            
+            const tenantInfo = {
+                tenant_type: tType,
+                emergency_contact_name: document.getElementById('emergency_contact_name').value,
+                emergency_contact_phone_no: document.getElementById('emergency_contact_phone_no').value
+            };
+            
+            if (tType === 'Student') {
+                tenantInfo.department = document.getElementById('department').value || null;
+                tenantInfo.level = document.getElementById('level').value || null;
+                tenantInfo.reg_no = parseInt(document.getElementById('reg_no').value) || null;
+            }
+
+            const payload = {
+                invite_id: document.getElementById('invite_id').value,
+                user_info: {
+                    first_name: document.getElementById('first_name').value,
+                    last_name: document.getElementById('last_name').value,
+                    email: document.getElementById('email').value,
+                    phone_no: document.getElementById('phone_no').value,
+                    password: document.getElementById('password').value
+                },
+                tenant_info: tenantInfo
+            };
+
+            try {
+                // POST /auth/register/tenant
+                await apiFetch('/auth/register/tenant', {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+                
+                showToast('Registration successful! Redirecting to login...', 'success');
+                setTimeout(() => window.location.href = 'login.html', 1500);
+            } catch (err) {
+                showToast(err.message);
+                btn.textContent = 'Register & Join';
+                btn.disabled = false;
             }
         });
     </script>

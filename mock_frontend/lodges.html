@@ -3,95 +3,87 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LodgeOps — My Properties</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>LodgeOps - My Lodges</title>
     <link rel="stylesheet" href="css/style.css">
-    <style>
-        .container { max-width: 1000px; margin: 60px auto; padding: 0 32px; }
-        .property-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 24px; margin-top: 32px; }
-        .lodge-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 32px; cursor: pointer; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: var(--shadow-sm); position: relative; overflow: hidden; }
-        .lodge-card::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--accent); opacity: 0; transition: opacity 0.3s; }
-        .lodge-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); border-color: var(--accent); }
-        .lodge-card:hover::before { opacity: 1; }
-        .lodge-name { font-family: 'Outfit', sans-serif; font-size: 24px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
-        .lodge-address { font-size: 14px; color: var(--muted); }
-        .empty-state { text-align: center; padding: 60px 40px; background: var(--surface); border: 2px dashed var(--border); border-radius: 16px; margin-top: 32px; }
-        
-        .modal { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); justify-content: center; align-items: center; z-index: 1000; opacity: 0; transition: opacity 0.3s; }
-        .modal.active { display: flex; opacity: 1; }
-        .modal-content { background: var(--surface); padding: 40px; border-radius: 20px; width: 100%; max-width: 480px; box-shadow: var(--shadow-glass); border: 1px solid var(--border); transform: translateY(20px); transition: transform 0.3s; }
-        .modal.active .modal-content { transform: translateY(0); }
-        .modal-title { font-family: 'Outfit', sans-serif; font-size: 24px; font-weight: 700; margin-bottom: 24px; color: var(--text); }
-    </style>
 </head>
 <body>
-    <div class="container fade-in">
-        <div class="page-header slide-up">
-            <div class="header-left">
-                <h1 class="page-title" style="font-size: 36px;">My Properties</h1>
-                <p class="page-subtitle" style="font-size: 16px;">Select a lodge to manage</p>
-            </div>
-            <button class="btn btn-primary" onclick="openModal()">+ Add New Lodge</button>
-        </div>
+    <div class="layout fade-in">
+        <main class="main" style="margin-left:0; align-items:center;">
+            <div style="width:100%; max-width:1000px; margin-top: 40px;">
+                <div class="page-header slide-up">
+                    <div>
+                        <div class="logo" style="margin-bottom: 24px; font-size:24px;">Lodge<span>Ops</span></div>
+                        <h1 class="page-title" style="font-size: 36px;">Select Lodge Portfolio</h1>
+                        <p class="page-subtitle">Choose a lodge to manage its inventory and tenants.</p>
+                    </div>
+                    <div style="display:flex; gap:16px;">
+                        <button class="btn btn-primary" onclick="openLodgeModal()">+ Register New Lodge</button>
+                        <button class="btn btn-outline" style="color:var(--owing); border-color:var(--owing-border);" onclick="logout()">Log Out</button>
+                    </div>
+                </div>
 
-        <div id="toast-container" class="toast-container"></div>
-        
-        <div id="lodges-grid" class="property-grid slide-up" style="animation-delay: 0.1s;">
-            <!-- Skeleton Loaders -->
-            <div class="lodge-card glass-panel skeleton" style="height: 140px;"></div>
-            <div class="lodge-card glass-panel skeleton" style="height: 140px;"></div>
-            <div class="lodge-card glass-panel skeleton" style="height: 140px;"></div>
-        </div>
-        
-        <div id="empty-state" class="empty-state slide-up" style="display:none; animation-delay: 0.1s;">
-            <h3 style="font-family:'Outfit',sans-serif; font-size:24px; color:var(--text);">No properties found</h3>
-            <p style="color:var(--muted); font-size:15px; margin-top:12px; margin-bottom:24px;">You haven't added any lodges yet.</p>
-            <button class="btn btn-primary" onclick="openModal()">Create First Lodge</button>
-        </div>
+                <div id="toast-container" class="toast-container"></div>
+                
+                <div id="lodges-grid" class="room-grid slide-up" style="animation-delay: 0.1s;">
+                    <!-- Injected by JS -->
+                </div>
+            </div>
+        </main>
     </div>
 
-    <!-- Create Lodge Modal -->
+    <!-- LODGE MODAL -->
     <div id="lodge-modal" class="modal">
-        <div class="modal-content">
-            <h2 class="modal-title">Register New Lodge</h2>
-            <form id="create-lodge-form">
-                <div class="form-group floating">
-                    <input type="text" id="lodge-name" class="form-input" required placeholder=" ">
-                    <label class="form-label">Lodge Name</label>
-                </div>
-                <div class="form-group floating" style="margin-bottom: 32px;">
-                    <input type="text" id="lodge-address" class="form-input" required placeholder=" ">
-                    <label class="form-label">Property Address</label>
-                </div>
-                <div style="display:flex; justify-content:flex-end; gap:12px;">
-                    <button type="button" class="btn btn-outline" onclick="closeModal()">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Create Lodge</button>
-                </div>
-            </form>
+        <div class="modal-content glass-panel" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>Register New Lodge</h2>
+                <span class="close" onclick="closeLodgeModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="lodge-form">
+                    <div class="form-group floating">
+                        <input type="text" id="lodge_name" class="form-input" required placeholder=" ">
+                        <label class="form-label">Lodge Name</label>
+                    </div>
+                    <div class="form-group floating">
+                        <input type="text" id="lodge_address" class="form-input" required placeholder=" ">
+                        <label class="form-label">Address</label>
+                    </div>
+                    
+                    <div style="margin-top:24px; padding-top:24px; border-top:1px solid var(--border-color);">
+                        <p style="font-weight:600; margin-bottom:12px;">Auto-Generate Rooms (Optional)</p>
+                        <div style="display:flex; gap:16px;">
+                            <div class="form-group floating" style="flex:1;">
+                                <input type="number" id="start_num" class="form-input" placeholder=" ">
+                                <label class="form-label">Start No.</label>
+                            </div>
+                            <div class="form-group floating" style="flex:1;">
+                                <input type="number" id="end_num" class="form-input" placeholder=" ">
+                                <label class="form-label">End No.</label>
+                            </div>
+                        </div>
+                        <div class="form-group floating">
+                            <input type="number" id="default_rent" class="form-input" placeholder=" ">
+                            <label class="form-label">Default Rent (₦)</label>
+                        </div>
+                        <div class="form-group floating">
+                            <input type="text" id="default_desc" class="form-input" placeholder=" ">
+                            <label class="form-label">Default Description</label>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" id="btn-lodge-submit" class="btn btn-primary" style="width:100%; margin-top:24px;">Register Lodge</button>
+                </form>
+            </div>
         </div>
     </div>
 
     <script src="js/api.js"></script>
     <script>
-        function showToast(message, type = 'error') {
-            const container = document.getElementById('toast-container');
-            if (!container) return;
-            const toast = document.createElement('div');
-            toast.className = `toast ${type} show`;
-            toast.innerText = message;
-            container.appendChild(toast);
-            setTimeout(() => {
-                toast.classList.remove('show');
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
-        }
+        document.addEventListener('DOMContentLoaded', fetchLodges);
 
         async function fetchLodges() {
             try {
-                // Fake loading delay for premium feel
-                await new Promise(r => setTimeout(r, 600));
-                
-                const lodges = await apiFetch('/lodges/?skip=0&limit=50');
+                const lodges = await apiFetch('/lodges/');
                 renderLodges(lodges);
             } catch (err) {
                 showToast(err.message, 'error');
@@ -101,62 +93,70 @@
 
         function renderLodges(lodges) {
             const grid = document.getElementById('lodges-grid');
-            const emptyState = document.getElementById('empty-state');
-            
             grid.innerHTML = '';
             
-            if (lodges.length === 0) {
-                emptyState.style.display = 'block';
-            } else {
-                emptyState.style.display = 'none';
-                lodges.forEach(lodge => {
-                    const card = document.createElement('div');
-                    card.className = 'lodge-card glass-panel';
-                    card.innerHTML = `
-                        <div class="lodge-name">${lodge.name}</div>
-                        <div class="lodge-address">${lodge.address}</div>
-                    `;
-                    card.onclick = () => {
-                        localStorage.setItem('active_lodge_id', lodge.id);
-                        localStorage.setItem('active_lodge_name', lodge.name);
-                        window.location.href = 'dashboard.html';
-                    };
-                    grid.appendChild(card);
-                });
+            if (!lodges || lodges.length === 0) {
+                grid.innerHTML = `<div class="glass-panel" style="grid-column: 1 / -1; text-align:center; padding: 60px;">You have not registered any lodges yet.</div>`;
+                return;
             }
+
+            lodges.forEach(lodge => {
+                const card = document.createElement('div');
+                card.className = 'room-card';
+                card.innerHTML = `
+                    <div style="font-family: 'Outfit'; font-size: 28px; font-weight: 700; margin-bottom: 8px; color:var(--text-primary);">${lodge.name}</div>
+                    <div style="font-size: 14px; color: var(--text-secondary); margin-bottom: 24px; display:flex; gap:8px; align-items:center;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                        ${lodge.address || 'No address provided'}
+                    </div>
+                    <div style="font-size: 13px; color: var(--accent-base); font-weight:600; text-transform:uppercase; letter-spacing:1px;">
+                        Manage Portfolio →
+                    </div>
+                `;
+                card.onclick = () => {
+                    localStorage.setItem('active_lodge_id', lodge.id);
+                    localStorage.setItem('active_lodge_name', lodge.name);
+                    window.location.href = 'dashboard.html';
+                };
+                grid.appendChild(card);
+            });
         }
 
-        function openModal() { document.getElementById('lodge-modal').classList.add('active'); }
-        function closeModal() { document.getElementById('lodge-modal').classList.remove('active'); document.getElementById('create-lodge-form').reset(); }
-
-        document.getElementById('create-lodge-form').addEventListener('submit', async (e) => {
+        function openLodgeModal() { document.getElementById('lodge-modal').style.display = 'flex'; }
+        function closeLodgeModal() { document.getElementById('lodge-modal').style.display = 'none'; document.getElementById('lodge-form').reset(); }
+        
+        document.getElementById('lodge-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const btn = e.target.querySelector('button[type="submit"]');
-            btn.innerHTML = 'Creating...'; btn.disabled = true;
-
-            const name = document.getElementById('lodge-name').value.trim();
-            const address = document.getElementById('lodge-address').value.trim();
+            const btn = document.getElementById('btn-lodge-submit');
+            btn.textContent = 'Registering...'; btn.disabled = true;
+            
+            const payload = {
+                name: document.getElementById('lodge_name').value,
+                address: document.getElementById('lodge_address').value
+            };
+            
+            const startNum = document.getElementById('start_num').value;
+            if (startNum) {
+                payload.room_generator = {
+                    prefix: "",
+                    start_number: parseInt(startNum),
+                    end_number: parseInt(document.getElementById('end_num').value || startNum),
+                    default_rent: parseInt(document.getElementById('default_rent').value || 0),
+                    default_description: document.getElementById('default_desc').value || 'Standard room'
+                };
+            }
             
             try {
-                await apiCall('/lodges/register', 'POST', { name, address });
-                showToast('Lodge created successfully!', 'success');
-                closeModal();
-                // Refresh list
-                document.getElementById('lodges-grid').innerHTML = `
-                    <div class="lodge-card glass-panel skeleton" style="height: 140px;"></div>
-                    <div class="lodge-card glass-panel skeleton" style="height: 140px;"></div>
-                    <div class="lodge-card glass-panel skeleton" style="height: 140px;"></div>
-                `;
+                await apiFetch('/lodges/register', { method: 'POST', body: JSON.stringify(payload) });
+                showToast('Lodge registered successfully', 'success');
+                closeLodgeModal();
                 fetchLodges();
             } catch (err) {
-                showToast(err.message, 'error');
+                showToast(err.message);
             } finally {
-                btn.innerHTML = 'Create Lodge'; btn.disabled = false;
+                btn.textContent = 'Register Lodge'; btn.disabled = false;
             }
         });
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', fetchLodges);
     </script>
 </body>
 </html>

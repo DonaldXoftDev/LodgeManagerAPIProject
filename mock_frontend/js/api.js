@@ -1,104 +1,140 @@
-const API_BASE_URL = 'http://127.0.0.1:8000/api/v1';
+const API_BASE = 'http://localhost:8000/api/v1';
 
-// Unified fetch wrapper
+let isRefreshing = false;
+let refreshSubscribers = [];
+
+function subscribeTokenRefresh(cb) {
+    refreshSubscribers.push(cb);
+}
+
+function onRefreshed(isSuccess) {
+    refreshSubscribers.map(cb => cb(isSuccess));
+    refreshSubscribers = [];
+}
+
+async function processResponse(response) {
+    if (response.status === 401) {
+        localStorage.clear();
+        window.location.href = 'login.html';
+        throw new Error('Session expired. Please log in again.');
+    }
+
+    const contentType = response.headers.get("content-type");
+    let data = null;
+    if (contentType && contentType.indexOf("application/json") !== -1) {
+        data = await response.json();
+    }
+
+    if (!response.ok) {
+        let errorMsg = 'An error occurred';
+        if (data) {
+            if (data.detail && typeof data.detail === 'string') {
+                errorMsg = data.detail;
+            } else if (data.detail && Array.isArray(data.detail)) {
+                errorMsg = data.detail.map(err => `${err.loc.join('.')} - ${err.msg}`).join(', ');
+            }
+        }
+        throw new Error(errorMsg);
+    }
+
+    return data;
+}
+
 async function apiFetch(endpoint, options = {}) {
-    const token = localStorage.getItem('access_token');
-    
     const headers = {
         'Content-Type': 'application/json',
         ...options.headers
     };
 
-    if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    // If options.body is FormData (e.g. for OAuth2 login), let browser set Content-Type
-    if (options.body instanceof URLSearchParams) {
-        headers['Content-Type'] = 'application/x-www-form-urlencoded';
-    }
-
-    const config = {
-        ...options,
-        headers
-    };
-
     try {
-        const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
-        
-        if (response.status === 401) {
-            const refreshToken = localStorage.getItem('refresh_token');
-            
-            // If we have a refresh token and we aren't currently trying to refresh
-            if (refreshToken && !endpoint.includes('/refresh')) {
+        let response = await fetch(`${API_BASE}${endpoint}`, {
+            ...options,
+            headers,
+            credentials: 'include'
+        });
+
+        if (response.status === 401 && endpoint !== '/auth/login' && endpoint !== '/auth/refresh') {
+            if (!isRefreshing) {
+                isRefreshing = true;
                 try {
-                    // Make a silent request to the refresh endpoint
-                    const refreshResponse = await fetch(`${API_BASE_URL}/auth/refresh`, {
+                    const refreshRes = await fetch(`${API_BASE}/auth/refresh`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ refresh_token: refreshToken })
+                        credentials: 'include'
                     });
-
-                    if (refreshResponse.ok) {
-                        const newTokens = await refreshResponse.json();
-                        localStorage.setItem('access_token', newTokens.access_token);
-                        
-                        // Retry the original request with the new token
-                        config.headers['Authorization'] = `Bearer ${newTokens.access_token}`;
-                        const retryResponse = await fetch(`${API_BASE_URL}${endpoint}`, config);
-                        
-                        if (retryResponse.status === 204) return null;
-                        if (!retryResponse.ok) throw new Error('Retry failed');
-                        
-                        return await retryResponse.json();
+                    
+                    if (refreshRes.ok) {
+                        isRefreshing = false;
+                        onRefreshed(true);
+                        // Retry original request
+                        response = await fetch(`${API_BASE}${endpoint}`, {
+                            ...options,
+                            headers,
+                            credentials: 'include'
+                        });
+                    } else {
+                        isRefreshing = false;
+                        onRefreshed(false);
+                        localStorage.clear();
+                        window.location.href = 'login.html';
+                        throw new Error('Session expired. Please log in again.');
                     }
-                } catch (refreshErr) {
-                    console.error("Refresh failed", refreshErr);
-                    // Fall through to the logout logic below
+                } catch (e) {
+                    isRefreshing = false;
+                    onRefreshed(false);
+                    localStorage.clear();
+                    window.location.href = 'login.html';
+                    throw new Error('Session expired. Please log in again.');
                 }
+            } else {
+                return new Promise((resolve, reject) => {
+                    subscribeTokenRefresh(async (isSuccess) => {
+                        if (isSuccess) {
+                            try {
+                                const retryRes = await fetch(`${API_BASE}${endpoint}`, {
+                                    ...options,
+                                    headers,
+                                    credentials: 'include'
+                                });
+                                resolve(await processResponse(retryRes));
+                            } catch (e) {
+                                reject(e);
+                            }
+                        } else {
+                            reject(new Error('Session expired. Please log in again.'));
+                        }
+                    });
+                });
             }
-
-            // Unauthorized - token expired or missing, and refresh failed or wasn't available
-            localStorage.removeItem('access_token');
-            localStorage.removeItem('refresh_token');
-            if (!window.location.pathname.endsWith('auth.html') && !window.location.pathname.endsWith('tenant-register.html')) {
-                window.location.href = 'auth.html';
-            }
-            throw new Error('Session expired. Please log in again.');
         }
-
-        // 204 No Content has no JSON body
-        if (response.status === 204) {
-            return null;
-        }
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            let errorMsg = data.detail || 'An API error occurred';
-            if (Array.isArray(data.detail)) {
-                // FastAPI Validation Error formatting
-                errorMsg = data.detail.map(e => `${e.loc.join('.')}: ${e.msg}`).join(', ');
-            }
-            throw new Error(errorMsg);
-        }
-
-        return data;
-    } catch (error) {
-        console.error('API Error:', error);
-        throw error;
+        
+        return await processResponse(response);
+    } catch (err) {
+        console.error('API Error:', err);
+        throw err;
     }
 }
 
-function showToast(message) {
-    let toast = document.getElementById('toast');
-    if (!toast) {
-        toast = document.createElement('div');
-        toast.id = 'toast';
-        toast.className = 'toast';
-        document.body.appendChild(toast);
-    }
-    toast.textContent = message;
-    toast.classList.add('show');
-    setTimeout(() => toast.classList.remove('show'), 3000);
+// Global Premium UI Helpers
+function showToast(message, type = 'error') {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+    const toast = document.createElement('div');
+    toast.className = `toast ${type} show`;
+    toast.innerText = message;
+    container.appendChild(toast);
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 400);
+    }, 4000);
 }
+
+function logout() {
+    // We should call POST /auth/logout to invalidate refresh token in the backend
+    apiFetch('/auth/logout', { method: 'POST' }).finally(() => {
+        localStorage.clear();
+        window.location.href = 'login.html';
+    });
+}
+
+const currencyFormatter = new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' });

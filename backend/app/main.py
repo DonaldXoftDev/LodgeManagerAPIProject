@@ -64,6 +64,9 @@ origins = [
     "http://localhost:5173", # Default for Vite React apps
     "http://localhost:3000", # Default for Create React App
     "http://localhost:8080", # Local python server
+    "http://127.0.0.1:8080", # Local python server via IP
+    "http://localhost:8000", # FastAPI itself (if served statically)
+    "http://127.0.0.1:8000",
     "http://127.0.0.1:5500", # VSCode Live Server
     "http://localhost:5500", # VSCode Live Server
     "http://localhost:63342", # PyCharm Built-in Server
