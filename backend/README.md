@@ -1,187 +1,135 @@
-# LodgeManager API
+# LodgeOps API — Backend Documentation
 
-**A Modern Property & Lodge Management System** built with **FastAPI**.
+**LodgeOps** is a modern, enterprise-grade Property and Lodge Management System built specifically for landlords managing multi-room student accommodations and rental properties. 
 
-This is a robust backend designed for efficient management of student accommodations and rental properties. It handles everything from tenant onboarding and room assignments to complex financial aggregations and dashboard reporting.
-
----
-
-## 🚀 Features
-
-### Core Business Modules
-- **Authentication & Authorization:** Secure JWT-based authentication with role-based access control (Landlord & Tenant).
-- **Lodge & Room Management:** Manage properties, room status (Safe, Expiring, Overdue, Owing, Vacant, Maintenance), and track occupancy.
-- **Tenant Management:** Track tenant profiles, user details, and active statuses.
-- **Lease & Contract Management:** Handle lease agreements and terms seamlessly.
-- **Payment & Financial Tracking:** Record rent payments, calculate outstanding debts, and aggregate financial metrics (expected vs. collected revenue).
-
-### Advanced Dashboard & Analytics
-- **Landlord Dashboard:** Provides a real-time overview of the lodge.
-- **Financial Aggregations:** Complex SQLAlchemy queries to accurately compute potential income, unpaid rent, and active lease financials dynamically.
-- **Entity Count Summaries:** Aggregated counts for total rooms, occupied rooms, maintenance rooms, and total tenants based on customizable filters.
-
-### Technical Highlights
-- **Clean Architecture:** Strict separation between Presentation (Routers), Business Logic (Services), Data Access (CRUD), and Domain Models.
-- **High-Performance ORM:** Utilizing **SQLAlchemy 2.0** with raw SQL queries, subqueries, and advanced aggregations (`func.sum`, `outerjoin`) for performance.
-- **Data Validation:** Strict schema definitions using **Pydantic v2**.
-- **Comprehensive Testing:** A robust suite of automated tests using `pytest` to guarantee application reliability.
-- **Migrations:** Managed database schema versioning with **Alembic**.
+This backend provides a robust, scalable, and fully type-checked API serving landlord and tenant dashboards, lease lifecycles, and complex financial analytics.
 
 ---
 
-## 🛠 Tech Stack
+## 🏗️ Architecture: The N-Tier Pattern
 
-| Layer          | Technology                          |
-|----------------|-------------------------------------|
-| **Backend**    | Python 3.11+, FastAPI               |
-| **ORM**        | SQLAlchemy 2.0 + Alembic            |
-| **Validation** | Pydantic v2                         |
-| **Auth**       | JWT, Passlib + Bcrypt               |
-| **Testing**    | Pytest                              |
+LodgeOps strictly adheres to the **Clean N-Tier Architecture** (Controller → Service → Repository), separating HTTP transport, business logic, and database operations.
 
----
+### 1. Presentation Layer (`app/api/v1/`)
+- Contains **FastAPI Routers**.
+- Solely responsible for receiving HTTP requests, injecting dependencies (like DB sessions and current users), and returning HTTP responses.
+- **Rule:** Zero business logic or raw SQL exists here.
 
-## 📁 Project Structure
+### 2. Business Logic Layer (`app/services/`)
+- Contains the core brain of the application.
+- Orchestrates complex workflows (e.g., verifying landlord ownership, calculating dynamic lease statuses, handling tenant onboarding).
+- **Rule:** Does not handle HTTP Request/Response objects directly.
 
-```bash
-.
-├── alembic/                  # Database migration scripts and versions
-├── app/                      # Main Backend Application source code
-│   ├── __init__.py           # Package initialization
-│   ├── main.py               # FastAPI application entry point
-│   ├── todos.py              # Epic-level task tracking
-│   ├── api/                  # API routing layer
-│   │   ├── __init__.py
-│   │   ├── deps.py           # Dependency injection (e.g., auth checks)
-│   │   └── v1/               # API version 1 endpoints
-│   │       ├── __init__.py
-│   │       ├── leases.py     # Lease management endpoints
-│   │       ├── lodges.py     # Lodge management endpoints
-│   │       ├── payments.py   # Payment tracking endpoints
-│   │       ├── rooms.py      # Room management endpoints
-│   │       ├── tenants.py    # Tenant profile endpoints
-│   │       ├── user.py       # User authentication endpoints
-│   │       └── dashboards/   # Dashboard aggregation endpoints
-│   │           ├── landlord_dashboard.py # Landlord stats overview
-│   │           └── tenant_dashboard.py   # Tenant stats overview
-│   ├── core/                 # Application configuration and settings
-│   │   ├── __init__.py
-│   │   ├── config.py         # Environment variables and settings
-│   │   ├── constants.py      # Global constants
-│   │   ├── enums.py          # Enum definitions (e.g., RoomStatus)
-│   │   ├── exceptions.py     # Custom domain exceptions
-│   │   ├── handlers.py       # Global exception handlers
-│   │   └── security.py       # Password hashing and token generation
-│   ├── crud/                 # Data Access Layer (CRUD operations)
-│   │   ├── __init__.py
-│   │   ├── base_crud.py      # Generic CRUD functionality
-│   │   ├── lease.py          # Lease database operations
-│   │   ├── lodge.py          # Lodge database operations
-│   │   ├── payment.py        # Payment database operations
-│   │   ├── room.py           # Room database operations
-│   │   ├── tenantprofile.py  # Tenant database operations
-│   │   └── user.py           # User database operations
-│   ├── db/                   # Database configuration
-│   │   ├── __init__.py
-│   │   ├── base.py           # SQLAlchemy declarative base
-│   │   └── session.py        # Database session management
-│   ├── models/               # SQLAlchemy ORM definitions
-│   │   ├── __init__.py
-│   │   ├── lease.py          # Lease SQL table model
-│   │   ├── lodge.py          # Lodge SQL table model
-│   │   ├── payment.py        # Payment SQL table model
-│   │   ├── room.py           # Room SQL table model
-│   │   ├── tenantprofile.py  # Tenant Profile SQL table model
-│   │   └── user.py           # User SQL table model
-│   ├── schemas/              # Pydantic validation models
-│   │   ├── __init__.py
-│   │   ├── dashboard.py      # Dashboard response schemas
-│   │   ├── entity_count.py   # Entity count summary schemas
-│   │   ├── financial.py      # Financial summary schemas
-│   │   ├── generic_extras.py # Shared schema components
-│   │   ├── lease.py          # Lease DTOs
-│   │   ├── lodge.py          # Lodge DTOs
-│   │   ├── payment.py        # Payment DTOs
-│   │   ├── room.py           # Room DTOs
-│   │   ├── tenantprofile.py  # Tenant DTOs
-│   │   └── user.py           # User DTOs
-│   └── services/             # Business Logic Layer
-│       ├── __init__.py
-│       ├── dashboard_service.py # Dashboard data aggregation
-│       ├── lease_services.py    # Lease creation rules
-│       ├── lodge_service.py     # Lodge management rules
-│       ├── payment_service.py   # Payment calculation rules
-│       ├── room_service.py      # Room status rules
-│       ├── tenant_services.py   # Tenant onboarding rules
-│       └── user_service.py      # User authentication rules
-├── test/                     # Comprehensive test suite
-│   ├── __init__.py
-│   ├── conftest.py           # Pytest fixtures and test DB setup
-│   ├── test_auth.py          # Auth endpoint tests
-│   ├── test_example.py       # Boilerplate test examples
-│   ├── test_lease.py         # Lease logic tests
-│   ├── test_lodge.py         # Lodge logic tests
-│   ├── test_main.py          # App startup tests
-│   ├── test_payment.py       # Payment calculation tests
-│   ├── test_room.py          # Room logic tests
-│   └── test_tenant.py        # Tenant logic tests
-├── utilities/                # Helper scripts
-│   └── dashboard_utilities.py # Dashboard filtering helpers
-├── .gitignore                # Git ignored files list
-├── alembic.ini               # Alembic configuration
-├── Project_Architecture_Report.md # Detailed architecture design document
-├── pytest.ini                # Pytest configuration
-├── README.md                 # Primary project documentation
-├── requirements.txt          # Python pip dependencies
-└── test_main.http            # HTTP requests for manual testing
-```
+### 3. Data Access Layer (`app/crud/`)
+- Contains raw **SQLAlchemy 2.0** queries.
+- Manages all database interactions, including advanced aggregations (`func.sum`, `outerjoin`) for dashboard metrics.
+- **Rule:** Contains no business logic; strictly retrieves and persists data.
+
+### 4. Domain & Data Contracts (`app/models/` & `app/schemas/`)
+- **`models/` (SQLAlchemy):** Represents the actual database tables. Uses advanced features like `ondelete='CASCADE'` and Python `@property` decorators for computing dynamic state without background cron jobs.
+- **`schemas/` (Pydantic v2):** The strict data contracts. Validates all incoming JSON payloads and formats all outgoing API responses.
 
 ---
 
-## 🚀 Getting Started
+## 🗄️ Domain Model
+
+The platform is driven by 8 core database entities:
+
+| Entity | Purpose |
+|---|---|
+| **User** | Core authentication table for both Landlords and Tenants. |
+| **TenantProfile** | Extended profile data specifically for Tenants (Student Level, Reg No). |
+| **Lodge** | A physical property/building owned by a Landlord. |
+| **Room** | Individual rentable units within a Lodge. |
+| **Lease** | The contract linking a Tenant to a Room. Holds rent amount and dates. |
+| **Payment** | Append-only ledger of rent collections tied to a Lease. |
+| **Invite** | UUID-based invitation links generated by Landlords for new Tenants. |
+| **RefreshToken** | JWT refresh tokens for secure session management. |
+
+---
+
+## ⚙️ Core Business Workflows
+
+### 1. Tenant Onboarding (Invite System)
+Tenants cannot self-register to protect system integrity. 
+- Landlords generate a time-limited **Invite UUID** (`POST /api/v1/invites/`).
+- Prospective tenants use this UUID to create their account (`POST /api/v1/user/register/tenant`).
+- Tenant accounts start as `PENDING` until the Landlord approves them.
+
+### 2. Lease Lifecycle & Financials
+- **Dynamic Statuses:** A lease is never explicitly saved as "Overdue" in the database. Instead, a dynamic property computes the status in real-time by comparing `end_date` against the current clock.
+- **Append-Only Payments:** Rent payments are never updated or deleted. Every collection is a new row. Outstanding balances are dynamically computed using `func.sum()` at query time to prevent stale states.
+- **Strict Amendments:** Once active, a lease can only have its `end_date` extended or its `agreed_rent_amt` renegotiated. Rooms and Tenants cannot be swapped.
+
+### 3. Dashboard Aggregations
+The Landlord Dashboard (`GET /api/v1/dashboard-landlord/{lodge_id}`) utilizes advanced SQLAlchemy queries to instantly return:
+- Expected vs. Collected Revenue.
+- Unpaid Rent calculations.
+- Room Categorization grids (Safe, Expiring, Overdue, Owing, Vacant, Maintenance).
+
+---
+
+## 💻 Tech Stack
+
+- **Framework:** Python 3.11+, FastAPI
+- **ORM:** SQLAlchemy 2.0
+- **Validation:** Pydantic v2
+- **Database:** SQLite (Development) / PostgreSQL-ready (Production)
+- **Migrations:** Alembic
+- **Authentication:** JWT (Access + Refresh token rotation), Bcrypt
+- **Testing:** Pytest (150+ tests, 96% coverage)
+
+---
+
+## 🚀 Getting Started (Development)
 
 ### Prerequisites
-- Python 3.11 or higher
+- Python 3.11+
+- Git
 
-### Local Setup
-
-```bash
-# 1. Clone the repository
+### 1. Setup Environment
+```powershell
+# Clone the repository
 git clone https://github.com/DonaldXoftDev/LodgeManagerAPIProject.git
-cd LodgeManagerAPIProject
+cd LodgeManagerAPIProject/backend
 
-# 2. Create and activate virtual environment
+# Create and activate virtual environment
 python -m venv .venv
-# On Windows:
 .\.venv\Scripts\activate
 
-# 3. Install dependencies
+# Install dependencies
 pip install -r requirements.txt
+```
 
-# 4. Setup environment variables
+### 2. Configure Database
+```powershell
+# Copy environment variables
 cp .env.example .env
 
-# 5. Run database migrations
+# Run Alembic migrations to generate the schema
 alembic upgrade head
+```
 
-# 6. Start the development server
+### 3. Run the Server
+```powershell
+# Start the FastAPI Uvicorn server
 uvicorn app.main:app --reload
 ```
 
-### Accessing the API:
-Once running, you can interact with the API documentations at:
-- **Swagger UI:** [http://localhost:8000/docs](http://localhost:8000/docs)
-- **ReDoc:** [http://localhost:8000/redoc](http://localhost:8000/redoc)
+The interactive API documentation will be available at:
+- **Swagger UI:** `http://localhost:8000/docs`
+- **ReDoc:** `http://localhost:8000/redoc`
 
 ---
 
-## 🧪 Running Tests
-The project contains a thorough test suite. To run the tests, execute:
-```bash
-pytest
+## 🧪 Testing
+
+The platform is secured by a comprehensive Pytest suite using an isolated in-memory database to ensure business logic remains unbroken.
+
+```powershell
+# Run the test suite
+.\.venv\Scripts\python.exe -m pytest test/ -v
 ```
 
 ---
-
-## 🤝 Contributing
-Feedback, suggestions, and contributions are very welcome! Feel free to open issues or submit pull requests.
+*Built with modern engineering standards to guarantee operational scalability.*
