@@ -18,7 +18,6 @@ class LeaseBase(BaseModel):
         tenant_id (int): The ID of the tenant.
         room_id (int): The ID of the leased room.
         agreed_rent_amt (int): The agreed rental amount.
-        status (LeaseStatus): The current status of the lease.
         start_date (date): The start date of the lease.
         end_date (date): The end date of the lease.
     """
@@ -43,10 +42,7 @@ class LeaseResponse(LeaseBase):
 
 
 class LeaseUpdate(BaseModel):
-    tenant_id: Optional[int] = Field(None, description="The ID of the tenant.", examples=[1])
-    room_id: Optional[int] = Field(None, description="The ID of the leased room.", examples=[1])
     agreed_rent_amt: Optional[int]  = Field(None, ge=0, description="The agreed ANNUAL rental amount in KOBO.", examples=[20000000])
-    start_date: Optional[date] = Field(None, description="The start date of the lease.", examples=["2026-01-01"])
     end_date: Optional[date] = Field(None, description="The end date of the lease.", examples=["2026-12-31"])
 
 class OccupiedRoomLeasesResponse(BaseModel):
