@@ -11,7 +11,7 @@ from app.core.config import settings
 from app.crud.user import crud_user
 from app.core.enums import UserRole
 from app.core.exceptions import UserAlreadyExistError, UnauthorizedAccessError, UserNotFoundError, \
-    InvalidCredentialsError
+    InvalidCredentialsError, BaseNotFoundError
 from app.core.security import verify_password_hash, get_password_hash, create_access_token, create_refresh_token
 from app.models.refresh_token import RefreshToken
 from app.models.user import User
@@ -180,7 +180,11 @@ def refresh_access_token(db: Session, response: Response, refresh_token: str| No
 
 
 def logout_authenticated_user(db: Session, response: Response, refresh_token: str | None, user_id: int):
-    crud_user.delete_refresh_token(db, db_refresh_token=refresh_token, user_id=user_id)
+    db_refresh_token = crud_user.get_refresh_token(db, refresh_token=refresh_token, user_id=user_id)
+    if not db_refresh_token:
+        raise  BaseNotFoundError('RefreshToken')
+
+    crud_user.delete_refresh_token(db, db_refresh_token=db_refresh_token, user_id=user_id)
 
     response.delete_cookie("access_token", httponly=True, secure=True, samesite="lax", path='/')
     response.delete_cookie("refresh_token", httponly=True, secure=True, samesite="lax", path="/api/v1/auth")
