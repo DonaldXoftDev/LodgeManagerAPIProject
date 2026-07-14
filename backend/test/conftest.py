@@ -37,19 +37,30 @@ engine = create_engine(
 
 TestSessionLocal = sessionmaker(autoflush=False, autocommit=False, bind=engine)
 
+@pytest.fixture(scope='session', autouse=True)
+def test_session():
+    try:
+        Base.metadata.create_all(bind=engine)
+        yield
+    finally:
+        Base.metadata.drop_all(bind=engine)
+
 @pytest.fixture
 def test_db():
     """
     A pytest fixture that sets up a test database.
     It creates all tables before the test and drops them after the test.
     """
-    Base.metadata.create_all(bind=engine)
-    db = TestSessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-        Base.metadata.drop_all(bind=engine)
+    with engine.connect() as conn:
+        txn = conn.begin()
+        session = TestSessionLocal(bind=conn)
+        try:
+            yield session
+        finally:
+            txn.rollback()
+
+
+
 
 base_url = "/api/v1"
 
