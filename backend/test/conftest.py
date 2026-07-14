@@ -1,6 +1,7 @@
 from uuid import UUID
 
 import pytest
+from passlib.context import CryptContext
 from sqlalchemy.engine import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
@@ -8,6 +9,7 @@ import random
 from datetime import date, timedelta, datetime
 
 from app.api.deps import get_db
+from app.core import security
 from app.core.enums import StudentLevel, TenantType, RoomStatus, LeaseStatus
 from app.main import app
 from app.db.session import Base
@@ -50,6 +52,15 @@ def test_db():
         Base.metadata.drop_all(bind=engine)
 
 base_url = "/api/v1"
+
+@pytest.fixture(scope='session', autouse=True)
+def fast_pwd_context():
+    mp = pytest.MonkeyPatch()
+    fast_context = CryptContext(schemes=['bcrypt'], deprecated='auto', bcrypt__rounds=2)
+    mp.setattr(security, 'pwd_context', fast_context)
+    yield
+    mp.undo()
+
 
 @pytest.fixture
 def client(test_db):
